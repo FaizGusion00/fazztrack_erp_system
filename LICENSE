@@ -1,0 +1,81 @@
+MIT License
+
+Copyright (c) 2024 FazzPrint Sdn Bhd
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+**Fazztrack - T-Shirt Printing Management System**
+
+**Developed by:** Faiz Nasir  
+**Company:** FazzPrint Sdn Bhd  
+**Version:** 1.0.0  
+**Release Date:** December 2024
+
+**Contact Information:**
+- **Email:** support@fazzprint.com
+- **Website:** https://fazzprint.com
+- **Phone:** +60 12-345 6789
+
+**Technical Stack:**
+- Laravel 10.x (PHP 8.2+)
+- MySQL 8.0
+- Docker & Docker Compose
+- Tailwind CSS
+- Alpine.js
+- Font Awesome 6.4.0
+
+**Features:**
+- Complete order management workflow
+- Role-based access control (SuperAdmin, Admin, Sales Manager, Designer, Production Staff)
+- QR code tracking system
+- Offline support for production staff
+- Real-time analytics and reporting
+- Design management with approval workflow
+- Mobile responsive interface
+- Time tracking and duration calculation
+
+**License Terms:**
+This software is licensed under the MIT License, which allows for:
+- Commercial use
+- Modification
+- Distribution
+- Private use
+- Patent use
+
+The MIT License is one of the most permissive open-source licenses, making it suitable for both commercial and personal use.
+
+**Attribution:**
+When using this software, please include appropriate attribution to FazzPrint Sdn Bhd and Faiz Nasir as the original developers.
+
+**Support:**
+For technical support, bug reports, or feature requests, please contact:
+- **Email:** support@fazzprint.com
+- **Documentation:** https://docs.fazzprint.com
+
+**Warranty:**
+This software is provided "as is" without warranty of any kind. The authors and copyright holders disclaim all warranties, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+
+**Limitation of Liability:**
+In no event shall the authors or copyright holders be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+---
+
+**Made with ❤️ by Faiz Nasir for FazzPrint Sdn Bhd** 

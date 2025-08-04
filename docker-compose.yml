@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fazztrack_app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - fazztrack_network
+
+  webserver:
+    image: nginx:alpine
+    container_name: fazztrack_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - fazztrack_network
+
+  db:
+    image: mysql:8.0
+    container_name: fazztrack_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: fazztrack
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: fazztrack
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+      - dbdata:/var/lib/mysql
+    networks:
+      - fazztrack_network
+
+  redis:
+    image: redis:alpine
+    container_name: fazztrack_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - fazztrack_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: fazztrack_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: fazztrack
+      PMA_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - fazztrack_network
+
+networks:
+  fazztrack_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local 

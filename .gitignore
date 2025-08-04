@@ -1,0 +1,150 @@
+# Laravel Framework
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+
+# Laravel specific
+/bootstrap/cache/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/app/public/*
+/public/storage
+
+# Composer
+composer.phar
+/vendor/
+
+# NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Database
+*.sql
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+*.cache
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Security
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.p12
+
+# Uploads and generated files
+/public/uploads/
+/public/qr-codes/
+/public/templates/
+/public/designs/
+/public/receipts/
+/public/job-sheets/
+
+# Backup files
+*.tar.gz
+*.zip
+backups/
+
+# Testing
+/coverage/
+.phpunit.cache/
+
+# Application specific
+/storage/app/public/uploads/
+/storage/app/public/qr-codes/
+/storage/app/public/templates/
+/storage/app/public/designs/
+/storage/app/public/receipts/
+/storage/app/public/job-sheets/
+
+# SSL certificates
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Local development
+docker-compose.override.yml
+docker-compose.local.yml
+
+# IDE specific
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Backup and temporary files
+*.bak
+*.backup
+*.tmp
+*.temp
+*~
