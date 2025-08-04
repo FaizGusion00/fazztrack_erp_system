@@ -272,42 +272,6 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 
 ---
 
-## 🚀 Future Roadmap
-
-### Phase 1 - Core Features ✅
-- [x] User authentication and role management
-- [x] Client and order management
-- [x] QR code tracking system
-- [x] Offline support for production staff
-- [x] Design management and approval workflow
-- [x] Real-time analytics and reporting
-
-### Phase 2 - Advanced Features 🔄
-- [ ] **Inventory Management** - Track materials and supplies
-- [ ] **Supplier Management** - Manage suppliers and purchases
-- [ ] **Advanced Reporting** - Custom reports and analytics
-- [ ] **Email Notifications** - Automated email alerts
-- [ ] **SMS Integration** - Text message notifications
-- [ ] **Mobile App** - Native mobile application
-
-### Phase 3 - Enterprise Features 📋
-- [ ] **Multi-Location Support** - Multiple factory locations
-- [ ] **Advanced Analytics** - Machine learning insights
-- [ ] **API Integration** - Third-party integrations
-- [ ] **Advanced Security** - Two-factor authentication
-- [ ] **Backup & Recovery** - Automated backup system
-- [ ] **Performance Optimization** - Caching and optimization
-
-### Phase 4 - Innovation Features 🚀
-- [ ] **AI-Powered Design** - AI design suggestions
-- [ ] **Predictive Analytics** - Demand forecasting
-- [ ] **IoT Integration** - Smart factory equipment
-- [ ] **Blockchain Tracking** - Supply chain transparency
-- [ ] **AR/VR Support** - Virtual design preview
-- [ ] **Voice Commands** - Voice-controlled interface
-
----
-
 ## 🛠️ Development
 
 ### Local Development Setup
@@ -369,22 +333,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
 ## 📞 Support
 
 For support and questions:
 
-- **Email:** support@fazzprint.com
-- **Phone:** +60 12-345 6789
+- **Email:** fazzprint@gmail.com
+- **Phone:** +03 3122 4889
 - **Website:** https://fazzprint.com
 - **Documentation:** https://docs.fazzprint.com
 
