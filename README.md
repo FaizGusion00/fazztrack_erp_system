@@ -21,13 +21,15 @@
 ### ✨ Key Features
 
 - **🎨 Complete Order Management** - From client registration to order fulfillment
-- **👥 Role-Based Access Control** - SuperAdmin, Admin, Sales Manager, Designer, Production Staff
-- **📱 QR Code Tracking** - Real-time job tracking with QR code scanning
+- **👥 Role-Based Access Control** - SuperAdmin, Sales Manager, Designer, Production Staff
+- **📱 QR Code Tracking** - Real-time job tracking with QR code scanning and manual input
 - **📶 Offline Support** - Production staff can work without internet connectivity
-- **📊 Real-Time Analytics** - Comprehensive dashboards with charts and reports
-- **🎨 Design Management** - Template system with approval workflow
+- **📊 Real-Time Analytics** - Comprehensive dashboards with live data updates
+- **🎨 Design Management** - Template system with approval workflow and file storage
 - **⏱️ Time Tracking** - Automatic duration calculation for each production phase
-- **📱 Mobile Responsive** - Works seamlessly on all devices
+- **📱 Mobile Responsive** - Modern UI with Tailwind CSS
+- **🖨️ Work Orders** - Printable job sheets with design images and QR codes
+- **📈 Live Progress Tracking** - Real-time order status and production progress
 
 ---
 
@@ -37,10 +39,11 @@
 
 - **Backend**: Laravel 10.x (PHP 8.2+)
 - **Database**: MySQL 8.0
-- **Frontend**: Tailwind CSS, Alpine.js
+- **Frontend**: Tailwind CSS, Alpine.js, Chart.js
 - **Containerization**: Docker & Docker Compose
 - **QR Code**: SimpleSoftwareIO/simple-qrcode
 - **Icons**: Font Awesome 6.4.0
+- **Asset Building**: Vite
 
 ### System Requirements
 
@@ -72,6 +75,9 @@ docker-compose up -d
 # Install PHP dependencies
 docker-compose exec app composer install
 
+# Install Node.js dependencies
+docker-compose exec app npm install
+
 # Copy environment file
 cp .env.example .env
 
@@ -84,6 +90,9 @@ docker-compose exec app php artisan migrate
 # Seed the database
 docker-compose exec app php artisan db:seed
 
+# Build frontend assets
+docker-compose exec app npm run build
+
 # Set storage permissions
 docker-compose exec app chmod -R 775 storage bootstrap/cache
 ```
@@ -94,7 +103,6 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 - **phpMyAdmin**: http://localhost:8080
 - **Default Login**: 
   - SuperAdmin: `superadmin@fazztrack.com` / `superadmin123`
-  - Admin: `admin@fazztrack.com` / `admin123`
   - Sales Manager: `sales@fazztrack.com` / `sales123`
   - Designer: `designer@fazztrack.com` / `designer123`
   - Production Staff: `production@fazztrack.com` / `production123`
@@ -105,70 +113,123 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 
 ### SuperAdmin
 - **Full System Access** - Complete control over all features
-- **Advanced Analytics** - Comprehensive dashboards with charts
+- **Advanced Analytics** - Comprehensive dashboards with live charts
 - **User Management** - Create, edit, and manage all users
 - **System Configuration** - Global settings and configurations
-
-### Admin
-- **Order Approval** - Approve payments and designs
-- **Design Review** - Review and approve/reject designs
-- **Production Oversight** - Monitor production progress
-- **Financial Tracking** - Revenue and payment tracking
+- **Job Management** - Create, edit, and assign production jobs
 
 ### Sales Manager
 - **Client Management** - Add and manage clients
-- **Order Creation** - Create and manage orders
+- **Order Creation** - Create and manage orders with design uploads
 - **Payment Tracking** - Monitor payment status
-- **Job QR Generation** - Generate QR codes for production jobs
+- **Job Creation** - Create production jobs for each phase
+- **Order Status Management** - Monitor and update order progress
 
 ### Designer
-- **Design Upload** - Upload design files for orders
+- **Design Upload** - Upload design files (front, back, left, right views)
 - **Design Templates** - Create and manage reusable templates
 - **Design History** - Track design versions and feedback
 - **Template Library** - Access shared design templates
 
 ### Production Staff
 - **QR Code Scanning** - Scan job QR codes to start/end work
-- **Offline Mode** - Work without internet connectivity
-- **Time Tracking** - Record start/end times for each phase
+- **Manual Input** - Enter job IDs manually when camera unavailable
+- **Time Tracking** - Record start/end times with duration calculation
 - **Phase Management** - Complete production phases in sequence
+- **Remarks & Quantities** - Add notes and track quantities for QC phase
+- **Offline Mode** - Work without internet connectivity
 
 ---
 
-## 📋 Order Status Workflow
+## 📋 Enhanced Order Status Workflow
 
 ### Complete Production Workflow
 
 1. **Order Created** → Sales Manager creates new order
 2. **Order Approved** → Admin approves payment with receipt
-3. **Design Review** → Designer uploads design, gets feedback
+3. **Design Review** → Designer uploads design files (front, back, left, right)
 4. **Design Approved** → Admin/Sales Manager approves design
-5. **Job Created** → Sales Manager creates production jobs
-6. **Job Start** → Production staff scans QR, starts first phase
+5. **Job Created** → Sales Manager creates production jobs for each phase
+6. **Job Start** → Production staff scans QR, starts first phase (PRINT)
 7. **Job Complete** → All production phases completed
 8. **Order Packaging** → IRON/PACKING phase starts
 9. **Order Finished** → Shipping or self-collection
 
-### Production Phases
+### Enhanced Order Status Progression
+
+- **"Design Approved"** → **"Job Start"** (when first production job starts)
+- **"Job Start"** → **"Job Complete"** (when QC phase completes)
+- **"Job Complete"** → **"Order Packaging"** (when IRON/PACKING starts)
+- **"Order Packaging"** → **"Order Finished"** (when all phases complete)
+
+### Production Phases (Sequential Workflow)
 
 - **PRINT** → T-shirt printing process
 - **PRESS** → Heat press application
 - **CUT** → Cutting and trimming
 - **SEW** → Sewing and finishing
-- **QC** → Quality control and inspection
+- **QC** → Quality control and inspection (with remarks & quantities)
 - **IRON/PACKING** → Final ironing and packaging
 
 ---
 
 ## 🔧 Core Features
 
-### QR Code Tracking System
+### Enhanced QR Code Tracking System
 
 - **Job Identification** - Unique QR codes for each production job
+- **QR Format** - `QR_{randomstring}_{PHASE}` (e.g., `QR_EVLrykvkjc_PRINT`)
+- **Manual Input Fallback** - Enter job IDs directly when camera unavailable
+- **Backend Lookup** - QR codes linked to jobs via database lookup
+- **Test Buttons** - Quick testing with predefined job IDs
 - **Phase Management** - QR codes contain phase and job information
 - **Workflow Control** - Ensures phases are completed in sequence
-- **Time Tracking** - Automatic start/end time recording
+- **Time Tracking** - Automatic start/end time recording with duration calculation
 - **Status Updates** - Real-time job and order status updates
+
+### Production Job Management
+
+- **Start/End Jobs** - Production staff can start and end jobs with timestamps
+- **Duration Calculation** - Automatic calculation of job duration in minutes
+- **Remarks System** - Production staff can add notes when ending jobs
+- **Quantity Tracking** - Track start/reject quantities for QC phase
+- **Button State Management** - Buttons disabled when phase completed
+- **Real-Time Updates** - Live status updates without page refresh
+- **Error Handling** - Detailed error messages for access control
+
+### Work Order System
+
+- **Printable Job Sheets** - Professional work orders with design images
+- **Design Display** - Show front, back, left, right design views
+- **QR Code Integration** - QR codes displayed on work orders
+- **Manual Job ID** - Prominent display of job ID for manual entry
+- **Print/Download** - PDF generation and printing functionality
+- **Customer Information** - Complete customer and order details
+- **Job Specifications** - Phase, status, assigned user information
+
+### Enhanced Design Management System
+
+- **Multi-View Uploads** - Upload front, back, left, right design views
+- **Laravel Storage** - Secure file storage with proper file management
+- **JSON Field Storage** - Design files stored in JSON format
+- **Accessor Methods** - Easy retrieval of individual design files
+- **Drag-and-Drop Interface** - Modern upload interface with previews
+- **File Validation** - Secure file type and size validation
+- **Version Control** - Track design versions and feedback
+- **Approval Workflow** - Admin/Sales Manager approval process
+- **Template System** - Reusable design templates
+- **Design History** - Complete audit trail of design changes
+
+### Real-Time Analytics & Progress Tracking
+
+- **Live Data Updates** - AJAX-powered real-time updates
+- **Progress Calculation** - Based on 6 standard phases (not just existing jobs)
+- **Order Status Sync** - Automatic order status updates based on production
+- **Revenue Tracking** - Total and monthly revenue calculations
+- **Order Statistics** - Order status distribution with live updates
+- **Production Metrics** - Time tracking and efficiency metrics
+- **Client Analytics** - Top clients and order history
+- **Chart Visualizations** - Interactive charts and graphs
 
 ### Offline Support
 
@@ -178,22 +239,6 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 - **Data Protection** - No data loss from battery/reload issues
 - **Continuous Work** - Production doesn't stop for network issues
 
-### Design Management System
-
-- **Design Upload** - Multiple file formats (PSD, AI, JPG, PNG, PDF, ZIP)
-- **Version Control** - Track design versions and feedback
-- **Approval Workflow** - Admin/Sales Manager approval process
-- **Template System** - Reusable design templates
-- **Design History** - Complete audit trail of design changes
-
-### Real-Time Analytics
-
-- **Revenue Tracking** - Total and monthly revenue calculations
-- **Order Statistics** - Order status distribution
-- **Production Metrics** - Time tracking and efficiency
-- **Client Analytics** - Top clients and order history
-- **Chart Visualizations** - Interactive charts and graphs
-
 ---
 
 ## 📱 Mobile Features
@@ -201,17 +246,26 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 ### Responsive Design
 - **Mobile-First** - Optimized for mobile devices
 - **Touch-Friendly** - Large buttons and touch targets
+- **Modern UI** - Tailwind CSS with glass morphism effects
 - **Offline Capability** - Works without internet connection
-- **QR Scanner** - Camera-based QR code scanning
+- **QR Scanner** - Camera-based QR code scanning with manual fallback
 - **Real-Time Updates** - Live status and progress updates
 
 ### Production Staff Mobile Workflow
-1. **Receive QR Sheet** - From Sales Manager
-2. **Scan QR Code** - Use mobile camera
-3. **Start Job** - Record start time
+1. **Receive Work Order** - From Sales Manager with QR code and job ID
+2. **Scan QR Code** - Use mobile camera or manual input
+3. **Start Job** - Record start time and begin work
 4. **Work on Phase** - Complete production work
-5. **End Job** - Record end time and duration
+5. **End Job** - Record end time, duration, remarks, and quantities
 6. **Next Phase** - Pass to next production staff
+
+### Enhanced Scanner Interface
+- **Camera Integration** - Direct camera access with error handling
+- **Manual Input** - Type job IDs directly (25, 26, etc.)
+- **Test Buttons** - Quick testing with predefined job IDs
+- **Error Messages** - Clear feedback for access control issues
+- **Modal Interface** - Non-closing modals for better UX
+- **Button States** - Dynamic button enable/disable based on job status
 
 ---
 
@@ -222,7 +276,7 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 - **users** - User accounts and role management
 - **clients** - Client information and contacts
 - **orders** - Order details and status tracking
-- **production_jobs** - Individual production jobs
+- **production_jobs** - Individual production jobs with timestamps
 - **designs** - Design files and approval status
 - **design_templates** - Reusable design templates
 - **offline_job_logs** - Offline action tracking
@@ -236,6 +290,14 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 - **Designs** → **Orders** (Many-to-One)
 - **Designs** → **Users** (Many-to-One, designer)
 
+### Enhanced Fields
+
+- **orders.design_files** - JSON field storing design file paths
+- **production_jobs.duration** - Calculated duration in minutes
+- **production_jobs.remarks** - Production staff notes
+- **production_jobs.start_quantity** - Initial quantity for QC phase
+- **production_jobs.reject_quantity** - Rejected quantity for QC phase
+
 ---
 
 ## 🔒 Security Features
@@ -244,8 +306,9 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 - **Authentication** - Secure login system
 - **CSRF Protection** - Cross-site request forgery protection
 - **Input Validation** - Comprehensive form validation
-- **File Upload Security** - Secure file handling
+- **File Upload Security** - Secure file handling with validation
 - **SQL Injection Protection** - Laravel's built-in protection
+- **Access Control** - Production staff can only access assigned jobs
 
 ---
 
@@ -254,9 +317,15 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 ### Production Management
 - `GET /jobs/scanner` - QR scanner interface
 - `POST /jobs/{job}/start` - Start production job
-- `POST /jobs/{job}/end` - End production job
+- `POST /jobs/{job}/end` - End production job with remarks/quantities
 - `GET /jobs/{job}/details` - Get job details
+- `GET /jobs/qr/{qrCode}/details` - Get job details by QR code
 - `GET /jobs/{job}/workflow` - Get workflow information
+
+### Order Management
+- `GET /orders/{order}/status` - Get real-time order status
+- `POST /orders/{order}/jobs` - Create production jobs
+- `GET /orders/{order}/tracking` - Get order tracking data
 
 ### Offline Support
 - `GET /offline/jobs` - Get jobs for offline work
@@ -293,8 +362,24 @@ php artisan key:generate
 php artisan migrate
 php artisan db:seed
 
+# Build assets
+npm run build
+
 # Start development server
 php artisan serve
+```
+
+### Asset Building
+
+```bash
+# Development mode
+npm run dev
+
+# Production build
+npm run build
+
+# Watch for changes
+npm run watch
 ```
 
 ### Testing
@@ -351,6 +436,8 @@ For support and questions:
 - **Font Awesome** - For the comprehensive icon library
 - **Docker** - For the containerization platform
 - **MySQL** - For the reliable database system
+- **Vite** - For the modern asset building
+- **Chart.js** - For the interactive charts
 
 ---
 
