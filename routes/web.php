@@ -65,6 +65,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/jobs/{job}/print', [JobController::class, 'printJob'])->name('jobs.print');
     Route::get('/jobs/{job}/details', [JobController::class, 'getJobDetails'])->name('jobs.details');
     Route::get('/jobs/{job}/workflow', [JobController::class, 'getWorkflowInfo'])->name('jobs.workflow');
+    Route::get('/jobs/debug/list', [JobController::class, 'debugJobs'])->name('jobs.debug');
+    Route::get('/jobs/qr/{qrCode}/details', [JobController::class, 'getJobDetailsByQr'])->name('jobs.qr.details');
 
     // Design routes (Added)
     Route::resource('designs', DesignController::class);
@@ -75,6 +77,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Design Template routes
     Route::resource('design-templates', DesignTemplateController::class);
+
+    Route::get('/orders/{order}/status', [OrderController::class, 'getStatus'])->name('orders.status');
+    Route::get('/orders/{order}/tracking', [OrderController::class, 'tracking'])->name('orders.tracking');
 
 // Offline Support Routes
 Route::prefix('offline')->middleware(['auth'])->group(function () {

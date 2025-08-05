@@ -220,6 +220,20 @@
                                     Create Production Jobs
                                 </button>
                             @endif
+                        @elseif($order->status === 'Job Start')
+                            @if(auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin())
+                                <button onclick="showCreateJobsModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    <i class="fas fa-tasks mr-2"></i>
+                                    Create Additional Jobs
+                                </button>
+                            @endif
+                        @elseif($order->status === 'Order Finished')
+                            @if(auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin())
+                                <button onclick="showCreateJobsModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    <i class="fas fa-tasks mr-2"></i>
+                                    Create Additional Jobs
+                                </button>
+                            @endif
                         @endif
 
                         @if($order->status === 'In Progress' && $order->jobs->where('status', 'Completed')->count() === $order->jobs->count() && $order->jobs->count() > 0)
@@ -429,6 +443,87 @@
         </div>
     </div>
     @endif
+
+    <!-- Design Files -->
+    @if($order->design_front || $order->design_back || $order->design_left || $order->design_right)
+    <div class="mt-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                    <i class="fas fa-palette mr-2 text-primary-500"></i>
+                    Design Files
+                </h3>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    @if($order->design_front)
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-gray-700">Front View</h4>
+                        <div class="relative group">
+                            <img src="{{ Storage::url($order->design_front) }}" 
+                                 alt="Front Design" 
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                 onclick="openImageModal('{{ Storage::url($order->design_front) }}', 'Front Design')">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ basename($order->design_front) }}</p>
+                    </div>
+                    @endif
+
+                    @if($order->design_back)
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-gray-700">Back View</h4>
+                        <div class="relative group">
+                            <img src="{{ Storage::url($order->design_back) }}" 
+                                 alt="Back Design" 
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                 onclick="openImageModal('{{ Storage::url($order->design_back) }}', 'Back Design')">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ basename($order->design_back) }}</p>
+                    </div>
+                    @endif
+
+                    @if($order->design_left)
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-gray-700">Left View</h4>
+                        <div class="relative group">
+                            <img src="{{ Storage::url($order->design_left) }}" 
+                                 alt="Left Design" 
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                 onclick="openImageModal('{{ Storage::url($order->design_left) }}', 'Left Design')">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ basename($order->design_left) }}</p>
+                    </div>
+                    @endif
+
+                    @if($order->design_right)
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-medium text-gray-700">Right View</h4>
+                        <div class="relative group">
+                            <img src="{{ Storage::url($order->design_right) }}" 
+                                 alt="Right Design" 
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                 onclick="openImageModal('{{ Storage::url($order->design_right) }}', 'Right Design')">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ basename($order->design_right) }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 <!-- Create Jobs Modal -->
@@ -440,20 +535,52 @@
                 @csrf
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Production Phases</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Next Production Phase</label>
                         <div class="space-y-2">
                             @php
                                 $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+                                $completedPhases = $order->jobs->where('status', 'Completed')->pluck('phase')->toArray();
+                                $availablePhases = array_diff($phases, $completedPhases);
+                                
+                                // Find the next phase to create
+                                $nextPhase = null;
+                                foreach ($phases as $phase) {
+                                    if (!in_array($phase, $completedPhases)) {
+                                        $nextPhase = $phase;
+                                        break;
+                                    }
+                                }
                             @endphp
-                            @foreach($phases as $phase)
-                                <label class="flex items-center">
-                                    <input type="checkbox" 
-                                           name="phases[]" 
-                                           value="{{ $phase }}"
-                                           class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
-                                    <span class="ml-2 text-sm text-gray-700">{{ $phase }}</span>
+                            
+                            @if($nextPhase)
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" 
+                                           name="phase" 
+                                           value="{{ $nextPhase }}"
+                                           checked
+                                           class="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500">
+                                    <span class="ml-3 text-sm font-medium text-gray-700">{{ $nextPhase }}</span>
+                                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        Next Phase
+                                    </span>
                                 </label>
-                            @endforeach
+                                
+                                @if(count($availablePhases) > 1)
+                                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <p class="text-xs text-yellow-800">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Only the next phase is recommended. Creating jobs out of order may cause workflow issues.
+                                        </p>
+                                    </div>
+                                @endif
+                            @else
+                                <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                        <span class="text-sm text-green-800">All production phases are completed!</span>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -463,13 +590,26 @@
                             class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                         Cancel
                     </button>
-                    <button type="submit" 
-                            class="px-4 py-2 bg-primary-500 border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary-600">
-                        Create Jobs
-                    </button>
+                    @if($nextPhase)
+                        <button type="submit" 
+                                class="px-4 py-2 bg-primary-500 border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary-600">
+                            Create {{ $nextPhase }} Job
+                        </button>
+                    @endif
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+    <div class="relative max-w-4xl max-h-full mx-4">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain">
+        <h3 id="modalTitle" class="absolute bottom-4 left-4 text-white text-lg font-medium"></h3>
     </div>
 </div>
 
@@ -481,5 +621,29 @@ function showCreateJobsModal() {
 function hideCreateJobsModal() {
     document.getElementById('createJobsModal').classList.add('hidden');
 }
+
+function openImageModal(imageSrc, title) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('imageModal').classList.remove('hidden');
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
 </script>
 @endsection 

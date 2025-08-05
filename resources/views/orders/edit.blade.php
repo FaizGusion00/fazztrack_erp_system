@@ -241,39 +241,117 @@
 
                 <!-- Design Views -->
                 <div class="mt-6">
-                    <h4 class="text-md font-medium text-gray-900 mb-4">Design Views</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <label for="design_front" class="block text-sm font-medium text-gray-700 mb-2">Front View</label>
-                            <input type="file" 
-                                   id="design_front" 
-                                   name="design_front" 
-                                   accept=".jpg,.jpeg,.png"
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    <h4 class="text-md font-medium text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-palette mr-2 text-primary-500"></i>
+                        Design Views
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Front View -->
+                        <div class="space-y-3">
+                            <label for="design_front" class="block text-sm font-medium text-gray-700">Front View</label>
+                            <div class="relative">
+                                @if($order->design_front)
+                                    <div class="mb-3">
+                                        <img src="{{ Storage::url($order->design_front) }}" 
+                                             alt="Front Design" 
+                                             class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                                        <p class="text-xs text-gray-500 mt-1">Current: {{ basename($order->design_front) }}</p>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div class="text-center">
+                                        <i class="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+                                        <p class="text-sm text-gray-600">Click to upload or drag & drop</p>
+                                        <p class="text-xs text-gray-500">JPG, PNG up to 5MB</p>
+                                    </div>
+                                    <input type="file" 
+                                           id="design_front" 
+                                           name="design_front" 
+                                           accept=".jpg,.jpeg,.png"
+                                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="design_back" class="block text-sm font-medium text-gray-700 mb-2">Back View</label>
-                            <input type="file" 
-                                   id="design_back" 
-                                   name="design_back" 
-                                   accept=".jpg,.jpeg,.png"
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+
+                        <!-- Back View -->
+                        <div class="space-y-3">
+                            <label for="design_back" class="block text-sm font-medium text-gray-700">Back View</label>
+                            <div class="relative">
+                                @if($order->design_back)
+                                    <div class="mb-3">
+                                        <img src="{{ Storage::url($order->design_back) }}" 
+                                             alt="Back Design" 
+                                             class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                                        <p class="text-xs text-gray-500 mt-1">Current: {{ basename($order->design_back) }}</p>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div class="text-center">
+                                        <i class="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+                                        <p class="text-sm text-gray-600">Click to upload or drag & drop</p>
+                                        <p class="text-xs text-gray-500">JPG, PNG up to 5MB</p>
+                                    </div>
+                                    <input type="file" 
+                                           id="design_back" 
+                                           name="design_back" 
+                                           accept=".jpg,.jpeg,.png"
+                                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="design_left" class="block text-sm font-medium text-gray-700 mb-2">Left View</label>
-                            <input type="file" 
-                                   id="design_left" 
-                                   name="design_left" 
-                                   accept=".jpg,.jpeg,.png"
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+
+                        <!-- Left View -->
+                        <div class="space-y-3">
+                            <label for="design_left" class="block text-sm font-medium text-gray-700">Left View</label>
+                            <div class="relative">
+                                @if($order->design_left)
+                                    <div class="mb-3">
+                                        <img src="{{ Storage::url($order->design_left) }}" 
+                                             alt="Left Design" 
+                                             class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                                        <p class="text-xs text-gray-500 mt-1">Current: {{ basename($order->design_left) }}</p>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div class="text-center">
+                                        <i class="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+                                        <p class="text-sm text-gray-600">Click to upload or drag & drop</p>
+                                        <p class="text-xs text-gray-500">JPG, PNG up to 5MB</p>
+                                    </div>
+                                    <input type="file" 
+                                           id="design_left" 
+                                           name="design_left" 
+                                           accept=".jpg,.jpeg,.png"
+                                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label for="design_right" class="block text-sm font-medium text-gray-700 mb-2">Right View</label>
-                            <input type="file" 
-                                   id="design_right" 
-                                   name="design_right" 
-                                   accept=".jpg,.jpeg,.png"
-                                   class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+
+                        <!-- Right View -->
+                        <div class="space-y-3">
+                            <label for="design_right" class="block text-sm font-medium text-gray-700">Right View</label>
+                            <div class="relative">
+                                @if($order->design_right)
+                                    <div class="mb-3">
+                                        <img src="{{ Storage::url($order->design_right) }}" 
+                                             alt="Right Design" 
+                                             class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                                        <p class="text-xs text-gray-500 mt-1">Current: {{ basename($order->design_right) }}</p>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div class="text-center">
+                                        <i class="fas fa-upload text-gray-400 text-2xl mb-2"></i>
+                                        <p class="text-sm text-gray-600">Click to upload or drag & drop</p>
+                                        <p class="text-xs text-gray-500">JPG, PNG up to 5MB</p>
+                                    </div>
+                                    <input type="file" 
+                                           id="design_right" 
+                                           name="design_right" 
+                                           accept=".jpg,.jpeg,.png"
+                                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

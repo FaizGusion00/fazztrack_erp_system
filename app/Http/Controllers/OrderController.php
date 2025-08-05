@@ -105,18 +105,36 @@ class OrderController extends Controller
         
         foreach ($designFields as $field) {
             if ($request->hasFile($field)) {
-                $designFiles[$field] = $request->file($field)->store('designs', 'public');
+                $designFiles[$field] = $request->file($field)->store('designs/final', 'public');
             }
         }
         
         if (!empty($designFiles)) {
-            $orderData['download_link'] = json_encode($designFiles);
+            $orderData['design_files'] = json_encode($designFiles);
         }
 
         $order = Order::create($orderData);
 
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order created successfully with all uploaded files.');
+    }
+
+    /**
+     * Get order status for real-time updates
+     */
+    public function getStatus(Order $order)
+    {
+        $order->load(['jobs']);
+        $completedJobs = $order->jobs->where('status', 'Completed')->count();
+        $totalJobs = $order->jobs->count();
+        
+        return response()->json([
+            'success' => true,
+            'order' => $order,
+            'completed_jobs' => $completedJobs,
+            'total_jobs' => $totalJobs,
+            'progress_percentage' => $totalJobs > 0 ? ($completedJobs / $totalJobs) * 100 : 0
+        ]);
     }
 
     /**
@@ -186,18 +204,34 @@ class OrderController extends Controller
         }
 
         // Handle design files upload (finalized design by Sales Manager)
-        $designFiles = json_decode($order->design_files ?? '{}', true) ?: [];
+        $designFiles = $order->getDesignFilesArray();
         
         if ($request->hasFile('design_front')) {
+            // Delete old file if exists
+            if (isset($designFiles['design_front'])) {
+                Storage::disk('public')->delete($designFiles['design_front']);
+            }
             $designFiles['design_front'] = $request->file('design_front')->store('designs/final', 'public');
         }
         if ($request->hasFile('design_back')) {
+            // Delete old file if exists
+            if (isset($designFiles['design_back'])) {
+                Storage::disk('public')->delete($designFiles['design_back']);
+            }
             $designFiles['design_back'] = $request->file('design_back')->store('designs/final', 'public');
         }
         if ($request->hasFile('design_left')) {
+            // Delete old file if exists
+            if (isset($designFiles['design_left'])) {
+                Storage::disk('public')->delete($designFiles['design_left']);
+            }
             $designFiles['design_left'] = $request->file('design_left')->store('designs/final', 'public');
         }
         if ($request->hasFile('design_right')) {
+            // Delete old file if exists
+            if (isset($designFiles['design_right'])) {
+                Storage::disk('public')->delete($designFiles['design_right']);
+            }
             $designFiles['design_right'] = $request->file('design_right')->store('designs/final', 'public');
         }
         
@@ -276,21 +310,42 @@ class OrderController extends Controller
     public function createJobs(Request $request, Order $order)
     {
         $request->validate([
-            'phases' => 'required|array',
-            'phases.*' => 'in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
+            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
         ]);
 
-        foreach ($request->phases as $phase) {
-            Job::create([
-                'order_id' => $order->order_id,
-                'phase' => $phase,
-                'status' => 'Pending',
-                'qr_code' => 'QR_' . Str::random(10) . '_' . $phase,
-            ]);
+        $phase = $request->phase;
+        
+        // Check if this phase already exists
+        $existingJob = $order->jobs()->where('phase', $phase)->first();
+        if ($existingJob) {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "A job for {$phase} phase already exists.");
+        }
+        
+        // Check if previous phases are completed (workflow validation)
+        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+        $phaseIndex = array_search($phase, $phases);
+        
+        if ($phaseIndex > 0) {
+            $previousPhase = $phases[$phaseIndex - 1];
+            $previousJob = $order->jobs()->where('phase', $previousPhase)->first();
+            
+            if (!$previousJob || $previousJob->status !== 'Completed') {
+                return redirect()->route('orders.show', $order)
+                    ->with('error', "Cannot create {$phase} job. Previous phase ({$previousPhase}) must be completed first.");
+            }
         }
 
+        // Create the job
+        Job::create([
+            'order_id' => $order->order_id,
+            'phase' => $phase,
+            'status' => 'Pending',
+            'qr_code' => 'QR_' . Str::random(10) . '_' . $phase,
+        ]);
+
         return redirect()->route('orders.show', $order)
-            ->with('success', 'Jobs created successfully.');
+            ->with('success', "{$phase} job created successfully.");
     }
 
     /**

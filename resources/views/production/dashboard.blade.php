@@ -131,10 +131,10 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$job->status] ?? 'bg-gray-100 text-gray-800' }}">
                                     {{ $job->status }}
                                 </span>
-                                <a href="{{ route('jobs.show', $job) }}" 
+                                <!-- <a href="{{ route('jobs.show', $job) }}" 
                                    class="text-primary-600 hover:text-primary-700 text-xs font-medium">
                                     <i class="fas fa-eye mr-1"></i>View
-                                </a>
+                                </a> -->
                             </div>
                         </div>
                     @endforeach
@@ -177,9 +177,7 @@
                                 <div>
                                     <h4 class="font-medium text-gray-900">Job #{{ $job->job_id }}</h4>
                                     <p class="text-sm text-gray-600">{{ $job->order->job_name }} • {{ $job->order->client->name }}</p>
-                                    <p class="text-xs text-gray-500">
-                                        Assigned to: {{ $job->assignedUser ? $job->assignedUser->name : 'Unassigned' }}
-                                    </p>
+                                
                                     @if($job->start_time)
                                         <p class="text-xs text-green-600">Started: {{ $job->start_time->format('M d, H:i') }}</p>
                                     @endif
@@ -200,10 +198,10 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$job->status] ?? 'bg-gray-100 text-gray-800' }}">
                                     {{ $job->status }}
                                 </span>
-                                <a href="{{ route('jobs.show', $job) }}" 
+                                <!-- <a href="{{ route('jobs.show', $job) }}" 
                                    class="text-primary-600 hover:text-primary-700 text-xs font-medium">
                                     <i class="fas fa-eye mr-1"></i>View
-                                </a>
+                                </a> -->
                             </div>
                         </div>
                     @endforeach
@@ -268,10 +266,10 @@
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$job->status] ?? 'bg-gray-100 text-gray-800' }}">
                                     {{ $job->status }}
                                 </span>
-                                <a href="{{ route('jobs.show', $job) }}" 
+                                <!-- <a href="{{ route('jobs.show', $job) }}" 
                                    class="text-primary-600 hover:text-primary-700 text-xs font-medium">
                                     <i class="fas fa-eye mr-1"></i>View
-                                </a>
+                                </a> -->
                             </div>
                         </div>
                     @endforeach

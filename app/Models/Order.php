@@ -90,4 +90,48 @@ class Order extends Model
     {
         return $this->due_date_production->diffInDays(now()) <= 7;
     }
+
+    /**
+     * Get design files array
+     */
+    public function getDesignFilesArray()
+    {
+        return is_array($this->design_files) ? $this->design_files : (json_decode($this->design_files, true) ?: []);
+    }
+
+    /**
+     * Accessor for design_front
+     */
+    public function getDesignFrontAttribute()
+    {
+        $designFiles = $this->getDesignFilesArray();
+        return $designFiles['design_front'] ?? null;
+    }
+
+    /**
+     * Accessor for design_back
+     */
+    public function getDesignBackAttribute()
+    {
+        $designFiles = $this->getDesignFilesArray();
+        return $designFiles['design_back'] ?? null;
+    }
+
+    /**
+     * Accessor for design_left
+     */
+    public function getDesignLeftAttribute()
+    {
+        $designFiles = $this->getDesignFilesArray();
+        return $designFiles['design_left'] ?? null;
+    }
+
+    /**
+     * Accessor for design_right
+     */
+    public function getDesignRightAttribute()
+    {
+        $designFiles = $this->getDesignFilesArray();
+        return $designFiles['design_right'] ?? null;
+    }
 } 

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Fazztrack - T-Shirt Printing App')</title>
     
     <!-- Favicon -->
@@ -13,33 +14,10 @@
     <!-- Data URI Favicon (works immediately) -->
     <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZDEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojM0I4MkY2O3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxRDRFRDg7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICAKICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNSIgZmlsbD0idXJsKCNncmFkMSkiIHN0cm9rZT0iIzFFNDBBRiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgCiAgPHBhdGggZD0iTTggMTIgTDggMjQgTDI0IDI0IEwyNCAxMiBMMjIgMTAgTDIwIDEyIEwxOCAxMCBMMTYgMTIgTDE0IDEwIEwxMiAxMiBMMTAgMTAgWiIgZmlsbD0id2hpdGUiIHN0cm9rZT0iIzFFNDBBRiIgc3Ryb2tlLXdpZHRoPSIwLjUiLz4KICAKICA8cGF0aCBkPSJNMTAgMTAgTDE0IDggTDE2IDggTDE4IDggTDIyIDEwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTQwQUYiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgCiAgPHBhdGggZD0iTTggMTIgTDYgMTQgTDYgMTggTDggMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFFNDBBRiIgc3Ryb2tlLXdpZHRoPSIxIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMjQgMTIgTDI2IDE0IEwyNiAxOCBMMjQgMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFFNDBBRiIgc3Ryb2tlLXdpZHRoPSIxIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAKICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE4IiByPSIyIiBmaWxsPSIjM0I4MkY2IiBvcGFjaXR5PSIwLjgiLz4KICA8cGF0aCBkPSJNMTQgMTggTDE4IDE4IE0xNiAxNiBMMTYgMjAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC44IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICAKICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjE2IiByPSIwLjMiIGZpbGw9IiMzQjgyRjYiIG9wYWNpdHk9IjAuNiIvPgogIDxjaXJjbGUgY3g9IjIwIiBjeT0iMTYiIHI9IjAuMyIgZmlsbD0iIzNCODJGNiIgb3BhY2l0eT0iMC42Ii8+CiAgPGNpcmNsZSBjeD0iMTQiIGN5PSIyMiIgcj0iMC4zIiBmaWxsPSIjM0I4MkY2IiBvcGFjaXR5PSIwLjYiLz4KICA8Y2lyY2xlIGN4PSIxOCIgY3k9IjIyIiByPSIwLjMiIGZpbGw9IiMzQjgyRjYiIG9wYWNpdHk9IjAuNiIvPgogIDwvc3ZnPg==">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#1E90FF',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     @stack('styles')
 </head>
@@ -106,6 +84,9 @@
                                 </a>
                                 <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-shopping-cart mr-1"></i>Orders
+                                </a>
+                                <a href="{{ route('jobs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-tasks mr-1"></i>Jobs
                                 </a>
                                                     @elseif(auth()->user()->isDesigner())
                             <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">

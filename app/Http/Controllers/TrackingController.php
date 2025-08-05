@@ -12,9 +12,24 @@ class TrackingController extends Controller
      */
     public function show($orderId)
     {
-        $order = Order::with(['client', 'jobs'])
+        $order = Order::with(['client', 'jobs.assignedUser'])
             ->where('order_id', $orderId)
             ->firstOrFail();
+
+        // If it's an AJAX request, return JSON for live updates
+        if (request()->ajax()) {
+            return response()->json([
+                'order' => $order,
+                'jobs' => $order->jobs,
+                'progress' => [
+                    'total_phases' => 6,
+                    'completed' => $order->jobs->where('status', 'Completed')->count(),
+                    'in_progress' => $order->jobs->where('status', 'In Progress')->count(),
+                    'pending' => $order->jobs->where('status', 'Pending')->count(),
+                    'percentage' => $order->jobs->where('status', 'Completed')->count() / 6 * 100
+                ]
+            ]);
+        }
 
         return view('tracking.show', compact('order'));
     }
@@ -28,7 +43,7 @@ class TrackingController extends Controller
             'order_id' => 'required|string',
         ]);
 
-        $order = Order::with(['client', 'jobs'])
+        $order = Order::with(['client', 'jobs.assignedUser'])
             ->where('order_id', $request->order_id)
             ->first();
 

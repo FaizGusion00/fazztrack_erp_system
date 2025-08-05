@@ -78,7 +78,7 @@
     <!-- Orders Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         @forelse($orders as $order)
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow" data-order-id="{{ $order->order_id }}">
                 <div class="p-6">
                     <!-- Order Header -->
                     <div class="flex items-start justify-between mb-4">
@@ -147,7 +147,7 @@
                                 'On Hold' => 'bg-red-100 text-red-800'
                             ];
                         @endphp
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
+                        <span class="order-status inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
                             {{ $order->status }}
                         </span>
                         
@@ -160,15 +160,15 @@
                     <div class="mb-4">
                         <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
                             <span>Production Progress</span>
-                            <span>{{ $order->jobs->where('status', 'Completed')->count() }}/{{ $order->jobs->count() }}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
                             @php
                                 $completedJobs = $order->jobs->where('status', 'Completed')->count();
-                                $totalJobs = $order->jobs->count();
-                                $progress = $totalJobs > 0 ? ($completedJobs / $totalJobs) * 100 : 0;
+                                $totalPhases = 6; // PRINT, PRESS, CUT, SEW, QC, IRON/PACKING
+                                $progress = $totalPhases > 0 ? ($completedJobs / $totalPhases) * 100 : 0;
                             @endphp
-                            <div class="bg-primary-500 h-2 rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
+                            <span class="progress-text">{{ $completedJobs }}/{{ $totalPhases }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar bg-primary-500 h-2 rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
                         </div>
                     </div>
 
@@ -240,6 +240,59 @@
         </div>
     @endif
 </div>
+
+<script>
+// Function to refresh order statuses
+function refreshOrderStatuses() {
+    const orderCards = document.querySelectorAll('[data-order-id]');
+    
+    orderCards.forEach(card => {
+        const orderId = card.getAttribute('data-order-id');
+        const statusElement = card.querySelector('.order-status');
+        const progressElement = card.querySelector('.progress-text');
+        const progressBar = card.querySelector('.progress-bar');
+        
+        if (statusElement && progressElement && progressBar) {
+            fetch(`/orders/${orderId}/status`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update status badge
+                        statusElement.textContent = data.order.status;
+                        statusElement.className = `order-status inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            data.order.status === 'Job Created' ? 'bg-gray-100 text-gray-800' :
+                            data.order.status === 'Job Start' ? 'bg-blue-100 text-blue-800' :
+                            data.order.status === 'Job Complete' ? 'bg-green-100 text-green-800' :
+                            data.order.status === 'Order Finished' ? 'bg-purple-100 text-purple-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`;
+                        
+                        // Update progress
+                        const completedJobs = data.completed_jobs || 0;
+                        const totalPhases = 6;
+                        const progress = totalPhases > 0 ? (completedJobs / totalPhases) * 100 : 0;
+                        
+                        progressElement.textContent = `${completedJobs}/${totalPhases}`;
+                        progressBar.style.width = `${progress}%`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error refreshing order status:', error);
+                });
+        }
+    });
+}
+
+// Set up periodic refresh every 30 seconds
+setInterval(refreshOrderStatuses, 30000);
+
+// Also refresh when page becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        refreshOrderStatuses();
+    }
+});
+</script>
 
 @push('scripts')
 <script>

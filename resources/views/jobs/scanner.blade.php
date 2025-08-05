@@ -3,94 +3,213 @@
 @section('title', 'QR Scanner - Fazztrack')
 
 @section('content')
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-            <i class="fas fa-qrcode mr-3 text-primary-500"></i>
-            QR Scanner
-        </h1>
-        <p class="mt-2 text-gray-600">Scan QR codes to start and end production jobs.</p>
-    </div>
-
-    <!-- Scanner Container -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="p-6">
-            <!-- Scanner Status -->
-            <div class="mb-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div id="scanner-status" class="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span id="status-text" class="text-sm font-medium text-gray-700">Scanner Ready</span>
-                    </div>
-                    <button id="start-scanner" class="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors">
-                        <i class="fas fa-play mr-2"></i>Start Scanner
-                    </button>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+        <!-- Enhanced Header -->
+        <div class="mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent flex items-center">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center mr-2 sm:mr-3 lg:mr-4 shadow-lg">
+                            <i class="fas fa-qrcode text-white text-sm sm:text-base lg:text-xl"></i>
+                        </div>
+                        <span class="hidden sm:inline">QR Scanner</span>
+                        <span class="sm:hidden">Scanner</span>
+                    </h1>
+                    <p class="mt-2 sm:mt-3 text-sm sm:text-base lg:text-lg text-gray-600">Scan QR codes to start and end production jobs.</p>
                 </div>
             </div>
+        </div>
 
-            <!-- Video Container -->
-            <div class="relative">
-                <video id="qr-video" class="w-full h-64 bg-gray-100 rounded-lg" autoplay></video>
-                <div id="scanner-overlay" class="absolute inset-0 flex items-center justify-center hidden">
-                    <div class="bg-white p-4 rounded-lg shadow-lg">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-                        <p class="mt-2 text-sm text-gray-600">Processing QR Code...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Manual QR Input -->
-            <div class="mt-6">
-                <div class="space-y-3">
-                    <div class="flex space-x-3">
-                        <input type="text" 
-                               id="manual-qr" 
-                               placeholder="Enter QR code manually (e.g., QR_123 or job ID)" 
-                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                               maxlength="50">
-                        <button id="manual-scan" 
-                                class="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fas fa-search mr-2"></i>Scan
+        <!-- Enhanced Scanner Container -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-sm border border-white/20 overflow-hidden">
+            <div class="p-4 sm:p-6 lg:p-8">
+                <!-- Scanner Status -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div id="scanner-status" class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                            <span id="status-text" class="text-sm sm:text-base font-medium text-gray-700">Scanner Ready</span>
+                        </div>
+                        <button id="start-scanner" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 text-sm font-medium shadow-lg">
+                            <i class="fas fa-play mr-2"></i>
+                            <span class="hidden sm:inline">Start Scanner</span>
+                            <span class="sm:hidden">Start</span>
                         </button>
                     </div>
-                    <div class="text-xs text-gray-500 flex items-center">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        You can enter QR code directly or job ID number
+                </div>
+
+                <!-- Enhanced Video Container -->
+                <div id="camera-container" class="relative mb-6">
+                    <video id="qr-video" class="w-full h-48 sm:h-64 lg:h-80 bg-gray-100 rounded-xl sm:rounded-2xl" autoplay></video>
+                    <div id="scanner-overlay" class="absolute inset-0 flex items-center justify-center hidden bg-black/20 rounded-xl sm:rounded-2xl">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <div class="flex items-center space-x-3">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Processing QR Code...</p>
+                                    <p class="text-xs text-gray-500">Please wait</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Recent Scans -->
-            <div class="mt-8">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Scans</h3>
-                <div id="recent-scans" class="space-y-2">
-                    <!-- Recent scans will be populated here -->
+                <!-- Enhanced Manual QR Input -->
+                <div class="mb-6">
+                    <div class="space-y-4">
+                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                            <div class="flex-1">
+                                <label for="manual-qr" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-keyboard mr-1"></i>
+                                    Manual QR Code / Job ID
+                                </label>
+                                <input type="text" 
+                                       id="manual-qr" 
+                                       placeholder="Enter QR code or job ID (e.g., 25, QR_EVLrykvkjc_PRINT)" 
+                                       class="block w-full px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                                       maxlength="50">
+                            </div>
+                            <div class="flex items-end">
+                                <button id="manual-scan" 
+                                        class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fas fa-search mr-2"></i>
+                                    <span class="hidden sm:inline">Scan</span>
+                                    <span class="sm:hidden">Go</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-xs sm:text-sm text-gray-500 flex items-center">
+                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                            Supported formats: Job ID (25)
+                        </div>
+                    
+                    </div>
+                </div>
+
+                <!-- Enhanced Debug Section -->
+                <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <h4 class="text-sm sm:text-base font-medium text-blue-800 mb-3 flex items-center">
+                        <i class="fas fa-tools mr-2"></i>
+                        Quick Actions
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-1 gap-3">
+                    
+                        <button onclick="testScanner()" 
+                                class="inline-flex items-center justify-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-all duration-300 text-xs sm:text-sm font-medium">
+                            <i class="fas fa-vial mr-2"></i>
+                            Test Scanner
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simple Camera Help -->
+                <div class="mb-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                    <div class="text-xs text-yellow-700">
+                        <p><strong>Camera not working?</strong> No problem! Use manual input below - it works perfectly!</p>
+                        <p class="mt-1">You can type job ID (25, 26) or QR code (QR_EVLrykvkjc_PRINT) directly.</p>
+                        <p class="mt-1">All functionality works the same with manual input!</p>
+                    </div>
+                </div>
+
+                <!-- Enhanced Recent Scans -->
+                <div class="mb-6">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-history mr-2 text-gray-600"></i>
+                        Recent Scans
+                    </h3>
+                    <div id="recent-scans" class="space-y-2">
+                        <!-- Recent scans will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Job Details Modal -->
-    <div id="job-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Job Details</h3>
-                    <button id="close-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div id="job-details">
-                    <!-- Job details will be populated here -->
-                </div>
-                <div class="flex space-x-3 mt-6">
-                    <button id="start-job" class="flex-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
-                        <i class="fas fa-play mr-2"></i>Start Job
-                    </button>
-                    <button id="end-job" class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors hidden">
-                        <i class="fas fa-stop mr-2"></i>End Job
-                    </button>
+    <!-- Enhanced Job Details Modal -->
+    <div id="job-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-10 mx-auto p-4 w-full max-w-md">
+            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+                            <i class="fas fa-tasks mr-2 text-blue-500"></i>
+                            Job Details
+                        </h3>
+                        <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="job-details" class="mb-6">
+                        <!-- Job details will be populated here -->
+                    </div>
+                    
+                    <div id="workflow-status" class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                        <div id="workflow-info" class="text-sm text-blue-800">
+                            <!-- Workflow info will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div id="time-tracking" class="mb-4 p-3 bg-green-50 rounded-lg border border-green-200 hidden">
+                        <div id="time-info" class="text-sm text-green-800">
+                            <!-- Time tracking info will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button id="start-job" class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm font-medium shadow-lg hidden">
+                            <i class="fas fa-play mr-2"></i>
+                            Start Job
+                        </button>
+                        <button id="end-job" class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all duration-300 text-sm font-medium shadow-lg hidden">
+                            <i class="fas fa-stop mr-2"></i>
+                            End Job
+                        </button>
+                    </div>
+                    
+                    <!-- End Job Form (hidden by default) -->
+                    <div id="end-job-form" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+                        <h4 class="text-sm font-semibold text-gray-800 mb-3">Job Completion Details</h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">End Quantity</label>
+                                <input type="number" id="end-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter quantity">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Reject Quantity</label>
+                                <input type="number" id="reject-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter reject quantity">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Reject Status</label>
+                            <select id="reject-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select reject status</option>
+                                <option value="Quality Issue">Quality Issue</option>
+                                <option value="Material Defect">Material Defect</option>
+                                <option value="Print Error">Print Error</option>
+                                <option value="Size Mismatch">Size Mismatch</option>
+                                <option value="Color Issue">Color Issue</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
+                            <textarea id="remarks" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter any remarks about the job completion..."></textarea>
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <button id="confirm-end-job" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all duration-300 text-sm font-medium">
+                                <i class="fas fa-check mr-2"></i>Confirm End Job
+                            </button>
+                            <button id="cancel-end-job" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-300 text-sm font-medium">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -103,7 +222,7 @@ let scanner = null;
 let currentJob = null;
 let videoStream = null;
 
-// Initialize scanner
+// Initialize scanner with proper permission handling
 function initScanner() {
     const video = document.getElementById('qr-video');
     const statusIndicator = document.getElementById('scanner-status');
@@ -142,10 +261,26 @@ function initScanner() {
             console.error('Error accessing camera:', err);
             statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full';
             statusText.textContent = 'Camera Error';
+            
+            // Show error message but keep it simple
+            const cameraContainer = document.getElementById('camera-container');
+            cameraContainer.innerHTML = `
+                <div class="flex items-center justify-center h-full bg-red-50 rounded-xl">
+                    <div class="text-center p-6">
+                        <i class="fas fa-camera-slash text-4xl text-red-500 mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Camera Access Failed</h3>
+                        <p class="text-sm text-gray-600 mb-4">Please use manual input below</p>
+                        <button onclick="initScanner()" 
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-redo mr-2"></i>Try Again
+                        </button>
+                    </div>
+                </div>
+            `;
         });
 }
 
-// Handle QR code data with enhanced parsing
+// Enhanced QR code handling
 function handleQRCode(qrData) {
     showOverlay();
     
@@ -158,11 +293,12 @@ function handleQRCode(qrData) {
     } catch (e) {
         // Handle different QR code formats
         if (qrData.startsWith('QR_')) {
-            // Format: QR_123
-            jobId = qrData.split('_')[2];
+            // Check for format: QR_EVLrykvkjc_PRINT (QR_randomstring_phase)
+            // We need to find the job by QR code since the QR doesn't contain the job ID directly
+            jobId = qrData; // Pass the full QR code to backend
         } else if (qrData.startsWith('JOB_')) {
             // Format: JOB_123
-            jobId = qrData.split('_')[2];
+            jobId = qrData.split('_')[1];
         } else if (/^\d+$/.test(qrData)) {
             // Direct job ID number
             jobId = qrData;
@@ -181,41 +317,108 @@ function handleQRCode(qrData) {
         return;
     }
     
-    // Validate job ID is numeric
-    if (!/^\d+$/.test(jobId)) {
-        hideOverlay();
-        showError('Invalid job ID format. Please enter a valid job number.');
-        return;
+    // If it's a QR code (starts with QR_), we need to find the job by QR code
+    if (jobId.startsWith('QR_')) {
+        fetch(`/jobs/qr/${encodeURIComponent(jobId)}/details`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideOverlay();
+                if (data.success) {
+                    showJobModal(data.job);
+                    addRecentScan(data.job.job_id, 'Scanned');
+                } else {
+                    console.error('Job details error:', data.message);
+                    showError(data.message || 'Job not found or access denied');
+                }
+            })
+            .catch(error => {
+                console.error('QR scan error:', error);
+                console.error('Error details:', error.message);
+                if (error.message.includes('404')) {
+                    showError('Job not found. Please check the QR code.');
+                } else if (error.message.includes('403')) {
+                    showError('Access denied. This job is not assigned to you or does not match your phase.');
+                } else {
+                    showError('Error fetching job details. Please try again. Error: ' + error.message);
+                }
+            });
+    } else {
+        // Direct job ID - use existing endpoint
+        fetch(`/jobs/${jobId}/details`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                hideOverlay();
+                if (data.success) {
+                    showJobModal(data.job);
+                    addRecentScan(jobId, 'Scanned');
+                } else {
+                    console.error('Job details error:', data.message);
+                    showError(data.message || 'Job not found or access denied');
+                }
+            })
+            .catch(error => {
+                console.error('QR scan error:', error);
+                console.error('Error details:', error.message);
+                if (error.message.includes('404')) {
+                    showError('Job not found. Please check the job ID.');
+                } else if (error.message.includes('403')) {
+                    showError('Access denied. This job is not assigned to you or does not match your phase.');
+                } else {
+                    showError('Error fetching job details. Please try again. Error: ' + error.message);
+                }
+            });
     }
+}
+
+// Test scanner function
+function testScanner() {
+    console.log('=== QR Scanner Debug ===');
+    console.log('Testing scanner with job ID 25...');
+    console.log('Current user phase:', '{{ auth()->user()->phase ?? "N/A" }}');
+    console.log('Current user role:', '{{ auth()->user()->role ?? "N/A" }}');
+    console.log('Current user ID:', '{{ auth()->user()->id ?? "N/A" }}');
     
-    // Fetch job details with enhanced error handling
-    fetch(`/jobs/${jobId}/details`)
+    // Test the job details endpoint directly
+    fetch('/jobs/25/details')
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
             return response.json();
         })
         .then(data => {
-            hideOverlay();
+            console.log('Job details response:', data);
             if (data.success) {
+                console.log('✅ Job found and accessible');
                 showJobModal(data.job);
-                addRecentScan(jobId, 'Scanned');
+                addRecentScan('25', 'Test Success');
             } else {
+                console.log('❌ Job access denied:', data.message);
                 showError(data.message || 'Job not found or access denied');
             }
         })
         .catch(error => {
-            hideOverlay();
-            console.error('QR scan error:', error);
-            if (error.message.includes('404')) {
-                showError('Job not found. Please check the job ID.');
-            } else if (error.message.includes('403')) {
-                showError('Access denied. This job is not assigned to you.');
-            } else {
-                showError('Error fetching job details. Please try again.');
-            }
+            console.error('❌ Network error:', error);
+            showError('Network error: ' + error.message);
         });
+}
+
+// Test with specific job ID or QR code
+function testWithJobId(jobIdOrQR) {
+    console.log('Testing with:', jobIdOrQR);
+    
+    // Set the manual input value
+    document.getElementById('manual-qr').value = jobIdOrQR;
+    
+    // Trigger the manual scan
+    document.getElementById('manual-scan').click();
 }
 
 // Show/hide overlay
@@ -227,35 +430,57 @@ function hideOverlay() {
     document.getElementById('scanner-overlay').classList.add('hidden');
 }
 
-// Show job modal
+// Enhanced job modal
 function showJobModal(job) {
     currentJob = job;
     const modal = document.getElementById('job-modal');
     const details = document.getElementById('job-details');
     const startBtn = document.getElementById('start-job');
     const endBtn = document.getElementById('end-job');
+    const endJobForm = document.getElementById('end-job-form');
+    const confirmEndJobBtn = document.getElementById('confirm-end-job');
+    const cancelEndJobBtn = document.getElementById('cancel-end-job');
 
     details.innerHTML = `
-        <div class="space-y-3">
-            <div>
-                <span class="text-sm font-medium text-gray-500">Job ID:</span>
-                <span class="text-sm text-gray-900">${job.job_id}</span>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-xs font-medium text-gray-500">Job ID:</span>
+                    <p class="text-sm font-bold text-gray-900">${job.job_id}</p>
+                </div>
+                <div>
+                    <span class="text-xs font-medium text-gray-500">Phase:</span>
+                    <p class="text-sm font-bold text-gray-900">${job.phase}</p>
+                </div>
             </div>
             <div>
-                <span class="text-sm font-medium text-gray-500">Phase:</span>
-                <span class="text-sm text-gray-900">${job.phase}</span>
+                <span class="text-xs font-medium text-gray-500">Order:</span>
+                <p class="text-sm font-bold text-gray-900">${job.order.job_name}</p>
             </div>
             <div>
-                <span class="text-sm font-medium text-gray-500">Order:</span>
-                <span class="text-sm text-gray-900">${job.order.job_name}</span>
+                <span class="text-xs font-medium text-gray-500">Client:</span>
+                <p class="text-sm font-bold text-gray-900">${job.order.client.name}</p>
             </div>
             <div>
-                <span class="text-sm font-medium text-gray-500">Status:</span>
-                <span class="text-sm text-gray-900">${job.status}</span>
+                <span class="text-xs font-medium text-gray-500">Status:</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    ${job.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                      job.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                      job.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'}">
+                    ${job.status}
+                </span>
             </div>
             <div>
-                <span class="text-sm font-medium text-gray-500">Client:</span>
-                <span class="text-sm text-gray-900">${job.order.client.name}</span>
+                <span class="text-xs font-medium text-gray-500">Order Status:</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    ${job.order.status === 'Job Created' ? 'bg-gray-100 text-gray-800' :
+                      job.order.status === 'Job Start' ? 'bg-blue-100 text-blue-800' :
+                      job.order.status === 'Job Complete' ? 'bg-green-100 text-green-800' :
+                      job.order.status === 'Order Finished' ? 'bg-purple-100 text-purple-800' :
+                      'bg-yellow-100 text-yellow-800'}">
+                    ${job.order.status}
+                </span>
             </div>
         </div>
     `;
@@ -327,109 +552,216 @@ function showJobModal(job) {
         timeTracking.classList.add('hidden');
     }
 
-    // Check if user can start this job
-    fetch(`/jobs/${job.job_id}/workflow`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (job.status === 'Pending' && data.can_start) {
-                    startBtn.classList.remove('hidden');
-                    endBtn.classList.add('hidden');
-                    startBtn.disabled = false;
-                } else if (job.status === 'In Progress') {
-                    startBtn.classList.add('hidden');
-                    endBtn.classList.remove('hidden');
-                    endBtn.disabled = false;
-                } else if (job.status === 'Pending' && !data.can_start) {
-                    startBtn.classList.remove('hidden');
-                    endBtn.classList.add('hidden');
-                    startBtn.disabled = true;
-                    startBtn.textContent = 'Cannot Start - Previous Phase Required';
-                    startBtn.className = 'flex-1 px-4 py-2 bg-gray-400 text-white rounded-md cursor-not-allowed';
-                } else {
-                    startBtn.classList.add('hidden');
-                    endBtn.classList.add('hidden');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error checking workflow:', error);
-            // Fallback to basic status check
-            if (job.status === 'Pending') {
-                startBtn.classList.remove('hidden');
-                endBtn.classList.add('hidden');
-            } else if (job.status === 'In Progress') {
-                startBtn.classList.add('hidden');
-                endBtn.classList.remove('hidden');
-            }
-        });
+    // Update button states based on job status
+    updateButtonStates(job);
 
     modal.classList.remove('hidden');
 }
 
-// Start job
+// Function to update button states
+function updateButtonStates(job) {
+    const startBtn = document.getElementById('start-job');
+    const endBtn = document.getElementById('end-job');
+    const endJobForm = document.getElementById('end-job-form');
+    const confirmEndJobBtn = document.getElementById('confirm-end-job');
+    const cancelEndJobBtn = document.getElementById('cancel-end-job');
+    
+    // Reset button states
+    startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm font-medium shadow-lg';
+    endBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all duration-300 text-sm font-medium shadow-lg';
+    endJobForm.classList.add('hidden'); // Hide end job form by default
+    confirmEndJobBtn.classList.add('hidden'); // Hide confirm end job button by default
+    cancelEndJobBtn.classList.add('hidden'); // Hide cancel end job button by default
+    
+    if (job.status === 'Pending') {
+        // Check if can start
+        fetch(`/jobs/${job.job_id}/workflow`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.can_start) {
+                    startBtn.classList.remove('hidden');
+                    endBtn.classList.add('hidden');
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Start Job';
+                } else {
+                    startBtn.classList.remove('hidden');
+                    endBtn.classList.add('hidden');
+                    startBtn.disabled = true;
+                    startBtn.innerHTML = 'Cannot Start - Previous Phase Required';
+                    startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm font-medium';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking workflow:', error);
+                startBtn.classList.remove('hidden');
+                endBtn.classList.add('hidden');
+                startBtn.disabled = false;
+                startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Start Job';
+            });
+    } else if (job.status === 'In Progress') {
+        startBtn.classList.add('hidden');
+        endBtn.classList.remove('hidden');
+        endBtn.disabled = false;
+        endBtn.innerHTML = '<i class="fas fa-stop mr-2"></i>End Job';
+        endJobForm.classList.add('hidden'); // Hide form for in-progress jobs
+    } else if (job.status === 'Completed') {
+        // Disable both buttons instead of hiding them
+        startBtn.classList.remove('hidden');
+        endBtn.classList.remove('hidden');
+        startBtn.disabled = true;
+        endBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Start Done';
+        endBtn.innerHTML = '<i class="fas fa-check mr-2"></i>End Done';
+        startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm font-medium';
+        endBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm font-medium';
+        endJobForm.classList.add('hidden'); // Hide form for completed jobs
+        
+        // Show phase completed message
+        const modalBody = document.querySelector('#job-modal .bg-white');
+        if (modalBody) {
+            // Remove any existing completion indicator
+            const existingIndicator = modalBody.querySelector('.completion-indicator');
+            if (existingIndicator) {
+                existingIndicator.remove();
+            }
+            
+            // Add phase completed indicator
+            const completionIndicator = document.createElement('div');
+            completionIndicator.className = 'completion-indicator mt-4 p-4 bg-green-50 border border-green-200 rounded-lg';
+            completionIndicator.innerHTML = `
+                <div class="flex items-center space-x-2 mb-2">
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    <span class="text-lg font-semibold text-green-800">Phase Completed!</span>
+                </div>
+                <p class="text-sm text-green-700 mb-2">Your ${job.phase} phase has been completed successfully.</p>
+                <p class="text-xs text-green-600">You can close this modal or scan another job.</p>
+            `;
+            modalBody.appendChild(completionIndicator);
+        }
+    } else {
+        startBtn.classList.add('hidden');
+        endBtn.classList.add('hidden');
+        endJobForm.classList.add('hidden');
+    }
+}
+
+// Enhanced start job
 document.getElementById('start-job').addEventListener('click', function() {
     if (currentJob) {
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+        
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
         fetch(`/jobs/${currentJob.job_id}/start`, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-CSRF-TOKEN': csrfToken,
                 'Content-Type': 'application/json',
-            }
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                start_quantity: null // Optional parameter
+            })
         })
-        .then(response => response.json())
+        .then(response => {
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
-                showSuccess('Job started successfully');
-                document.getElementById('job-modal').classList.add('hidden');
+            console.log('Start job response data:', data);
+            if (data.message) {
+                let message = 'Job started successfully';
+                if (data.order_status) {
+                    message += ` (Order status: ${data.order_status})`;
+                }
+                showSuccess(message);
+                
+                // Immediately update the current job status
+                currentJob.status = 'In Progress';
+                currentJob.start_time = data.start_time;
+                
+                // Update button states immediately
+                updateButtonStates(currentJob);
+                
+                // Update time tracking
+                const timeTracking = document.getElementById('time-tracking');
+                const timeInfo = document.getElementById('time-info');
+                timeTracking.classList.remove('hidden');
+                
+                const startTime = new Date(data.start_time);
+                const now = new Date();
+                const duration = Math.floor((now - startTime) / (1000 * 60)); // minutes
+                
+                timeInfo.innerHTML = `
+                    <div class="space-y-1">
+                        <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
+                        <div>Duration: <strong>${duration} minutes</strong></div>
+                    </div>
+                `;
+                
+                // Update status badge in modal
+                const statusBadge = document.querySelector('#job-details .inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
+                if (statusBadge) {
+                    statusBadge.textContent = 'In Progress';
+                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800';
+                }
+                
                 addRecentScan(currentJob.job_id, 'Started');
+                
+                // Refresh the job data to show updated status (but keep modal open)
+                setTimeout(() => {
+                    fetch(`/jobs/${currentJob.job_id}/details`)
+                        .then(response => response.json())
+                        .then(jobData => {
+                            if (jobData.success) {
+                                currentJob = jobData.job;
+                                updateButtonStates(currentJob);
+                            }
+                        });
+                }, 1000);
             } else {
                 // Show detailed error message for workflow issues
                 if (data.error && data.previous_job) {
                     showError(`${data.message} Previous phase: ${data.previous_job} (${data.previous_status})`);
+                } else if (data.error && data.job_phase) {
+                    showError(`${data.error} Job phase: ${data.job_phase}, Your phase: ${data.user_phase}`);
+                } else if (data.error && data.assigned_user_id) {
+                    showError(`${data.error} This job is assigned to user ID: ${data.assigned_user_id}`);
                 } else {
-                    showError(data.message || 'Error starting job');
+                    showError(data.error || data.message || 'Error starting job');
                 }
             }
         })
         .catch(error => {
-            showError('Error starting job');
+            console.error('Start job error:', error);
+            showError('Error starting job: ' + error.message);
+        })
+        .finally(() => {
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
         });
     }
 });
 
-// End job
+// Enhanced end job
 document.getElementById('end-job').addEventListener('click', function() {
     if (currentJob) {
-        fetch(`/jobs/${currentJob.job_id}/end`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show completion message with time tracking
-                let message = 'Job completed successfully';
-                if (data.duration_formatted) {
-                    message += ` (Time taken: ${data.duration_formatted})`;
-                }
-                showSuccess(message);
-                document.getElementById('job-modal').classList.add('hidden');
-                addRecentScan(currentJob.job_id, 'Completed');
-            } else {
-                showError(data.message || 'Error completing job');
-            }
-        })
-        .catch(error => {
-            showError('Error completing job');
-        });
+        // Hide the end button and show the form
+        endBtn.classList.add('hidden');
+        endJobForm.classList.remove('hidden');
+        
+        // Focus on the first input field
+        document.getElementById('end-quantity').focus();
     }
 });
 
-// Manual QR input with enhanced functionality
+// Enhanced manual QR input
 document.getElementById('manual-scan').addEventListener('click', function() {
     const manualInput = document.getElementById('manual-qr');
     const qrCode = manualInput.value.trim();
@@ -445,15 +777,40 @@ document.getElementById('manual-scan').addEventListener('click', function() {
     scanButton.disabled = true;
     scanButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
     
-    // Process the QR code
-    handleQRCode(qrCode);
-    
-    // Clear input and re-enable button
-    manualInput.value = '';
-    setTimeout(() => {
-        scanButton.disabled = false;
-        scanButton.innerHTML = '<i class="fas fa-search mr-2"></i>Scan';
-    }, 2000);
+    // Try direct job ID first (most common case)
+    if (/^\d+$/.test(qrCode)) {
+        fetch(`/jobs/${qrCode}/details`)
+            .then(response => {
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showJobModal(data.job);
+                    addRecentScan(qrCode, 'Manual Scan Success');
+                } else {
+                    showError(data.message || 'Job not found or access denied');
+                }
+            })
+            .catch(error => {
+                console.error('Manual scan error:', error);
+                showError('Error fetching job details. Please try again.');
+            })
+            .finally(() => {
+                // Re-enable button
+                scanButton.disabled = false;
+                scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
+            });
+    } else {
+        // Process as QR code
+        handleQRCode(qrCode);
+        
+        // Clear input and re-enable button
+        manualInput.value = '';
+        setTimeout(() => {
+            scanButton.disabled = false;
+            scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
+        }, 2000);
+    }
 });
 
 // Allow Enter key to trigger manual scan
@@ -488,15 +845,20 @@ document.getElementById('close-modal').addEventListener('click', function() {
     document.getElementById('job-modal').classList.add('hidden');
 });
 
-// Add recent scan
+// Enhanced recent scan
 function addRecentScan(jobId, action) {
     const recentScans = document.getElementById('recent-scans');
     const scanItem = document.createElement('div');
-    scanItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+    scanItem.className = 'flex items-center justify-between p-3 bg-white/50 rounded-lg border border-gray-200 hover:bg-white/70 transition-all duration-200';
     scanItem.innerHTML = `
-        <div>
-            <span class="text-sm font-medium text-gray-900">Job #${jobId}</span>
-            <span class="text-xs text-gray-500 ml-2">${action}</span>
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-qrcode text-blue-600 text-sm"></i>
+            </div>
+            <div>
+                <span class="text-sm font-medium text-gray-900">Job #${jobId}</span>
+                <span class="text-xs text-gray-500 block">${action}</span>
+            </div>
         </div>
         <span class="text-xs text-gray-400">${new Date().toLocaleTimeString()}</span>
     `;
@@ -508,23 +870,292 @@ function addRecentScan(jobId, action) {
     }
 }
 
-// Show success/error messages
+// Enhanced success/error messages
 function showSuccess(message) {
-    // You can implement a toast notification here
-    alert('Success: ' + message);
+    // Create a toast notification
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full';
+    toast.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
 }
 
 function showError(message) {
-    // You can implement a toast notification here
-    alert('Error: ' + message);
+    // Create a toast notification
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full';
+    toast.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 5000);
 }
+
+// Function to refresh job status from database
+function refreshJobStatus() {
+    if (currentJob) {
+        fetch(`/jobs/${currentJob.job_id}/details`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const oldStatus = currentJob.status;
+                    currentJob = data.job;
+                    
+                    // Only update UI if status changed
+                    if (oldStatus !== currentJob.status) {
+                        updateButtonStates(currentJob);
+                        
+                        // Update status badge
+                        const statusBadge = document.querySelector('.inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
+                        if (statusBadge) {
+                            statusBadge.textContent = currentJob.status;
+                            statusBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                currentJob.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                currentJob.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                currentJob.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                            }`;
+                        }
+                        
+                        // Update time tracking if needed
+                        const timeTracking = document.getElementById('time-tracking');
+                        const timeInfo = document.getElementById('time-info');
+                        
+                        if (currentJob.status === 'In Progress' && currentJob.start_time) {
+                            timeTracking.classList.remove('hidden');
+                            const startTime = new Date(currentJob.start_time);
+                            const now = new Date();
+                            const duration = Math.floor((now - startTime) / (1000 * 60));
+                            
+                            timeInfo.innerHTML = `
+                                <div class="space-y-1">
+                                    <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
+                                    <div>Duration: <strong>${duration} minutes</strong></div>
+                                </div>
+                            `;
+                        } else if (currentJob.status === 'Completed' && currentJob.start_time && currentJob.end_time) {
+                            timeTracking.classList.remove('hidden');
+                            const startTime = new Date(currentJob.start_time);
+                            const endTime = new Date(currentJob.end_time);
+                            const duration = Math.floor((endTime - startTime) / (1000 * 60));
+                            
+                            timeInfo.innerHTML = `
+                                <div class="space-y-1">
+                                    <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
+                                    <div>Completed: <strong>${endTime.toLocaleString()}</strong></div>
+                                    <div>Total Time: <strong>${duration} minutes</strong></div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing job status:', error);
+            });
+    }
+}
+
+// Set up periodic refresh every 10 seconds
+setInterval(refreshJobStatus, 10000);
+
+// Also refresh when page becomes visible
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        refreshJobStatus();
+    }
+});
 
 // Initialize scanner on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-start scanner for production staff
-    if (document.body.classList.contains('production-staff')) {
-        initScanner();
+    initScanner();
+    
+    // Add close modal functionality
+    document.getElementById('close-modal').addEventListener('click', function() {
+        document.getElementById('job-modal').classList.add('hidden');
+        // Clear current job when modal is closed
+        currentJob = null;
+    });
+    
+    // Also close modal when clicking outside
+    document.getElementById('job-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+            currentJob = null;
+        }
+    });
+    
+    // Focus on manual input
+    document.getElementById('manual-qr').focus();
+});
+
+// Confirm end job
+document.getElementById('confirm-end-job').addEventListener('click', function() {
+    if (currentJob) {
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
+        
+        // Get form data
+        const endQuantity = document.getElementById('end-quantity').value;
+        const rejectQuantity = document.getElementById('reject-quantity').value;
+        const rejectStatus = document.getElementById('reject-status').value;
+        const remarks = document.getElementById('remarks').value;
+        
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch(`/jobs/${currentJob.job_id}/end`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                end_quantity: endQuantity || null,
+                reject_quantity: rejectQuantity || null,
+                reject_status: rejectStatus || null,
+                remarks: remarks || null
+            })
+        })
+        .then(response => {
+            return response.json();
+        })
+        .then(data => {
+            console.log('End job response data:', data);
+            if (data.message) {
+                // Show completion message with time tracking
+                let message = 'Job completed successfully';
+                if (data.duration_formatted) {
+                    message += ` (Time taken: ${data.duration_formatted})`;
+                }
+                if (data.order_status) {
+                    message += ` (Order status: ${data.order_status})`;
+                }
+                showSuccess(message);
+                
+                // Immediately update the current job status
+                currentJob.status = 'Completed';
+                currentJob.end_time = data.end_time;
+                currentJob.duration = data.duration;
+                
+                // Update button states immediately
+                updateButtonStates(currentJob);
+                
+                // Update time tracking
+                const timeTracking = document.getElementById('time-tracking');
+                const timeInfo = document.getElementById('time-info');
+                timeTracking.classList.remove('hidden');
+                
+                const startTime = new Date(currentJob.start_time);
+                const endTime = new Date(data.end_time);
+                const duration = Math.floor((endTime - startTime) / (1000 * 60)); // minutes
+                
+                timeInfo.innerHTML = `
+                    <div class="space-y-1">
+                        <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
+                        <div>Completed: <strong>${endTime.toLocaleString()}</strong></div>
+                        <div>Total Time: <strong>${duration} minutes</strong></div>
+                    </div>
+                `;
+                
+                // Update status badge in modal
+                const statusBadge = document.querySelector('#job-details .inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
+                if (statusBadge) {
+                    statusBadge.textContent = 'Completed';
+                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                }
+                
+                addRecentScan(currentJob.job_id, 'Completed');
+                
+                // Refresh the job data to show updated status (but keep modal open)
+                setTimeout(() => {
+                    fetch(`/jobs/${currentJob.job_id}/details`)
+                        .then(response => response.json())
+                        .then(jobData => {
+                            if (jobData.success) {
+                                currentJob = jobData.job;
+                                updateButtonStates(currentJob);
+                            }
+                        });
+                }, 1000);
+            } else {
+                // Show detailed error message
+                if (data.error && data.job_phase) {
+                    showError(`${data.error} Job phase: ${data.job_phase}, Your phase: ${data.user_phase}`);
+                } else if (data.error && data.assigned_user_id) {
+                    showError(`${data.error} This job is assigned to user ID: ${data.assigned_user_id}`);
+                } else {
+                    showError(data.error || data.message || 'Error ending job');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('End job error:', error);
+            showError('Error ending job: ' + error.message);
+        })
+        .finally(() => {
+            // Restore button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
     }
+});
+
+// Cancel end job
+document.getElementById('cancel-end-job').addEventListener('click', function() {
+    // Hide the form
+    const endJobForm = document.getElementById('end-job-form');
+    const endBtn = document.getElementById('end-job');
+    
+    endJobForm.classList.add('hidden');
+    
+    // Only show the end button if the job is still in progress
+    if (currentJob && currentJob.status === 'In Progress') {
+        endBtn.classList.remove('hidden');
+    }
+    
+    // Clear form fields
+    document.getElementById('end-quantity').value = '';
+    document.getElementById('reject-quantity').value = '';
+    document.getElementById('reject-status').value = '';
+    document.getElementById('remarks').value = '';
 });
 </script>
 @endsection 

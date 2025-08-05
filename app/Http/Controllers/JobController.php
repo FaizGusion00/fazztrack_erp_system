@@ -16,12 +16,14 @@ class JobController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Job::with(['order.client', 'assignedUser']);
         
-        // Role-based filtering
-        if ($user->isProductionStaff()) {
-            $query->where('assigned_user_id', $user->id);
+        // Only SuperAdmin and Sales Manager can view jobs
+        if (!$user->isSuperAdmin() && !$user->isSalesManager()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'You do not have permission to view jobs.');
         }
+        
+        $query = Job::with(['order.client', 'assignedUser']);
         
         // Search functionality
         if ($request->filled('search')) {
@@ -71,14 +73,52 @@ class JobController extends Controller
         ]);
 
         try {
-            $qrData = json_decode($request->qr_data, true);
-            
-            if (!$qrData || !isset($qrData['job_id'])) {
-                return response()->json(['error' => 'Invalid QR code'], 400);
+            $qrData = $request->qr_data;
+            $jobId = null;
+
+            // Try to parse as JSON first (for complex QR codes)
+            try {
+                $qrDataObj = json_decode($qrData, true);
+                if ($qrDataObj && isset($qrDataObj['job_id'])) {
+                    $jobId = $qrDataObj['job_id'];
+                }
+            } catch (\Exception $e) {
+                // Not JSON, try other formats
+            }
+
+            // If not JSON, try different QR code formats
+            if (!$jobId) {
+                if (preg_match('/QR_([A-Za-z0-9]+)_([A-Z]+)/', $qrData, $matches)) {
+                    // Format: QR_EVLrykvkjc_PRINT (QR_code_phase)
+                    $jobId = $matches[1];
+                } elseif (preg_match('/QR_(\d+)/', $qrData, $matches)) {
+                    // Format: QR_123
+                    $jobId = $matches[1];
+                } elseif (preg_match('/JOB_(\d+)/', $qrData, $matches)) {
+                    // Format: JOB_123
+                    $jobId = $matches[1];
+                } elseif (preg_match('/^(\d+)$/', $qrData, $matches)) {
+                    // Direct job ID number
+                    $jobId = $matches[1];
+                } else {
+                    // Try to extract any number as job ID
+                    if (preg_match('/(\d+)/', $qrData, $matches)) {
+                        $jobId = $matches[1];
+                    }
+                }
+            }
+
+            if (!$jobId) {
+                return response()->json(['error' => 'Invalid QR code format'], 400);
+            }
+
+            // For direct job IDs, allow numeric values
+            if (!preg_match('/^[A-Za-z0-9]+$/', $jobId)) {
+                return response()->json(['error' => 'Invalid job ID format'], 400);
             }
 
             $job = Job::with(['order.client', 'assignedUser'])
-                ->findOrFail($qrData['job_id']);
+                ->findOrFail($jobId);
 
             // Check if user can access this job
             $user = Auth::user();
@@ -104,9 +144,25 @@ class JobController extends Controller
     {
         $user = Auth::user();
         
-        // Check permissions
-        if ($user->isProductionStaff() && $job->assigned_user_id !== $user->id) {
-            return response()->json(['error' => 'Access denied'], 403);
+        // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
+        if ($user->isProductionStaff()) {
+            // Check if job phase matches user's phase
+            if ($job->phase !== $user->phase) {
+                return response()->json([
+                    'error' => 'Access denied. This job phase does not match your assigned phase.',
+                    'job_phase' => $job->phase,
+                    'user_phase' => $user->phase
+                ], 403);
+            }
+            
+            // Check if job is assigned to someone else
+            if ($job->assigned_user_id && $job->assigned_user_id !== $user->id) {
+                return response()->json([
+                    'error' => 'Access denied. This job is assigned to another user.',
+                    'assigned_user_id' => $job->assigned_user_id,
+                    'current_user_id' => $user->id
+                ], 403);
+            }
         }
 
         if ($job->status !== 'Pending') {
@@ -138,7 +194,16 @@ class JobController extends Controller
 
         // Update order status to Job Start if this is the first job started
         $order = $job->order;
-        if ($order->status === 'Job Created') {
+        $allJobs = $order->jobs;
+        $inProgressJobs = $allJobs->where('status', 'In Progress')->count();
+        $completedJobs = $allJobs->where('status', 'Completed')->count();
+        $totalJobs = $allJobs->count();
+        
+        // Enhanced order status update for job start
+        if ($order->status === 'Job Created' || $order->status === 'Design Approved') {
+            $order->update(['status' => 'Job Start']);
+        } elseif ($inProgressJobs > 0 && $completedJobs === 0) {
+            // First job started - update to Job Start
             $order->update(['status' => 'Job Start']);
         }
 
@@ -146,7 +211,11 @@ class JobController extends Controller
             'message' => 'Job started successfully',
             'job' => $job->fresh(),
             'start_time' => $job->start_time->toISOString(),
-            'next_job' => $this->getNextJob($job)
+            'next_job' => $this->getNextJob($job),
+            'order_status' => $order->fresh()->status,
+            'in_progress_jobs' => $inProgressJobs,
+            'completed_jobs' => $completedJobs,
+            'total_jobs' => $totalJobs
         ]);
     }
 
@@ -157,9 +226,25 @@ class JobController extends Controller
     {
         $user = Auth::user();
         
-        // Check permissions
-        if ($user->isProductionStaff() && $job->assigned_user_id !== $user->id) {
-            return response()->json(['error' => 'Access denied'], 403);
+        // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
+        if ($user->isProductionStaff()) {
+            // Check if job phase matches user's phase
+            if ($job->phase !== $user->phase) {
+                return response()->json([
+                    'error' => 'Access denied. This job phase does not match your assigned phase.',
+                    'job_phase' => $job->phase,
+                    'user_phase' => $user->phase
+                ], 403);
+            }
+            
+            // Check if job is assigned to someone else
+            if ($job->assigned_user_id && $job->assigned_user_id !== $user->id) {
+                return response()->json([
+                    'error' => 'Access denied. This job is assigned to another user.',
+                    'assigned_user_id' => $job->assigned_user_id,
+                    'current_user_id' => $user->id
+                ], 403);
+            }
         }
 
         if ($job->status !== 'In Progress') {
@@ -181,36 +266,45 @@ class JobController extends Controller
             $request->remarks
         );
 
-        // Calculate time taken for this phase
-        $duration = null;
-        if ($job->start_time && $job->end_time) {
-            $duration = $job->end_time->diffInMinutes($job->start_time);
-        }
+        // Get the duration from the model (already calculated)
+        $duration = $job->fresh()->duration;
 
         // Update order status based on job completion
         $order = $job->order;
         $allJobs = $order->jobs;
+        $completedJobs = $allJobs->where('status', 'Completed')->count();
+        $totalJobs = $allJobs->count();
         
-        // Check if all jobs are completed
-        if ($allJobs->where('status', 'Completed')->count() === $allJobs->count()) {
+        // Enhanced order status update logic
+        if ($completedJobs === $totalJobs && $totalJobs > 0) {
+            // All jobs completed - Order Finished
             $order->update(['status' => 'Order Finished']);
-        }
-        // Check if QC phase is completed
-        elseif ($job->phase === 'QC' && $job->status === 'Completed') {
+        } elseif ($job->phase === 'QC' && $job->status === 'Completed') {
+            // QC phase completed - Job Complete
             $order->update(['status' => 'Job Complete']);
-        }
-        // Check if IRON/PACKING phase is starting
-        elseif ($job->phase === 'IRON/PACKING' && $job->status === 'In Progress') {
+        } elseif ($job->phase === 'IRON/PACKING' && $job->status === 'In Progress') {
+            // IRON/PACKING started - Order Packaging
             $order->update(['status' => 'Order Packaging']);
+        } elseif ($job->phase === 'IRON/PACKING' && $job->status === 'Completed') {
+            // IRON/PACKING completed - Order Finished
+            $order->update(['status' => 'Order Finished']);
+        } elseif ($completedJobs > 0 && $completedJobs < $totalJobs) {
+            // Some jobs completed but not all - keep current status or update to Job Start
+            if ($order->status === 'Job Created' || $order->status === 'Design Approved') {
+                $order->update(['status' => 'Job Start']);
+            }
         }
 
         return response()->json([
             'message' => 'Job completed successfully',
             'job' => $job->fresh(),
             'end_time' => $job->end_time->toISOString(),
-            'duration_minutes' => $duration,
+            'duration' => $duration,
             'duration_formatted' => $this->formatDuration($duration),
-            'next_job' => $this->getNextJob($job)
+            'next_job' => $this->getNextJob($job),
+            'order_status' => $order->fresh()->status,
+            'completed_jobs' => $completedJobs,
+            'total_jobs' => $totalJobs
         ]);
     }
 
@@ -262,8 +356,17 @@ class JobController extends Controller
      */
     public function edit(Job $job)
     {
-        $orders = \App\Models\Order::where('status', 'Approved')->get();
-        return view('jobs.edit', compact('job', 'orders'));
+        // Check if user has permission to edit this job
+        $user = Auth::user();
+        if (!$user->isAdmin() && !$user->isSuperAdmin()) {
+            return redirect()->route('jobs.index')
+                ->with('error', 'You do not have permission to edit jobs.');
+        }
+
+        $orders = \App\Models\Order::where('status', '!=', 'Order Finished')->get();
+        $users = User::where('role', 'Production Staff')->get();
+        
+        return view('jobs.edit', compact('job', 'orders', 'users'));
     }
 
     /**
@@ -271,17 +374,72 @@ class JobController extends Controller
      */
     public function update(Request $request, Job $job)
     {
+        // Check if user has permission to edit this job
+        $user = Auth::user();
+        if (!$user->isAdmin() && !$user->isSuperAdmin()) {
+            return redirect()->route('jobs.index')
+                ->with('error', 'You do not have permission to edit jobs.');
+        }
+
         $request->validate([
+            'order_id' => 'required|exists:orders,order_id',
             'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
-            'start_quantity' => 'required|integer|min:1',
-            'remarks' => 'nullable|string',
+            'status' => 'required|in:Pending,In Progress,Completed,On Hold',
+            'start_quantity' => 'nullable|integer|min:1',
+            'end_quantity' => 'nullable|integer|min:0',
+            'reject_quantity' => 'nullable|integer|min:0',
+            'reject_status' => 'nullable|string|max:255',
+            'assigned_user_id' => 'nullable|exists:users,id',
+            'remarks' => 'nullable|string|max:1000',
+            'start_time' => 'nullable|date',
+            'end_time' => 'nullable|date|after_or_equal:start_time',
         ]);
 
-        $job->update([
+        // Additional validation for quantities
+        if ($request->filled('start_quantity') && $request->filled('end_quantity')) {
+            if ($request->end_quantity > $request->start_quantity) {
+                return back()->withErrors(['end_quantity' => 'End quantity cannot be greater than start quantity.'])->withInput();
+            }
+        }
+
+        // Check if assigned user can handle this phase
+        if ($request->filled('assigned_user_id')) {
+            $assignedUser = User::find($request->assigned_user_id);
+            if ($assignedUser && $assignedUser->role === 'Production Staff' && $assignedUser->phase !== $request->phase) {
+                return back()->withErrors(['assigned_user_id' => 'Selected user cannot handle this phase.'])->withInput();
+            }
+        }
+
+        // Prepare update data
+        $updateData = [
+            'order_id' => $request->order_id,
             'phase' => $request->phase,
+            'status' => $request->status,
             'start_quantity' => $request->start_quantity,
+            'end_quantity' => $request->end_quantity,
+            'reject_quantity' => $request->reject_quantity,
+            'reject_status' => $request->reject_status,
+            'assigned_user_id' => $request->assigned_user_id ?: null,
             'remarks' => $request->remarks,
-        ]);
+        ];
+
+        // Handle time fields
+        if ($request->filled('start_time')) {
+            $updateData['start_time'] = $request->start_time;
+        }
+        if ($request->filled('end_time')) {
+            $updateData['end_time'] = $request->end_time;
+            
+            // Recalculate duration if both times are provided
+            if ($request->filled('start_time')) {
+                $startTime = \Carbon\Carbon::parse($request->start_time);
+                $endTime = \Carbon\Carbon::parse($request->end_time);
+                $updateData['duration'] = $endTime->diffInMinutes($startTime);
+            }
+        }
+
+        // Update the job
+        $job->update($updateData);
 
         return redirect()->route('jobs.show', $job)
             ->with('success', 'Job updated successfully.');
@@ -303,8 +461,17 @@ class JobController extends Controller
     public function assign(Request $request, Job $job)
     {
         $request->validate([
-            'assigned_user_id' => 'required|exists:users,id',
+            'assigned_user_id' => 'nullable|exists:users,id',
         ]);
+
+        // If no user is assigned, just unassign the job
+        if (!$request->filled('assigned_user_id')) {
+            $job->update(['assigned_user_id' => null]);
+            return response()->json([
+                'message' => 'Job unassigned successfully',
+                'job' => $job->fresh(),
+            ]);
+        }
 
         $user = User::find($request->assigned_user_id);
         
@@ -340,16 +507,48 @@ class JobController extends Controller
     {
         $user = Auth::user();
         
-        // Check if user is assigned to this job or is admin/superadmin
-        if ($job->assigned_user_id !== $user->id && !$user->isAdmin() && !$user->isSuperAdmin()) {
-            return response()->json(['success' => false, 'message' => 'Access denied']);
+        // SuperAdmin and Sales Manager can access all jobs
+        if ($user->isSuperAdmin() || $user->isSalesManager()) {
+            $job->load(['order.client']);
+            return response()->json([
+                'success' => true,
+                'job' => $job
+            ]);
         }
         
-        $job->load(['order.client']);
+        // Production staff can access:
+        // 1. Jobs assigned to them
+        // 2. Unassigned jobs that match their phase
+        if ($user->isProductionStaff()) {
+            $canAccess = false;
+            
+            // Check if job is assigned to this user
+            if ($job->assigned_user_id === $user->id) {
+                $canAccess = true;
+            }
+            // Check if job is unassigned and matches user's phase
+            elseif (!$job->assigned_user_id && $job->phase === $user->phase) {
+                $canAccess = true;
+            }
+            
+            if ($canAccess) {
+                $job->load(['order.client']);
+                return response()->json([
+                    'success' => true,
+                    'job' => $job
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Access denied. This job is not assigned to you or does not match your phase.'
+                ]);
+            }
+        }
         
+        // Default: deny access
         return response()->json([
-            'success' => true,
-            'job' => $job
+            'success' => false, 
+            'message' => 'Access denied'
         ]);
     }
 
@@ -360,22 +559,62 @@ class JobController extends Controller
     {
         $user = Auth::user();
         
-        // Check if user is assigned to this job or is admin/superadmin
-        if ($job->assigned_user_id !== $user->id && !$user->isAdmin() && !$user->isSuperAdmin()) {
-            return response()->json(['success' => false, 'message' => 'Access denied']);
+        // SuperAdmin and Sales Manager can access all jobs
+        if ($user->isSuperAdmin() || $user->isSalesManager()) {
+            $previousJob = $this->getPreviousJob($job);
+            $nextJob = $this->getNextJob($job);
+            
+            return response()->json([
+                'success' => true,
+                'previous_job' => $previousJob,
+                'next_job' => $nextJob,
+                'can_start' => !$previousJob || $previousJob->status === 'Completed',
+                'workflow_message' => $previousJob && $previousJob->status !== 'Completed' 
+                    ? "Please complete {$previousJob->phase} phase first." 
+                    : "Ready to start {$job->phase} phase."
+            ]);
         }
         
-        $previousJob = $this->getPreviousJob($job);
-        $nextJob = $this->getNextJob($job);
+        // Production staff can access:
+        // 1. Jobs assigned to them
+        // 2. Unassigned jobs that match their phase
+        if ($user->isProductionStaff()) {
+            $canAccess = false;
+            
+            // Check if job is assigned to this user
+            if ($job->assigned_user_id === $user->id) {
+                $canAccess = true;
+            }
+            // Check if job is unassigned and matches user's phase
+            elseif (!$job->assigned_user_id && $job->phase === $user->phase) {
+                $canAccess = true;
+            }
+            
+            if ($canAccess) {
+                $previousJob = $this->getPreviousJob($job);
+                $nextJob = $this->getNextJob($job);
+                
+                return response()->json([
+                    'success' => true,
+                    'previous_job' => $previousJob,
+                    'next_job' => $nextJob,
+                    'can_start' => !$previousJob || $previousJob->status === 'Completed',
+                    'workflow_message' => $previousJob && $previousJob->status !== 'Completed' 
+                        ? "Please complete {$previousJob->phase} phase first." 
+                        : "Ready to start {$job->phase} phase."
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Access denied. This job is not assigned to you or does not match your phase.'
+                ]);
+            }
+        }
         
+        // Default: deny access
         return response()->json([
-            'success' => true,
-            'previous_job' => $previousJob,
-            'next_job' => $nextJob,
-            'can_start' => !$previousJob || $previousJob->status === 'Completed',
-            'workflow_message' => $previousJob && $previousJob->status !== 'Completed' 
-                ? "Please complete {$previousJob->phase} phase first." 
-                : "Ready to start {$job->phase} phase."
+            'success' => false, 
+            'message' => 'Access denied'
         ]);
     }
 
@@ -395,6 +634,28 @@ class JobController extends Controller
     {
         $job->load(['order.client']);
         return view('jobs.print', compact('job'));
+    }
+
+    /**
+     * Debug method to list all jobs (for testing QR scanner)
+     */
+    public function debugJobs()
+    {
+        $jobs = Job::select('job_id', 'phase', 'status', 'order_id')
+            ->with(['order:order_id,job_name'])
+            ->get();
+        
+        return response()->json([
+            'jobs' => $jobs->map(function($job) {
+                return [
+                    'job_id' => $job->job_id,
+                    'phase' => $job->phase,
+                    'status' => $job->status,
+                    'order_id' => $job->order_id,
+                    'order_name' => $job->order->job_name ?? 'N/A'
+                ];
+            })
+        ]);
     }
 
     /**
@@ -446,5 +707,51 @@ class JobController extends Controller
         }
         
         return "{$hours} hour" . ($hours > 1 ? 's' : '') . " {$remainingMinutes} minute" . ($remainingMinutes > 1 ? 's' : '');
+    }
+
+    /**
+     * Get job details by QR code
+     */
+    public function getJobDetailsByQr($qrCode)
+    {
+        $user = auth()->user();
+        
+        // Find job by QR code
+        $job = Job::where('qr_code', $qrCode)->with(['order.client', 'assignedUser'])->first();
+        
+        if (!$job) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job not found with this QR code.'
+            ], 404);
+        }
+        
+        // Check access permissions
+        if ($user->isProductionStaff()) {
+            // Production staff can only access jobs assigned to them or unassigned jobs matching their phase
+            if ($job->assigned_user_id && $job->assigned_user_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This job is assigned to another user.'
+                ], 403);
+            }
+            
+            if ($job->phase !== $user->phase) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This job does not match your assigned phase.'
+                ], 403);
+            }
+        } elseif (!$user->isSuperAdmin() && !$user->isSalesManager()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied. Only SuperAdmin and Sales Manager can view job details.'
+            ], 403);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'job' => $job
+        ]);
     }
 } 
