@@ -12,7 +12,7 @@ class TrackingController extends Controller
      */
     public function show($orderId)
     {
-        $order = Order::with(['client', 'jobs.assignedUser'])
+        $order = Order::with(['client', 'jobs.assignedUser', 'product'])
             ->where('order_id', $orderId)
             ->firstOrFail();
 
@@ -27,6 +27,14 @@ class TrackingController extends Controller
                     'in_progress' => $order->jobs->where('status', 'In Progress')->count(),
                     'pending' => $order->jobs->where('status', 'Pending')->count(),
                     'percentage' => $order->jobs->where('status', 'Completed')->count() / 6 * 100
+                ],
+                'delivery' => [
+                    'status' => $order->delivery_status,
+                    'tracking_number' => $order->tracking_number,
+                    'delivery_company' => $order->delivery_company,
+                    'delivery_date' => $order->delivery_date ? $order->delivery_date->format('M d, Y H:i') : null,
+                    'delivery_notes' => $order->delivery_notes,
+                    'proof_of_delivery_path' => $order->proof_of_delivery_path
                 ]
             ]);
         }

@@ -29,6 +29,17 @@ class Order extends Model
         'job_sheet',
         'design_files',
         'download_link',
+        'delivery_status',
+        'tracking_number',
+        'delivery_date',
+        'delivery_notes',
+        'delivery_company',
+        'payment_status',
+        'paid_amount',
+        'last_payment_date',
+        'payment_notes',
+        'payment_due_date',
+        'proof_of_delivery_path',
     ];
 
     protected $casts = [
@@ -41,6 +52,10 @@ class Order extends Model
         'delivery_method' => 'string',
         'status' => 'string',
         'design_files' => 'array',
+        'delivery_date' => 'datetime',
+        'last_payment_date' => 'datetime',
+        'payment_due_date' => 'date',
+        'paid_amount' => 'decimal:2',
     ];
 
     /**

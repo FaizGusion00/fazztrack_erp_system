@@ -305,6 +305,64 @@
                     @endif
                 </div>
             </div>
+
+            <!-- Delivery Status (for shipping orders) -->
+            @if($order->delivery_method === 'Shipping' && $order->status === 'Order Finished')
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6" data-delivery-section>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-truck mr-2 text-blue-500"></i>
+                        Delivery Status
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Status:</span>
+                            @php
+                                $deliveryColors = [
+                                    'Pending' => 'bg-yellow-100 text-yellow-800',
+                                    'In Transit' => 'bg-blue-100 text-blue-800',
+                                    'Delivered' => 'bg-green-100 text-green-800',
+                                    'Failed' => 'bg-red-100 text-red-800',
+                                ];
+                            @endphp
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $deliveryColors[$order->delivery_status] ?? 'bg-gray-100 text-gray-800' }}" data-delivery-status>
+                                {{ $order->delivery_status ?? 'Pending' }}
+                            </span>
+                        </div>
+                        @if($order->tracking_number)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tracking Number:</span>
+                                <span class="font-medium" data-tracking-number>{{ $order->tracking_number }}</span>
+                            </div>
+                        @endif
+                        @if($order->delivery_company)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Delivery Company:</span>
+                                <span class="font-medium" data-delivery-company>{{ $order->delivery_company }}</span>
+                            </div>
+                        @endif
+                        @if($order->delivery_date)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Delivery Date:</span>
+                                <span class="font-medium" data-delivery-date>{{ $order->delivery_date->format('M d, Y H:i') }}</span>
+                            </div>
+                        @endif
+                        @if($order->delivery_notes)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Notes:</span>
+                                <span class="font-medium text-right max-w-xs" data-delivery-notes>{{ $order->delivery_notes }}</span>
+                            </div>
+                        @endif
+                        @if($order->proof_of_delivery_path)
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Proof of Delivery:</span>
+                                <a href="{{ asset('storage/' . $order->proof_of_delivery_path) }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium" data-proof-of-delivery>
+                                    <i class="fas fa-image mr-1"></i>View Image
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -417,6 +475,78 @@
                         }
                     }
                 });
+                
+                // Update delivery status if delivery section exists
+                const deliverySection = document.querySelector('[data-delivery-section]');
+                if (deliverySection && data.delivery) {
+                    // Update delivery status
+                    const statusElement = deliverySection.querySelector('[data-delivery-status]');
+                    if (statusElement && data.delivery.status) {
+                        const deliveryColors = {
+                            'Pending': 'bg-yellow-100 text-yellow-800',
+                            'In Transit': 'bg-blue-100 text-blue-800',
+                            'Delivered': 'bg-green-100 text-green-800',
+                            'Failed': 'bg-red-100 text-red-800'
+                        };
+                        statusElement.textContent = data.delivery.status;
+                        statusElement.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${deliveryColors[data.delivery.status] || 'bg-gray-100 text-gray-800'}`;
+                    }
+                    
+                    // Update tracking number
+                    const trackingElement = deliverySection.querySelector('[data-tracking-number]');
+                    if (trackingElement) {
+                        if (data.delivery.tracking_number) {
+                            trackingElement.textContent = data.delivery.tracking_number;
+                            trackingElement.parentElement.style.display = 'flex';
+                        } else {
+                            trackingElement.parentElement.style.display = 'none';
+                        }
+                    }
+                    
+                    // Update delivery company
+                    const companyElement = deliverySection.querySelector('[data-delivery-company]');
+                    if (companyElement) {
+                        if (data.delivery.delivery_company) {
+                            companyElement.textContent = data.delivery.delivery_company;
+                            companyElement.parentElement.style.display = 'flex';
+                        } else {
+                            companyElement.parentElement.style.display = 'none';
+                        }
+                    }
+                    
+                    // Update delivery date
+                    const dateElement = deliverySection.querySelector('[data-delivery-date]');
+                    if (dateElement) {
+                        if (data.delivery.delivery_date) {
+                            dateElement.textContent = data.delivery.delivery_date;
+                            dateElement.parentElement.style.display = 'flex';
+                        } else {
+                            dateElement.parentElement.style.display = 'none';
+                        }
+                    }
+                    
+                    // Update delivery notes
+                    const notesElement = deliverySection.querySelector('[data-delivery-notes]');
+                    if (notesElement) {
+                        if (data.delivery.delivery_notes) {
+                            notesElement.textContent = data.delivery.delivery_notes;
+                            notesElement.parentElement.style.display = 'flex';
+                        } else {
+                            notesElement.parentElement.style.display = 'none';
+                        }
+                    }
+                    
+                    // Update proof of delivery
+                    const proofElement = deliverySection.querySelector('[data-proof-of-delivery]');
+                    if (proofElement) {
+                        if (data.delivery.proof_of_delivery_path) {
+                            proofElement.href = `/storage/${data.delivery.proof_of_delivery_path}`;
+                            proofElement.parentElement.style.display = 'flex';
+                        } else {
+                            proofElement.parentElement.style.display = 'none';
+                        }
+                    }
+                }
                 
                 updateTimestamp();
             })

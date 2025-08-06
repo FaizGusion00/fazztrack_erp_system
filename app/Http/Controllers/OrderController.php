@@ -370,4 +370,82 @@ class OrderController extends Controller
         return redirect()->route('orders.index')
             ->with('success', 'Order deleted successfully.');
     }
+
+    /**
+     * Update delivery status for an order
+     */
+    public function updateDelivery(Request $request, Order $order)
+    {
+        $user = auth()->user();
+        
+        // Check role-based access
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. You do not have permission to update delivery status.');
+        }
+        
+        $request->validate([
+            'delivery_status' => 'required|in:Pending,In Transit,Delivered,Failed',
+            'tracking_number' => 'nullable|string|max:255',
+            'delivery_company' => 'nullable|string|max:255',
+            'delivery_notes' => 'nullable|string',
+        ]);
+
+        $updateData = [
+            'delivery_status' => $request->delivery_status,
+            'tracking_number' => $request->tracking_number,
+            'delivery_company' => $request->delivery_company,
+            'delivery_notes' => $request->delivery_notes,
+        ];
+
+        // Set delivery date when delivered
+        if ($request->delivery_status === 'Delivered') {
+            $updateData['delivery_date'] = now();
+        }
+
+        $order->update($updateData);
+
+        return response()->json([
+            'message' => 'Delivery status updated successfully',
+            'order' => $order->fresh(),
+        ]);
+    }
+
+    /**
+     * Update payment status for an order
+     */
+    public function updatePayment(Request $request, Order $order)
+    {
+        $user = auth()->user();
+        
+        // Check role-based access
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. You do not have permission to update payment status.');
+        }
+        
+        $request->validate([
+            'payment_status' => 'required|in:Pending,Partial,Completed,Overdue',
+            'paid_amount' => 'required|numeric|min:0|max:' . $order->total_amount,
+            'payment_notes' => 'nullable|string',
+            'payment_due_date' => 'nullable|date',
+        ]);
+
+        $updateData = [
+            'payment_status' => $request->payment_status,
+            'paid_amount' => $request->paid_amount,
+            'payment_notes' => $request->payment_notes,
+            'payment_due_date' => $request->payment_due_date,
+        ];
+
+        // Set last payment date when payment is made
+        if ($request->paid_amount > $order->paid_amount) {
+            $updateData['last_payment_date'] = now();
+        }
+
+        $order->update($updateData);
+
+        return response()->json([
+            'message' => 'Payment status updated successfully',
+            'order' => $order->fresh(),
+        ]);
+    }
 } 

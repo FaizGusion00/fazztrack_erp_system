@@ -279,6 +279,13 @@ class JobController extends Controller
         if ($completedJobs === $totalJobs && $totalJobs > 0) {
             // All jobs completed - Order Finished
             $order->update(['status' => 'Order Finished']);
+            
+            // Automatically set delivery status based on delivery method
+            if ($order->delivery_method === 'Self Collect') {
+                $order->update(['delivery_status' => 'Pending']);
+            } else {
+                $order->update(['delivery_status' => 'Pending']);
+            }
         } elseif ($job->phase === 'QC' && $job->status === 'Completed') {
             // QC phase completed - Job Complete
             $order->update(['status' => 'Job Complete']);
@@ -288,6 +295,13 @@ class JobController extends Controller
         } elseif ($job->phase === 'IRON/PACKING' && $job->status === 'Completed') {
             // IRON/PACKING completed - Order Finished
             $order->update(['status' => 'Order Finished']);
+            
+            // Automatically set delivery status based on delivery method
+            if ($order->delivery_method === 'Self Collect') {
+                $order->update(['delivery_status' => 'Pending']);
+            } else {
+                $order->update(['delivery_status' => 'Pending']);
+            }
         } elseif ($completedJobs > 0 && $completedJobs < $totalJobs) {
             // Some jobs completed but not all - keep current status or update to Job Start
             if ($order->status === 'Job Created' || $order->status === 'Design Approved') {

@@ -39,7 +39,7 @@
                     </div>
                     <div class="p-6">
                         <!-- User Avatar -->
-                        <div class="flex items-center mb-6">
+                        <div class="flex items-center mb-8">
                             @php
                                 $roleIcons = [
                                     'SuperAdmin' => ['icon' => 'fas fa-crown', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
@@ -50,12 +50,12 @@
                                 ];
                                 $roleConfig = $roleIcons[$user->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
                             @endphp
-                            <div class="w-16 h-16 rounded-full {{ $roleConfig['bg'] }} flex items-center justify-center mr-4">
-                                <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }} text-2xl"></i>
+                            <div class="w-20 h-20 rounded-full {{ $roleConfig['bg'] }} flex items-center justify-center mr-6 shadow-lg">
+                                <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }} text-3xl"></i>
                             </div>
-                            <div>
-                                <h2 class="text-2xl font-bold text-gray-900">{{ $user->name }}</h2>
-                                <p class="text-gray-600">{{ $user->role }}</p>
+                            <div class="flex-1">
+                                <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ $user->name }}</h2>
+                                <p class="text-lg text-gray-600 font-medium">{{ $user->role }}</p>
                             </div>
                         </div>
 
@@ -66,7 +66,7 @@
                             </div>
                             <div>
                                 <h4 class="text-sm font-medium text-gray-500 mb-2">Username</h4>
-                                <p class="text-lg font-semibold text-gray-900">@{{ $user->username }}</p>
+                                <p class="text-lg font-semibold text-gray-900">{{ $user->username }}</p>
                             </div>
                             <div>
                                 <h4 class="text-sm font-medium text-gray-500 mb-2">Email Address</h4>

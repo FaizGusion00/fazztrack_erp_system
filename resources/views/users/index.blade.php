@@ -153,7 +153,7 @@
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="flex-shrink-0 h-12 w-12">
                                                 @php
                                                     $roleIcons = [
                                                         'SuperAdmin' => ['icon' => 'fas fa-crown', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
@@ -164,11 +164,11 @@
                                                     ];
                                                     $roleConfig = $roleIcons[$user->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
                                                 @endphp
-                                                <div class="h-10 w-10 rounded-full {{ $roleConfig['bg'] }} flex items-center justify-center">
-                                                    <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }}"></i>
+                                                <div class="h-12 w-12 rounded-full {{ $roleConfig['bg'] }} flex items-center justify-center shadow-md">
+                                                    <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }} text-lg"></i>
                                                 </div>
                                             </div>
-                                            <div class="ml-4">
+                                            <div class="ml-5">
                                                 <div class="text-sm font-medium text-gray-900">{{ $user->name }}</div>
                                                 <div class="text-sm text-gray-500">{{ $user->email }}</div>
                                             </div>

@@ -12,6 +12,7 @@ use App\Http\Controllers\OfflineController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DeliveryController;
 
 // Public routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -113,4 +114,16 @@ Route::prefix('offline')->middleware(['auth'])->group(function () {
     Route::get('/unsynced-logs', [OfflineController::class, 'getUnsyncedLogs'])->name('offline.unsynced-logs');
     Route::get('/check-status', [OfflineController::class, 'checkOnlineStatus'])->name('offline.check-status');
 });
+
+// Delivery Management routes (SuperAdmin, Admin, Sales Manager only)
+Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
+Route::get('/deliveries/{order}', [DeliveryController::class, 'show'])->name('deliveries.show');
+Route::post('/deliveries/{order}/update-delivery', [DeliveryController::class, 'updateDeliveryStatus'])->name('deliveries.update-delivery');
+Route::post('/deliveries/{order}/upload-proof', [DeliveryController::class, 'uploadProof'])->name('deliveries.upload-proof');
+Route::get('/deliveries/stats', [DeliveryController::class, 'getStats'])->name('deliveries.stats');
+Route::get('/deliveries/export', [DeliveryController::class, 'export'])->name('deliveries.export');
+
+// Order delivery and payment routes
+Route::post('/orders/{order}/update-delivery', [OrderController::class, 'updateDelivery'])->name('orders.update-delivery');
+Route::post('/orders/{order}/update-payment', [OrderController::class, 'updatePayment'])->name('orders.update-payment');
 });

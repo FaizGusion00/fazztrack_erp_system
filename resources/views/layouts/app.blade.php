@@ -59,6 +59,9 @@
                                 <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-shopping-cart mr-1"></i>Orders
                                 </a>
+                                <a href="{{ route('deliveries.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-truck mr-1"></i>Deliveries
+                                </a>
                                 <a href="{{ route('jobs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-tasks mr-1"></i>Jobs
                                 </a>
@@ -80,6 +83,9 @@
                                 </a>
                                 <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-shopping-cart mr-1"></i>Orders
+                                </a>
+                                <a href="{{ route('deliveries.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-truck mr-1"></i>Deliveries
                                 </a>
                             @elseif(auth()->user()->isSalesManager())
                                 <a href="{{ route('clients.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -130,11 +136,11 @@
                                 ];
                                 $roleConfig = $roleIcons[auth()->user()->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
                             @endphp
-                            <button id="user-menu-button" class="flex items-center space-x-2 text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                <div class="w-8 h-8 {{ $roleConfig['bg'] }} rounded-full flex items-center justify-center">
-                                    <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }}"></i>
+                            <button id="user-menu-button" class="flex items-center space-x-3 text-gray-700 hover:text-primary-500 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                                <div class="w-10 h-10 {{ $roleConfig['bg'] }} rounded-full flex items-center justify-center shadow-md">
+                                    <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }} text-lg"></i>
                                 </div>
-                                <span>{{ auth()->user()->name }}</span>
+                                <span class="font-medium">{{ auth()->user()->name }}</span>
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </button>
                             
@@ -159,124 +165,227 @@
         <!-- Mobile Sidebar -->
         <div id="mobile-sidebar" class="fixed inset-0 z-50 hidden">
             <!-- Backdrop -->
-            <div class="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" onclick="closeMobileSidebar()"></div>
+            <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity" onclick="closeMobileSidebar()"></div>
             
             <!-- Sidebar -->
-            <div class="fixed inset-y-0 left-0 flex flex-col w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out -translate-x-full" id="sidebar-content">
-                <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-tshirt text-white text-sm"></i>
+            <div class="fixed inset-y-0 left-0 flex flex-col w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out -translate-x-full" id="sidebar-content">
+                <!-- Header -->
+                <div class="flex items-center justify-between h-20 px-6 border-b border-gray-100 bg-gradient-to-r from-primary-500 to-primary-600">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                            <i class="fas fa-tshirt text-white text-lg"></i>
                         </div>
-                        <span class="text-xl font-bold text-primary-500">Fazztrack</span>
+                        <div>
+                            <span class="text-xl font-bold text-white">Fazztrack</span>
+                            <p class="text-xs text-white/80">Management System</p>
+                        </div>
                     </div>
-                    <button onclick="closeMobileSidebar()" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-times text-xl"></i>
+                    <button onclick="closeMobileSidebar()" class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
                 
-                <div class="flex-1 px-4 py-6 space-y-4">
-                    @if(auth()->user()->isSuperAdmin())
-                        <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                        </a>
-                        <a href="{{ route('users.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-users mr-3"></i>Users
-                        </a>
-                        <a href="{{ route('clients.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-user-friends mr-3"></i>Clients
-                        </a>
-                        <a href="{{ route('products.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-box mr-3"></i>Products
-                        </a>
-                        <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-shopping-cart mr-3"></i>Orders
-                        </a>
-                        <a href="{{ route('jobs.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-tasks mr-3"></i>Jobs
-                        </a>
-                        <a href="{{ route('designs.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-palette mr-3"></i>Designs
-                        </a>
-                    @elseif(auth()->user()->isAdmin())
-                        <a href="{{ route('admin.admin-dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                        </a>
-                        <a href="{{ route('products.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-box mr-3"></i>Products
-                        </a>
-                        <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-shopping-cart mr-3"></i>Orders
-                        </a>
-                        <a href="{{ route('designs.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-palette mr-3"></i>Designs
-                        </a>
-                    @elseif(auth()->user()->isSalesManager())
-                        <a href="{{ route('sales.dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                        </a>
-                        <a href="{{ route('clients.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-users mr-3"></i>Clients
-                        </a>
-                        <a href="{{ route('products.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-box mr-3"></i>Products
-                        </a>
-                        <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-shopping-cart mr-3"></i>Orders
-                        </a>
-                        <a href="{{ route('designs.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-palette mr-3"></i>Designs
-                        </a>
-                    @elseif(auth()->user()->isDesigner())
-                        <a href="{{ route('designer.dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                        </a>
-                        <a href="{{ route('designs.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-palette mr-3"></i>Designs
-                        </a>
-                        <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-shopping-cart mr-3"></i>Orders
-                        </a>
-                    @elseif(auth()->user()->isProductionStaff())
-                        <a href="{{ route('production.dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
-                        </a>
-                        <a href="{{ route('jobs.scanner') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-qrcode mr-3"></i>QR Scanner
-                        </a>
-                        <a href="{{ route('production.offline') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-wifi-slash mr-3"></i>Offline Mode
-                        </a>
-                    @endif
-                    
-                    <hr class="border-gray-200">
-                    
-                    <div class="flex items-center px-3 py-2">
-                        @php
-                            $roleIcons = [
-                                'SuperAdmin' => ['icon' => 'fas fa-crown', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
-                                'Admin' => ['icon' => 'fas fa-user-shield', 'bg' => 'bg-blue-100', 'text' => 'text-blue-600'],
-                                'Sales Manager' => ['icon' => 'fas fa-user-tie', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
-                                'Designer' => ['icon' => 'fas fa-palette', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
-                                'Production Staff' => ['icon' => 'fas fa-cogs', 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
-                            ];
-                            $roleConfig = $roleIcons[auth()->user()->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
-                        @endphp
-                        <div class="w-8 h-8 {{ $roleConfig['bg'] }} rounded-full flex items-center justify-center mr-3">
-                            <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }}"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
-                            <p class="text-xs text-gray-500">{{ auth()->user()->role }}</p>
+                <!-- Navigation -->
+                <div class="flex-1 px-6 py-8 space-y-2 overflow-y-auto">
+                    <!-- Navigation Section -->
+                    <div class="mb-8">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-2">Navigation</h3>
+                        <div class="space-y-1">
+                            @if(auth()->user()->isSuperAdmin())
+                                <a href="{{ route('dashboard') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-tachometer-alt text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <a href="{{ route('users.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-users text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Users</span>
+                                </a>
+                                <a href="{{ route('clients.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-user-friends text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Clients</span>
+                                </a>
+                                <a href="{{ route('products.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-box text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Products</span>
+                                </a>
+                                <a href="{{ route('orders.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-shopping-cart text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Orders</span>
+                                </a>
+                                <a href="{{ route('deliveries.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-truck text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Deliveries</span>
+                                </a>
+                                <a href="{{ route('jobs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-tasks text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Jobs</span>
+                                </a>
+                                <a href="{{ route('designs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-palette text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Designs</span>
+                                </a>
+                                <a href="{{ route('reports.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-chart-bar text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Reports</span>
+                                </a>
+                            @elseif(auth()->user()->isAdmin())
+                                <a href="{{ route('admin.admin-dashboard') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-tachometer-alt text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <a href="{{ route('products.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-box text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Products</span>
+                                </a>
+                                <a href="{{ route('orders.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-shopping-cart text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Orders</span>
+                                </a>
+                                <a href="{{ route('deliveries.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-truck text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Deliveries</span>
+                                </a>
+                                <a href="{{ route('designs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-palette text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Designs</span>
+                                </a>
+                            @elseif(auth()->user()->isSalesManager())
+                                <a href="{{ route('sales.dashboard') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-tachometer-alt text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <a href="{{ route('clients.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-users text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Clients</span>
+                                </a>
+                                <a href="{{ route('products.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-box text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Products</span>
+                                </a>
+                                <a href="{{ route('orders.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-shopping-cart text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Orders</span>
+                                </a>
+                                <a href="{{ route('designs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-palette text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Designs</span>
+                                </a>
+                            @elseif(auth()->user()->isDesigner())
+                                <a href="{{ route('designer.dashboard') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-tachometer-alt text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <a href="{{ route('designs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-palette text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Designs</span>
+                                </a>
+                                <a href="{{ route('orders.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-shopping-cart text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Orders</span>
+                                </a>
+                            @elseif(auth()->user()->isProductionStaff())
+                                <a href="{{ route('production.dashboard') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-tachometer-alt text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Dashboard</span>
+                                </a>
+                                <a href="{{ route('jobs.scanner') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-qrcode text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">QR Scanner</span>
+                                </a>
+                                <a href="{{ route('production.offline') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-wifi-slash text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Offline Mode</span>
+                                </a>
+                            @endif
                         </div>
                     </div>
                     
-                    <form method="POST" action="{{ route('logout') }}" class="px-3">
-                        @csrf
-                        <button type="submit" class="flex items-center w-full px-3 py-2 text-gray-700 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
-                            <i class="fas fa-sign-out-alt mr-3"></i>Logout
-                        </button>
-                    </form>
+                    <!-- User Profile Section -->
+                    <div class="border-t border-gray-100 pt-6">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 px-2">Account</h3>
+                        <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 mb-4">
+                            <div class="flex items-center">
+                                @php
+                                    $roleIcons = [
+                                        'SuperAdmin' => ['icon' => 'fas fa-crown', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
+                                        'Admin' => ['icon' => 'fas fa-user-shield', 'bg' => 'bg-blue-100', 'text' => 'text-blue-600'],
+                                        'Sales Manager' => ['icon' => 'fas fa-user-tie', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
+                                        'Designer' => ['icon' => 'fas fa-palette', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
+                                        'Production Staff' => ['icon' => 'fas fa-cogs', 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                                    ];
+                                    $roleConfig = $roleIcons[auth()->user()->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
+                                @endphp
+                                <div class="w-14 h-14 {{ $roleConfig['bg'] }} rounded-full flex items-center justify-center mr-4 shadow-lg">
+                                    <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }} text-2xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-gray-900">{{ auth()->user()->name }}</p>
+                                    <p class="text-xs text-gray-600 font-medium">{{ auth()->user()->role }}</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ auth()->user()->email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="group flex items-center w-full px-4 py-3 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200">
+                                <div class="w-10 h-10 bg-gray-100 group-hover:bg-red-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                    <i class="fas fa-sign-out-alt text-gray-600 group-hover:text-red-600"></i>
+                                </div>
+                                <span class="font-medium">Logout</span>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
