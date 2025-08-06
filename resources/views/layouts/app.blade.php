@@ -120,9 +120,19 @@
                         
                         <!-- User Menu -->
                         <div class="relative">
+                            @php
+                                $roleIcons = [
+                                    'SuperAdmin' => ['icon' => 'fas fa-crown', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
+                                    'Admin' => ['icon' => 'fas fa-user-shield', 'bg' => 'bg-blue-100', 'text' => 'text-blue-600'],
+                                    'Sales Manager' => ['icon' => 'fas fa-user-tie', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
+                                    'Designer' => ['icon' => 'fas fa-palette', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
+                                    'Production Staff' => ['icon' => 'fas fa-cogs', 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                                ];
+                                $roleConfig = $roleIcons[auth()->user()->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
+                            @endphp
                             <button id="user-menu-button" class="flex items-center space-x-2 text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-primary-500"></i>
+                                <div class="w-8 h-8 {{ $roleConfig['bg'] }} rounded-full flex items-center justify-center">
+                                    <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }}"></i>
                                 </div>
                                 <span>{{ auth()->user()->name }}</span>
                                 <i class="fas fa-chevron-down text-xs"></i>
@@ -242,8 +252,18 @@
                     <hr class="border-gray-200">
                     
                     <div class="flex items-center px-3 py-2">
-                        <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-user text-primary-500"></i>
+                        @php
+                            $roleIcons = [
+                                'SuperAdmin' => ['icon' => 'fas fa-crown', 'bg' => 'bg-red-100', 'text' => 'text-red-600'],
+                                'Admin' => ['icon' => 'fas fa-user-shield', 'bg' => 'bg-blue-100', 'text' => 'text-blue-600'],
+                                'Sales Manager' => ['icon' => 'fas fa-user-tie', 'bg' => 'bg-purple-100', 'text' => 'text-purple-600'],
+                                'Designer' => ['icon' => 'fas fa-palette', 'bg' => 'bg-green-100', 'text' => 'text-green-600'],
+                                'Production Staff' => ['icon' => 'fas fa-cogs', 'bg' => 'bg-yellow-100', 'text' => 'text-yellow-600'],
+                            ];
+                            $roleConfig = $roleIcons[auth()->user()->role] ?? ['icon' => 'fas fa-user', 'bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
+                        @endphp
+                        <div class="w-8 h-8 {{ $roleConfig['bg'] }} rounded-full flex items-center justify-center mr-3">
+                            <i class="{{ $roleConfig['icon'] }} {{ $roleConfig['text'] }}"></i>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
