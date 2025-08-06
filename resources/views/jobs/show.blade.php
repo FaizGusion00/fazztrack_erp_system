@@ -58,12 +58,7 @@
                     </div>
 
                     <!-- Order Value -->
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-500">Work order value (RM):</span>
-                            <span class="text-sm font-bold text-gray-900">RM {{ number_format($job->order->total_amount, 2) }}</span>
-                        </div>
-                    </div>
+                    {{-- Removed work order value display as per request --}}
 
                     <!-- Design Specifications -->
                     <div class="space-y-3">
