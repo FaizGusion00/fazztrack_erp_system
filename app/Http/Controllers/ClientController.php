@@ -76,16 +76,27 @@ class ClientController extends Controller
             'billing_address' => 'required|string',
             'shipping_address' => 'nullable|string',
             'customer_type' => 'required|in:Individual,Agent,Organisation',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'contacts' => 'nullable|array',
             'contacts.*.contact_name' => 'required|string|max:255',
             'contacts.*.contact_phone' => 'required|string|max:20',
             'contacts.*.contact_email' => 'required|email',
         ]);
 
-        $client = Client::create($request->only([
+        $clientData = $request->only([
             'name', 'phone', 'email', 'billing_address', 
             'shipping_address', 'customer_type'
-        ]));
+        ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imagePath = $image->storeAs('clients', $imageName, 'public');
+            $clientData['image'] = $imagePath;
+        }
+
+        $client = Client::create($clientData);
 
         // Create contacts if provided
         if ($request->has('contacts')) {
@@ -127,12 +138,28 @@ class ClientController extends Controller
             'billing_address' => 'required|string',
             'shipping_address' => 'nullable|string',
             'customer_type' => 'required|in:Individual,Agent,Organisation',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $client->update($request->only([
+        $clientData = $request->only([
             'name', 'phone', 'email', 'billing_address', 
             'shipping_address', 'customer_type'
-        ]));
+        ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($client->image && Storage::disk('public')->exists($client->image)) {
+                Storage::disk('public')->delete($client->image);
+            }
+            
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $imagePath = $image->storeAs('clients', $imageName, 'public');
+            $clientData['image'] = $imagePath;
+        }
+
+        $client->update($clientData);
 
         return redirect()->route('clients.index')
             ->with('success', 'Client updated successfully.');

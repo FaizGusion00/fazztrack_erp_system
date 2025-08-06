@@ -23,7 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'role',
-        'phase'
+        'phase',
+        'is_active'
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => 'string',
             'phase' => 'string',
+            'is_active' => 'boolean',
         ];
     }
 

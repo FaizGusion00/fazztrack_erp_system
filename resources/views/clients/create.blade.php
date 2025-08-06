@@ -24,7 +24,7 @@
 
     <!-- Client Form -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <form method="POST" action="{{ route('clients.store') }}" class="p-6">
+        <form method="POST" action="{{ route('clients.store') }}" enctype="multipart/form-data" class="p-6">
             @csrf
             
             <!-- Basic Information -->
@@ -67,6 +67,36 @@
                         @error('customer_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Image -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-camera mr-2 text-primary-500"></i>
+                    Profile Image
+                </h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
+                            Client Photo
+                        </label>
+                        <input type="file" 
+                               id="image" 
+                               name="image" 
+                               accept="image/*"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 @error('image') border-red-300 @enderror"
+                               onchange="previewImage(this)">
+                        <p class="mt-1 text-sm text-gray-500">Upload a profile photo (JPEG, PNG, JPG, GIF - Max 2MB)</p>
+                        @error('image')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div id="image-preview" class="hidden">
+                        <img id="preview" src="" alt="Preview" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
                     </div>
                 </div>
             </div>
@@ -260,6 +290,23 @@
             newContact.remove();
         });
     });
+
+    function previewImage(input) {
+        const preview = document.getElementById('preview');
+        const imagePreview = document.getElementById('image-preview');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = "";
+            imagePreview.classList.add('hidden');
+        }
+    }
 </script>
 @endpush
 @endsection 

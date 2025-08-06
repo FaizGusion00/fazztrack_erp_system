@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Job;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -50,7 +51,8 @@ class OrderController extends Controller
     public function create()
     {
         $clients = Client::all();
-        return view('orders.create', compact('clients'));
+        $products = Product::active()->inStock()->orderBy('name')->get();
+        return view('orders.create', compact('clients', 'products'));
     }
 
     /**
@@ -60,6 +62,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
+            'product_id' => 'required|exists:products,product_id',
             'job_name' => 'required|string|max:255',
             'delivery_method' => 'required|in:Self Collect,Shipping',
             'design_deposit' => 'required|numeric|min:0',
@@ -78,7 +81,7 @@ class OrderController extends Controller
         ]);
 
         $orderData = $request->only([
-            'client_id', 'job_name', 'delivery_method', 'design_deposit',
+            'client_id', 'product_id', 'job_name', 'delivery_method', 'design_deposit',
             'production_deposit', 'balance_payment', 'due_date_design',
             'due_date_production', 'remarks', 'download_link'
         ]);
@@ -152,7 +155,8 @@ class OrderController extends Controller
     public function edit(Order $order)
     {
         $clients = Client::all();
-        return view('orders.edit', compact('order', 'clients'));
+        $products = Product::active()->orderBy('name')->get();
+        return view('orders.edit', compact('order', 'clients', 'products'));
     }
 
     /**
@@ -162,6 +166,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
+            'product_id' => 'required|exists:products,product_id',
             'job_name' => 'required|string|max:255',
             'delivery_method' => 'required|in:Self Collect,Shipping',
             'design_deposit' => 'required|numeric|min:0',
@@ -180,7 +185,7 @@ class OrderController extends Controller
         ]);
 
         $orderData = $request->only([
-            'client_id', 'job_name', 'delivery_method', 'design_deposit',
+            'client_id', 'product_id', 'job_name', 'delivery_method', 'design_deposit',
             'production_deposit', 'balance_payment', 'due_date_design',
             'due_date_production', 'remarks', 'download_link'
         ]);

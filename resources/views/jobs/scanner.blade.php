@@ -15,19 +15,19 @@
                         </div>
                         <span class="hidden sm:inline">QR Scanner</span>
                         <span class="sm:hidden">Scanner</span>
-                    </h1>
+        </h1>
                     <p class="mt-2 sm:mt-3 text-sm sm:text-base lg:text-lg text-gray-600">Scan QR codes to start and end production jobs.</p>
                 </div>
             </div>
-        </div>
+    </div>
 
         <!-- Enhanced Scanner Container -->
         <div class="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-sm border border-white/20 overflow-hidden">
             <div class="p-4 sm:p-6 lg:p-8">
-                <!-- Scanner Status -->
-                <div class="mb-6">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
+            <!-- Scanner Status -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
                             <div id="scanner-status" class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                             <span id="status-text" class="text-sm sm:text-base font-medium text-gray-700">Scanner Ready</span>
                         </div>
@@ -50,10 +50,10 @@
                                     <p class="text-sm font-medium text-gray-900">Processing QR Code...</p>
                                     <p class="text-xs text-gray-500">Please wait</p>
                                 </div>
-                            </div>
-                        </div>
+                </div>
                     </div>
                 </div>
+            </div>
 
                 <!-- Enhanced Manual QR Input -->
                 <div class="mb-6">
@@ -64,14 +64,14 @@
                                     <i class="fas fa-keyboard mr-1"></i>
                                     Manual QR Code / Job ID
                                 </label>
-                                <input type="text" 
-                                       id="manual-qr" 
+                        <input type="text" 
+                               id="manual-qr" 
                                        placeholder="Enter QR code or job ID (e.g., 25, QR_EVLrykvkjc_PRINT)" 
                                        class="block w-full px-4 py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                                       maxlength="50">
+                               maxlength="50">
                             </div>
                             <div class="flex items-end">
-                                <button id="manual-scan" 
+                        <button id="manual-scan" 
                                         class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                                     <i class="fas fa-search mr-2"></i>
                                     <span class="hidden sm:inline">Scan</span>
@@ -109,8 +109,8 @@
                         <p><strong>Camera not working?</strong> No problem! Use manual input below - it works perfectly!</p>
                         <p class="mt-1">You can type job ID (25, 26) or QR code (QR_EVLrykvkjc_PRINT) directly.</p>
                         <p class="mt-1">All functionality works the same with manual input!</p>
-                    </div>
                 </div>
+            </div>
 
                 <!-- Enhanced Recent Scans -->
                 <div class="mb-6">
@@ -118,8 +118,8 @@
                         <i class="fas fa-history mr-2 text-gray-600"></i>
                         Recent Scans
                     </h3>
-                    <div id="recent-scans" class="space-y-2">
-                        <!-- Recent scans will be populated here -->
+                <div id="recent-scans" class="space-y-2">
+                    <!-- Recent scans will be populated here -->
                     </div>
                 </div>
             </div>
@@ -138,12 +138,12 @@
                         </h3>
                         <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
                             <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
+                    </button>
+                </div>
                     
                     <div id="job-details" class="mb-6">
-                        <!-- Job details will be populated here -->
-                    </div>
+                    <!-- Job details will be populated here -->
+                </div>
                     
                     <div id="workflow-status" class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200 hidden">
                         <div id="workflow-info" class="text-sm text-blue-800">
@@ -204,10 +204,10 @@
                         <div class="flex space-x-3">
                             <button id="confirm-end-job" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all duration-300 text-sm font-medium">
                                 <i class="fas fa-check mr-2"></i>Confirm End Job
-                            </button>
+                    </button>
                             <button id="cancel-end-job" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-300 text-sm font-medium">
                                 <i class="fas fa-times mr-2"></i>Cancel
-                            </button>
+                    </button>
                         </div>
                     </div>
                 </div>
@@ -327,7 +327,7 @@ function handleQRCode(qrData) {
                 return response.json();
             })
             .then(data => {
-                hideOverlay();
+        hideOverlay();
                 if (data.success) {
                     showJobModal(data.job);
                     addRecentScan(data.job.job_id, 'Scanned');
@@ -349,29 +349,29 @@ function handleQRCode(qrData) {
             });
     } else {
         // Direct job ID - use existing endpoint
-        fetch(`/jobs/${jobId}/details`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                hideOverlay();
-                if (data.success) {
-                    showJobModal(data.job);
-                    addRecentScan(jobId, 'Scanned');
-                } else {
+    fetch(`/jobs/${jobId}/details`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            hideOverlay();
+            if (data.success) {
+                showJobModal(data.job);
+                addRecentScan(jobId, 'Scanned');
+            } else {
                     console.error('Job details error:', data.message);
-                    showError(data.message || 'Job not found or access denied');
-                }
-            })
-            .catch(error => {
-                console.error('QR scan error:', error);
+                showError(data.message || 'Job not found or access denied');
+            }
+        })
+        .catch(error => {
+            console.error('QR scan error:', error);
                 console.error('Error details:', error.message);
-                if (error.message.includes('404')) {
-                    showError('Job not found. Please check the job ID.');
-                } else if (error.message.includes('403')) {
+            if (error.message.includes('404')) {
+                showError('Job not found. Please check the job ID.');
+            } else if (error.message.includes('403')) {
                     showError('Access denied. This job is not assigned to you or does not match your phase.');
                 } else {
                     showError('Error fetching job details. Please try again. Error: ' + error.message);
@@ -448,7 +448,7 @@ function showJobModal(job) {
                     <span class="text-xs font-medium text-gray-500">Job ID:</span>
                     <p class="text-sm font-bold text-gray-900">${job.job_id}</p>
                 </div>
-                <div>
+            <div>
                     <span class="text-xs font-medium text-gray-500">Phase:</span>
                     <p class="text-sm font-bold text-gray-900">${job.phase}</p>
                 </div>
@@ -575,9 +575,9 @@ function updateButtonStates(job) {
     
     if (job.status === 'Pending') {
         // Check if can start
-        fetch(`/jobs/${job.job_id}/workflow`)
-            .then(response => response.json())
-            .then(data => {
+    fetch(`/jobs/${job.job_id}/workflow`)
+        .then(response => response.json())
+        .then(data => {
                 if (data.success && data.can_start) {
                     startBtn.classList.remove('hidden');
                     endBtn.classList.add('hidden');
@@ -589,18 +589,18 @@ function updateButtonStates(job) {
                     startBtn.disabled = true;
                     startBtn.innerHTML = 'Cannot Start - Previous Phase Required';
                     startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm font-medium';
-                }
-            })
-            .catch(error => {
-                console.error('Error checking workflow:', error);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking workflow:', error);
                 startBtn.classList.remove('hidden');
                 endBtn.classList.add('hidden');
                 startBtn.disabled = false;
                 startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Start Job';
             });
-    } else if (job.status === 'In Progress') {
-        startBtn.classList.add('hidden');
-        endBtn.classList.remove('hidden');
+            } else if (job.status === 'In Progress') {
+                startBtn.classList.add('hidden');
+                endBtn.classList.remove('hidden');
         endBtn.disabled = false;
         endBtn.innerHTML = '<i class="fas fa-stop mr-2"></i>End Job';
         endJobForm.classList.add('hidden'); // Hide form for in-progress jobs
@@ -802,14 +802,14 @@ document.getElementById('manual-scan').addEventListener('click', function() {
             });
     } else {
         // Process as QR code
-        handleQRCode(qrCode);
-        
-        // Clear input and re-enable button
-        manualInput.value = '';
-        setTimeout(() => {
-            scanButton.disabled = false;
+    handleQRCode(qrCode);
+    
+    // Clear input and re-enable button
+    manualInput.value = '';
+    setTimeout(() => {
+        scanButton.disabled = false;
             scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
-        }, 2000);
+    }, 2000);
     }
 });
 
@@ -855,8 +855,8 @@ function addRecentScan(jobId, action) {
             <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-qrcode text-blue-600 text-sm"></i>
             </div>
-            <div>
-                <span class="text-sm font-medium text-gray-900">Job #${jobId}</span>
+        <div>
+            <span class="text-sm font-medium text-gray-900">Job #${jobId}</span>
                 <span class="text-xs text-gray-500 block">${action}</span>
             </div>
         </div>
@@ -1000,7 +1000,7 @@ document.addEventListener('visibilitychange', function() {
 
 // Initialize scanner on page load
 document.addEventListener('DOMContentLoaded', function() {
-    initScanner();
+        initScanner();
     
     // Add close modal functionality
     document.getElementById('close-modal').addEventListener('click', function() {

@@ -9,6 +9,9 @@ use App\Http\Controllers\DesignController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\DesignTemplateController;
 use App\Http\Controllers\OfflineController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReportController;
 
 // Public routes
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
@@ -77,6 +80,27 @@ Route::middleware(['auth'])->group(function () {
 
     // Design Template routes
     Route::resource('design-templates', DesignTemplateController::class);
+
+    // Product routes
+    Route::resource('products', ProductController::class);
+    Route::post('/products/{product}/stock', [ProductController::class, 'updateStock'])->name('products.stock.update');
+    Route::get('/products/for-order', [ProductController::class, 'getProductsForOrder'])->name('products.for-order');
+    Route::get('/products/{product}/details', [ProductController::class, 'getProductDetails'])->name('products.details');
+
+    // User Management routes (SuperAdmin only)
+    Route::resource('users', UserController::class);
+    Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    Route::get('/users/stats', [UserController::class, 'getStats'])->name('users.stats');
+    Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
+
+    // Reports routes (SuperAdmin only)
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/orders', [ReportController::class, 'orderReport'])->name('reports.orders');
+    Route::get('/reports/production', [ReportController::class, 'productionReport'])->name('reports.production');
+    Route::get('/reports/users', [ReportController::class, 'userReport'])->name('reports.users');
+    Route::get('/reports/financial', [ReportController::class, 'financialReport'])->name('reports.financial');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     Route::get('/orders/{order}/status', [OrderController::class, 'getStatus'])->name('orders.status');
     Route::get('/orders/{order}/tracking', [OrderController::class, 'tracking'])->name('orders.tracking');

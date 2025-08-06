@@ -18,6 +18,7 @@ class Client extends Model
         'billing_address',
         'shipping_address',
         'customer_type',
+        'image',
     ];
 
     protected $casts = [

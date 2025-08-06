@@ -50,6 +50,9 @@
                                 <a href="{{ route('clients.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-users mr-1"></i>Clients
                                 </a>
+                                <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-box mr-1"></i>Products
+                                </a>
                                 <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-palette mr-1"></i>Designs
                                 </a>
@@ -59,15 +62,18 @@
                                 <a href="{{ route('jobs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-tasks mr-1"></i>Jobs
                                 </a>
-                                <a href="#" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <a href="{{ route('users.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-users-cog mr-1"></i>Users
                                 </a>
-                                <a href="#" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <a href="{{ route('reports.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-chart-bar mr-1"></i>Reports
                                 </a>
                             @elseif(auth()->user()->isAdmin())
                                 <a href="{{ route('clients.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-users mr-1"></i>Clients
+                                </a>
+                                <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-box mr-1"></i>Products
                                 </a>
                                 <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-palette mr-1"></i>Designs
@@ -78,6 +84,9 @@
                             @elseif(auth()->user()->isSalesManager())
                                 <a href="{{ route('clients.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-users mr-1"></i>Clients
+                                </a>
+                                <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-box mr-1"></i>Products
                                 </a>
                                 <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-palette mr-1"></i>Designs
@@ -161,8 +170,14 @@
                         <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
                             <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
                         </a>
+                        <a href="{{ route('users.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
+                            <i class="fas fa-users mr-3"></i>Users
+                        </a>
                         <a href="{{ route('clients.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
-                            <i class="fas fa-users mr-3"></i>Clients
+                            <i class="fas fa-user-friends mr-3"></i>Clients
+                        </a>
+                        <a href="{{ route('products.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
+                            <i class="fas fa-box mr-3"></i>Products
                         </a>
                         <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
                             <i class="fas fa-shopping-cart mr-3"></i>Orders
@@ -177,6 +192,9 @@
                         <a href="{{ route('admin.admin-dashboard') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
                             <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
                         </a>
+                        <a href="{{ route('products.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
+                            <i class="fas fa-box mr-3"></i>Products
+                        </a>
                         <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
                             <i class="fas fa-shopping-cart mr-3"></i>Orders
                         </a>
@@ -189,6 +207,9 @@
                         </a>
                         <a href="{{ route('clients.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
                             <i class="fas fa-users mr-3"></i>Clients
+                        </a>
+                        <a href="{{ route('products.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
+                            <i class="fas fa-box mr-3"></i>Products
                         </a>
                         <a href="{{ route('orders.index') }}" class="flex items-center px-3 py-2 text-gray-700 hover:text-primary-500 hover:bg-primary-50 rounded-md transition-colors">
                             <i class="fas fa-shopping-cart mr-3"></i>Orders

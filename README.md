@@ -21,6 +21,7 @@
 ### ✨ Key Features
 
 - **🎨 Complete Order Management** - From client registration to order fulfillment
+- **📦 Product Management** - Comprehensive inventory system with stock tracking and image management
 - **👥 Role-Based Access Control** - SuperAdmin, Sales Manager, Designer, Production Staff
 - **📱 QR Code Tracking** - Real-time job tracking with QR code scanning and manual input
 - **📶 Offline Support** - Production staff can work without internet connectivity
@@ -113,13 +114,16 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 
 ### SuperAdmin
 - **Full System Access** - Complete control over all features
+- **User Management** - Complete CRUD operations for all system users with role assignment and status control
+- **Reports & Analytics** - Comprehensive reporting system with financial, production, and user performance analytics
+- **Product Management** - Create, edit, and manage product inventory
 - **Advanced Analytics** - Comprehensive dashboards with live charts
-- **User Management** - Create, edit, and manage all users
 - **System Configuration** - Global settings and configurations
 - **Job Management** - Create, edit, and assign production jobs
 
 ### Sales Manager
 - **Client Management** - Add and manage clients
+- **Product Management** - Create, edit, and manage product inventory
 - **Order Creation** - Create and manage orders with design uploads
 - **Payment Tracking** - Monitor payment status
 - **Job Creation** - Create production jobs for each phase
@@ -174,6 +178,45 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 ---
 
 ## 🔧 Core Features
+
+### User Management System
+
+- **👥 Complete CRUD Operations** - Create, edit, view, and delete users with full validation
+- **🎭 Role-Based Assignment** - Assign SuperAdmin, Admin, Sales Manager, Designer, and Production Staff roles
+- **⚙️ Phase Assignment** - Assign production phases to Production Staff members
+- **🔒 Account Status Control** - Activate/deactivate user accounts with safety checks
+- **🔑 Password Management** - Secure password reset functionality with confirmation
+- **📊 User Statistics** - Comprehensive user analytics and performance metrics
+- **📈 Assigned Jobs Tracking** - View jobs assigned to each user with completion statistics
+- **🎨 Modern Interface** - Beautiful UI with role-based color coding and responsive design
+- **🔒 Security Features** - Prevent self-deletion and protect against unauthorized access
+- **📤 Data Export** - Export user data to CSV format for external analysis
+
+### Product Management System
+
+- **📦 Inventory Management** - Complete product catalog with categories, sizes, and stock tracking
+- **🖼️ Image Management** - Multiple product images with drag & drop upload and gallery view
+- **💰 Pricing Control** - Set and manage product prices with automatic calculations
+- **📊 Stock Tracking** - Real-time stock levels with visual indicators (In Stock, Low Stock, Out of Stock)
+- **💬 Comments System** - Product notes that display in orders and job sheets
+- **🔄 Order Integration** - Products linked to orders for complete tracking
+- **📱 Work Order Display** - Product information visible in job sheets for production staff
+- **🎨 Modern UI** - Beautiful interface with glass morphism and responsive design
+- **🔒 Role-Based Access** - Only SuperAdmin, Admin, and Sales Manager can manage products
+- **⚡ Quick Updates** - Modal interface for fast stock updates and management
+
+### Reports & Analytics System
+
+- **📊 Comprehensive Dashboard** - Real-time analytics with revenue, orders, and production metrics
+- **📈 Interactive Charts** - Revenue trends, order patterns, and production efficiency visualization
+- **📅 Date Range Filtering** - Flexible date range selection with quick period presets
+- **💰 Financial Reports** - Detailed revenue analysis with payment breakdown and trends
+- **🏭 Production Reports** - Job completion rates, phase efficiency, and staff performance
+- **👥 User Performance Reports** - Staff productivity analysis with job assignment statistics
+- **📋 Order Reports** - Complete order analysis with client and product information
+- **📤 Data Export** - Export all report types to CSV format for external analysis
+- **🎨 Modern Charts** - Beautiful Chart.js visualizations with responsive design
+- **🔒 SuperAdmin Access** - Exclusive access to comprehensive business intelligence
 
 ### Enhanced QR Code Tracking System
 
@@ -275,7 +318,8 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 
 - **users** - User accounts and role management
 - **clients** - Client information and contacts
-- **orders** - Order details and status tracking
+- **products** - Product inventory with images, pricing, and stock management
+- **orders** - Order details and status tracking (linked to products)
 - **production_jobs** - Individual production jobs with timestamps
 - **designs** - Design files and approval status
 - **design_templates** - Reusable design templates
@@ -285,6 +329,7 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 ### Key Relationships
 
 - **Orders** → **Clients** (Many-to-One)
+- **Orders** → **Products** (Many-to-One)
 - **Jobs** → **Orders** (Many-to-One)
 - **Jobs** → **Users** (Many-to-One, assigned production staff)
 - **Designs** → **Orders** (Many-to-One)
@@ -292,6 +337,9 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 
 ### Enhanced Fields
 
+- **products.images** - JSON field storing multiple product image paths
+- **products.comments** - Product notes and instructions
+- **orders.product_id** - Foreign key linking orders to products
 - **orders.design_files** - JSON field storing design file paths
 - **production_jobs.duration** - Calculated duration in minutes
 - **production_jobs.remarks** - Production staff notes
@@ -313,6 +361,37 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 ---
 
 ## 📊 API Endpoints
+
+### User Management
+- `GET /users` - List all users with search and filtering
+- `POST /users` - Create new user with role assignment
+- `GET /users/create` - Show user creation form
+- `GET /users/{user}` - Show user details with assigned jobs
+- `PUT /users/{user}` - Update user information
+- `DELETE /users/{user}` - Delete user (with safety checks)
+- `POST /users/{user}/toggle-status` - Activate/deactivate user account
+- `POST /users/{user}/reset-password` - Reset user password
+- `GET /users/stats` - Get user statistics (AJAX)
+- `GET /users/export` - Export user data to CSV
+
+### Product Management
+- `GET /products` - List all products with pagination
+- `POST /products` - Create new product with images
+- `GET /products/create` - Show product creation form
+- `GET /products/{product}` - Show product details
+- `PUT /products/{product}` - Update product information
+- `DELETE /products/{product}` - Delete product and images
+- `POST /products/{product}/stock` - Update product stock
+- `GET /products/for-order` - Get products for order selection (AJAX)
+- `GET /products/{product}/details` - Get product details (AJAX)
+
+### Reports & Analytics
+- `GET /reports` - Main reports dashboard with charts and metrics
+- `GET /reports/orders` - Detailed order analysis report
+- `GET /reports/production` - Production efficiency and job analysis
+- `GET /reports/users` - User performance and productivity report
+- `GET /reports/financial` - Financial analysis with revenue breakdown
+- `GET /reports/export` - Export report data to CSV format
 
 ### Production Management
 - `GET /jobs/scanner` - QR scanner interface

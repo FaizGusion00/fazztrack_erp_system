@@ -59,6 +59,26 @@
                     </div>
 
                     <div>
+                        <label for="product_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Product <span class="text-red-500">*</span>
+                        </label>
+                        <select id="product_id" 
+                                name="product_id" 
+                                class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 @error('product_id') border-red-300 @enderror"
+                                required>
+                            <option value="">Select Product</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->product_id }}" {{ old('product_id', $order->product_id) == $product->product_id ? 'selected' : '' }}>
+                                    {{ $product->name }} ({{ $product->size }}) - RM {{ number_format($product->price, 2) }} - Stock: {{ $product->stock }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('product_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="job_name" class="block text-sm font-medium text-gray-700 mb-2">
                             Job Name <span class="text-red-500">*</span>
                         </label>

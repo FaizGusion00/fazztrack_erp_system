@@ -13,6 +13,7 @@ class Order extends Model
 
     protected $fillable = [
         'client_id',
+        'product_id',
         'job_name',
         'delivery_method',
         'status',
@@ -60,6 +61,14 @@ class Order extends Model
     public function client()
     {
         return $this->belongsTo(Client::class, 'client_id', 'client_id');
+    }
+
+    /**
+     * Get the product for this order.
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
     /**

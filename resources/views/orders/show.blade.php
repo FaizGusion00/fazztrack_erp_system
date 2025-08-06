@@ -70,6 +70,16 @@
                             <h4 class="text-sm font-medium text-gray-500 mb-2">Delivery Method</h4>
                             <p class="text-lg text-gray-900">{{ $order->delivery_method }}</p>
                         </div>
+                        @if($order->product)
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-2">Product</h4>
+                            <p class="text-lg text-gray-900">{{ $order->product->name }} ({{ $order->product->size }})</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-2">Product Price</h4>
+                            <p class="text-lg text-gray-900">RM {{ number_format($order->product->price, 2) }}</p>
+                        </div>
+                        @endif
                     </div>
 
                     <!-- Payment Summary -->
