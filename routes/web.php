@@ -24,6 +24,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/tracking', [TrackingController::class, 'searchForm'])->name('tracking.search');
 Route::get('/tracking/{order}', [TrackingController::class, 'show'])->name('tracking.show');
 Route::post('/tracking/search', [TrackingController::class, 'search'])->name('tracking.search.post');
+Route::get('/tracking/{order}/updates', [TrackingController::class, 'getTrackingUpdates'])->name('tracking.updates');
 
 // Health check route
 Route::get('/api/health', function () {

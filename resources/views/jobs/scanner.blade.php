@@ -575,9 +575,9 @@ function updateButtonStates(job) {
     
     if (job.status === 'Pending') {
         // Check if can start
-    fetch(`/jobs/${job.job_id}/workflow`)
-        .then(response => response.json())
-        .then(data => {
+        fetch(`/jobs/${job.job_id}/workflow`)
+            .then(response => response.json())
+            .then(data => {
                 if (data.success && data.can_start) {
                     startBtn.classList.remove('hidden');
                     endBtn.classList.add('hidden');
@@ -589,18 +589,18 @@ function updateButtonStates(job) {
                     startBtn.disabled = true;
                     startBtn.innerHTML = 'Cannot Start - Previous Phase Required';
                     startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm font-medium';
-            }
-        })
-        .catch(error => {
-            console.error('Error checking workflow:', error);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking workflow:', error);
                 startBtn.classList.remove('hidden');
                 endBtn.classList.add('hidden');
                 startBtn.disabled = false;
                 startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Start Job';
             });
-            } else if (job.status === 'In Progress') {
-                startBtn.classList.add('hidden');
-                endBtn.classList.remove('hidden');
+    } else if (job.status === 'In Progress') {
+        startBtn.classList.add('hidden');
+        endBtn.classList.remove('hidden');
         endBtn.disabled = false;
         endBtn.innerHTML = '<i class="fas fa-stop mr-2"></i>End Job';
         endJobForm.classList.add('hidden'); // Hide form for in-progress jobs
@@ -742,9 +742,11 @@ document.getElementById('start-job').addEventListener('click', function() {
             showError('Error starting job: ' + error.message);
         })
         .finally(() => {
-            // Restore button state
-            button.disabled = false;
-            button.innerHTML = originalText;
+            // Only restore button state if job wasn't successfully started
+            if (!currentJob || currentJob.status !== 'In Progress') {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
         });
     }
 });
@@ -752,12 +754,22 @@ document.getElementById('start-job').addEventListener('click', function() {
 // Enhanced end job
 document.getElementById('end-job').addEventListener('click', function() {
     if (currentJob) {
+        const endBtn = document.getElementById('end-job');
+        const endJobForm = document.getElementById('end-job-form');
+        const confirmEndJobBtn = document.getElementById('confirm-end-job');
+        const cancelEndJobBtn = document.getElementById('cancel-end-job');
+        
         // Hide the end button and show the form
         endBtn.classList.add('hidden');
         endJobForm.classList.remove('hidden');
+        confirmEndJobBtn.classList.remove('hidden');
+        cancelEndJobBtn.classList.remove('hidden');
         
         // Focus on the first input field
         document.getElementById('end-quantity').focus();
+        
+        // Add visual feedback
+        showSuccess('Please fill in the job completion details below');
     }
 });
 
@@ -1027,15 +1039,26 @@ document.getElementById('confirm-end-job').addEventListener('click', function() 
         const button = this;
         const originalText = button.innerHTML;
         
-        // Show loading state
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
-        
         // Get form data
         const endQuantity = document.getElementById('end-quantity').value;
         const rejectQuantity = document.getElementById('reject-quantity').value;
         const rejectStatus = document.getElementById('reject-status').value;
         const remarks = document.getElementById('remarks').value;
+        
+        // Validate form data
+        if (!endQuantity && !rejectQuantity) {
+            showError('Please enter either end quantity or reject quantity');
+            return;
+        }
+        
+        if (rejectQuantity > 0 && !rejectStatus) {
+            showError('Please select a reject status when there are rejected items');
+            return;
+        }
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
         
         // Get CSRF token from meta tag
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1131,20 +1154,26 @@ document.getElementById('confirm-end-job').addEventListener('click', function() 
             showError('Error ending job: ' + error.message);
         })
         .finally(() => {
-            // Restore button state
-            button.disabled = false;
-            button.innerHTML = originalText;
+            // Only restore button state if job wasn't successfully completed
+            if (!currentJob || currentJob.status !== 'Completed') {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
         });
     }
 });
 
 // Cancel end job
 document.getElementById('cancel-end-job').addEventListener('click', function() {
-    // Hide the form
+    // Hide the form and buttons
     const endJobForm = document.getElementById('end-job-form');
     const endBtn = document.getElementById('end-job');
+    const confirmEndJobBtn = document.getElementById('confirm-end-job');
+    const cancelEndJobBtn = document.getElementById('cancel-end-job');
     
     endJobForm.classList.add('hidden');
+    confirmEndJobBtn.classList.add('hidden');
+    cancelEndJobBtn.classList.add('hidden');
     
     // Only show the end button if the job is still in progress
     if (currentJob && currentJob.status === 'In Progress') {
@@ -1156,6 +1185,67 @@ document.getElementById('cancel-end-job').addEventListener('click', function() {
     document.getElementById('reject-quantity').value = '';
     document.getElementById('reject-status').value = '';
     document.getElementById('remarks').value = '';
+    
+    // Show feedback
+    showSuccess('End job cancelled. You can try again.');
 });
+
+// Real-time validation for end job form
+document.getElementById('end-quantity').addEventListener('input', function() {
+    validateEndJobForm();
+});
+
+document.getElementById('reject-quantity').addEventListener('input', function() {
+    validateEndJobForm();
+});
+
+document.getElementById('reject-status').addEventListener('change', function() {
+    validateEndJobForm();
+});
+
+function validateEndJobForm() {
+    const endQuantity = document.getElementById('end-quantity').value;
+    const rejectQuantity = document.getElementById('reject-quantity').value;
+    const rejectStatus = document.getElementById('reject-status').value;
+    const confirmBtn = document.getElementById('confirm-end-job');
+    
+    // Check if at least one quantity is entered
+    const hasQuantity = (endQuantity && endQuantity > 0) || (rejectQuantity && rejectQuantity > 0);
+    
+    // Check if reject status is selected when reject quantity is entered
+    const hasRejectStatus = !rejectQuantity || rejectQuantity == 0 || rejectStatus;
+    
+    // Visual feedback for form fields
+    const endQuantityField = document.getElementById('end-quantity');
+    const rejectQuantityField = document.getElementById('reject-quantity');
+    const rejectStatusField = document.getElementById('reject-status');
+    
+    // Reset all field styles
+    endQuantityField.classList.remove('border-red-500', 'border-green-500');
+    rejectQuantityField.classList.remove('border-red-500', 'border-green-500');
+    rejectStatusField.classList.remove('border-red-500', 'border-green-500');
+    
+    // Add visual feedback
+    if (endQuantity && endQuantity > 0) {
+        endQuantityField.classList.add('border-green-500');
+    }
+    
+    if (rejectQuantity && rejectQuantity > 0) {
+        rejectQuantityField.classList.add('border-green-500');
+        if (rejectStatus) {
+            rejectStatusField.classList.add('border-green-500');
+        } else {
+            rejectStatusField.classList.add('border-red-500');
+        }
+    }
+    
+    if (hasQuantity && hasRejectStatus) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+}
 </script>
 @endsection 

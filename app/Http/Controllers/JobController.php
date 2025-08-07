@@ -448,7 +448,7 @@ class JobController extends Controller
             if ($request->filled('start_time')) {
                 $startTime = \Carbon\Carbon::parse($request->start_time);
                 $endTime = \Carbon\Carbon::parse($request->end_time);
-                $updateData['duration'] = $endTime->diffInMinutes($startTime);
+                $updateData['duration'] = $startTime->diffInMinutes($endTime, false);
             }
         }
 

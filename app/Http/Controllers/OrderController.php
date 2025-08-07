@@ -41,8 +41,24 @@ class OrderController extends Controller
             $query->where('delivery_method', $request->delivery_method);
         }
         
-        $orders = $query->paginate(15)->withQueryString();
-        return view('orders.index', compact('orders'));
+        // Handle tab filtering
+        $activeTab = $request->get('tab', 'active');
+        
+        if ($activeTab === 'completed') {
+            // Show only completed orders (delivered)
+            $query->where('status', 'Completed');
+        } else {
+            // Show active orders (not completed)
+            $query->where('status', '!=', 'Completed');
+        }
+        
+        $orders = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        
+        // Get counts for tabs
+        $activeCount = Order::where('status', '!=', 'Completed')->count();
+        $completedCount = Order::where('status', 'Completed')->count();
+        
+        return view('orders.index', compact('orders', 'activeTab', 'activeCount', 'completedCount'));
     }
 
     /**

@@ -22,9 +22,28 @@
         </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="mb-6">
+        <nav class="flex space-x-8" aria-label="Tabs">
+            <a href="{{ route('orders.index', ['tab' => 'active'] + request()->except('tab')) }}" 
+               class="border-primary-500 text-primary-600 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'active' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-clock mr-2"></i>
+                Active Orders
+                <span class="ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $activeCount }}</span>
+            </a>
+            <a href="{{ route('orders.index', ['tab' => 'completed'] + request()->except('tab')) }}" 
+               class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'completed' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-check-circle mr-2"></i>
+                Completed Orders
+                <span class="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $completedCount }}</span>
+            </a>
+        </nav>
+    </div>
+
     <!-- Search and Filters -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <form method="GET" action="{{ route('orders.index') }}" class="flex flex-col md:flex-row gap-4">
+            <input type="hidden" name="tab" value="{{ $activeTab }}">
             <div class="flex-1">
                 <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search Orders</label>
                 <div class="relative">
@@ -39,18 +58,25 @@
                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                 </div>
             </div>
+            @if($activeTab === 'active')
             <div class="md:w-48">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select id="status" name="status" 
                         class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
                     <option value="">All Status</option>
-                    <option value="Pending" {{ request('status') == 'Pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="Approved" {{ request('status') == 'Approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="Order Created" {{ request('status') == 'Order Created' ? 'selected' : '' }}>Order Created</option>
+                    <option value="Order Approved" {{ request('status') == 'Order Approved' ? 'selected' : '' }}>Order Approved</option>
+                    <option value="Design Review" {{ request('status') == 'Design Review' ? 'selected' : '' }}>Design Review</option>
+                    <option value="Design Approved" {{ request('status') == 'Design Approved' ? 'selected' : '' }}>Design Approved</option>
+                    <option value="Job Created" {{ request('status') == 'Job Created' ? 'selected' : '' }}>Job Created</option>
+                    <option value="Job Start" {{ request('status') == 'Job Start' ? 'selected' : '' }}>Job Start</option>
+                    <option value="Job Complete" {{ request('status') == 'Job Complete' ? 'selected' : '' }}>Job Complete</option>
+                    <option value="Order Packaging" {{ request('status') == 'Order Packaging' ? 'selected' : '' }}>Order Packaging</option>
+                    <option value="Order Finished" {{ request('status') == 'Order Finished' ? 'selected' : '' }}>Order Finished</option>
                     <option value="On Hold" {{ request('status') == 'On Hold' ? 'selected' : '' }}>On Hold</option>
-                    <option value="In Progress" {{ request('status') == 'In Progress' ? 'selected' : '' }}>In Progress</option>
-                    <option value="Completed" {{ request('status') == 'Completed' ? 'selected' : '' }}>Completed</option>
                 </select>
             </div>
+            @endif
             <div class="md:w-48">
                 <label for="delivery_method" class="block text-sm font-medium text-gray-700 mb-2">Delivery</label>
                 <select id="delivery_method" name="delivery_method" 
@@ -66,7 +92,7 @@
                     Search
                 </button>
                 @if(request('search') || request('status') || request('delivery_method'))
-                    <a href="{{ route('orders.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
+                    <a href="{{ route('orders.index', ['tab' => $activeTab]) }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors">
                         <i class="fas fa-times mr-1"></i>
                         Clear
                     </a>
@@ -121,10 +147,34 @@
                             <i class="fas fa-truck w-4 mr-2"></i>
                             <span>{{ $order->delivery_method }}</span>
                         </div>
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-calendar w-4 mr-2"></i>
-                            <span>Due: {{ $order->due_date_production->format('M d, Y') }}</span>
-                        </div>
+                        @if($order->status === 'Completed')
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-calendar-check w-4 mr-2"></i>
+                                <span>Delivered: {{ $order->delivery_date ? $order->delivery_date->format('M d, Y') : 'N/A' }}</span>
+                            </div>
+                            @if($order->tracking_number)
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-barcode w-4 mr-2"></i>
+                                <span>Tracking: {{ $order->tracking_number }}</span>
+                            </div>
+                            @endif
+                        @elseif($order->delivery_status === 'Failed')
+                            <div class="flex items-center text-sm text-red-600">
+                                <i class="fas fa-exclamation-triangle w-4 mr-2"></i>
+                                <span>Delivery Failed</span>
+                            </div>
+                            @if($order->delivery_notes)
+                            <div class="flex items-center text-sm text-red-600">
+                                <i class="fas fa-comment w-4 mr-2"></i>
+                                <span>{{ Str::limit($order->delivery_notes, 30) }}</span>
+                            </div>
+                            @endif
+                        @else
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-calendar w-4 mr-2"></i>
+                                <span>Due: {{ $order->due_date_production->format('M d, Y') }}</span>
+                            </div>
+                        @endif
                         <div class="flex items-center text-sm text-gray-600">
                             <i class="fas fa-money-bill w-4 mr-2"></i>
                             <span>RM {{ number_format($order->design_deposit + $order->production_deposit + $order->balance_payment, 2) }}</span>
@@ -144,6 +194,7 @@
                                 'Job Complete' => 'bg-teal-100 text-teal-800',
                                 'Order Packaging' => 'bg-pink-100 text-pink-800',
                                 'Order Finished' => 'bg-green-100 text-green-800',
+                                'Completed' => 'bg-green-100 text-green-800',
                                 'On Hold' => 'bg-red-100 text-red-800'
                             ];
                         @endphp
@@ -158,18 +209,32 @@
 
                     <!-- Jobs Progress -->
                     <div class="mb-4">
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                            <span>Production Progress</span>
-                            @php
-                                $completedJobs = $order->jobs->where('status', 'Completed')->count();
-                                $totalPhases = 6; // PRINT, PRESS, CUT, SEW, QC, IRON/PACKING
-                                $progress = $totalPhases > 0 ? ($completedJobs / $totalPhases) * 100 : 0;
-                            @endphp
-                            <span class="progress-text">{{ $completedJobs }}/{{ $totalPhases }}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="progress-bar bg-primary-500 h-2 rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
-                        </div>
+                        @if($order->status === 'Completed')
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                <span>Order Status</span>
+                                <span class="text-green-600 font-medium">100% Complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 100%"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-green-600">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Order delivered successfully
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                <span>Production Progress</span>
+                                @php
+                                    $completedJobs = $order->jobs->where('status', 'Completed')->count();
+                                    $totalPhases = 6; // PRINT, PRESS, CUT, SEW, QC, IRON/PACKING
+                                    $progress = $totalPhases > 0 ? ($completedJobs / $totalPhases) * 100 : 0;
+                                @endphp
+                                <span class="progress-text">{{ $completedJobs }}/{{ $totalPhases }}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="progress-bar bg-primary-500 h-2 rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Action Buttons -->
@@ -179,11 +244,19 @@
                             <i class="fas fa-eye mr-1"></i>
                             View
                         </a>
+                        @if($order->status !== 'Completed')
                         <a href="{{ route('orders.edit', $order) }}" 
                            class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                             <i class="fas fa-edit mr-1"></i>
                             Edit
                         </a>
+                        @else
+                        <a href="{{ route('deliveries.show', $order) }}" 
+                           class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors">
+                            <i class="fas fa-truck mr-1"></i>
+                            Delivery
+                        </a>
+                        @endif
                     </div>
 
                     <!-- Admin Actions -->

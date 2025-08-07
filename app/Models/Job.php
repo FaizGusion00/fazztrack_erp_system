@@ -92,7 +92,8 @@ class Job extends Model
         $duration = null;
 
         if ($this->start_time) {
-            $duration = $endTime->diffInMinutes($this->start_time);
+            // Calculate duration as positive value (end_time - start_time)
+            $duration = $this->start_time->diffInMinutes($endTime, false);
         }
 
         $this->update([

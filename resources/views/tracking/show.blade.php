@@ -340,12 +340,7 @@
                                 <span class="font-medium" data-delivery-company>{{ $order->delivery_company }}</span>
                             </div>
                         @endif
-                        @if($order->delivery_date)
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Delivery Date:</span>
-                                <span class="font-medium" data-delivery-date>{{ $order->delivery_date->format('M d, Y H:i') }}</span>
-                            </div>
-                        @endif
+
                         @if($order->delivery_notes)
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Notes:</span>

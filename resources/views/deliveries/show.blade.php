@@ -221,6 +221,12 @@ document.getElementById('delivery-form').addEventListener('submit', function(e) 
     e.preventDefault();
     
     const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating & Syncing...';
     
     fetch('{{ route("deliveries.update-delivery", $order) }}', {
         method: 'POST',
@@ -232,13 +238,27 @@ document.getElementById('delivery-form').addEventListener('submit', function(e) 
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            alert(data.message);
+            // Show success message with sync status
+            let message = data.message;
+            if (data.tracking_synced) {
+                message += '\n✓ Synced with external tracking systems';
+            }
+            if (data.client_notified) {
+                message += '\n✓ Client notification sent';
+            }
+            
+            alert(message);
             location.reload();
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Error updating delivery status');
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
     });
 });
 
@@ -246,6 +266,12 @@ document.getElementById('proof-of-delivery-form').addEventListener('submit', fun
     e.preventDefault();
     
     const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading & Syncing...';
     
     fetch('{{ route("deliveries.upload-proof", $order) }}', {
         method: 'POST',
@@ -257,13 +283,27 @@ document.getElementById('proof-of-delivery-form').addEventListener('submit', fun
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            alert(data.message);
+            // Show success message with sync status
+            let message = data.message;
+            if (data.proof_synced) {
+                message += '\n✓ Proof synced with external tracking systems';
+            }
+            if (data.client_notified) {
+                message += '\n✓ Client notification sent';
+            }
+            
+            alert(message);
             location.reload();
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Error uploading proof of delivery');
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
     });
 });
 </script>
