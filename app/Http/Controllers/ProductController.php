@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -66,10 +67,7 @@ class ProductController extends Controller
         // Handle image uploads
         $images = [];
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $images[] = $path;
-            }
+            $images = StorageService::storeMultiple($request->file('images'), 'products');
         }
         
         $productData['images'] = $images;
@@ -136,16 +134,10 @@ class ProductController extends Controller
         if ($request->hasFile('images')) {
             // Delete old images
             if ($product->images) {
-                foreach ($product->images as $oldImage) {
-                    Storage::disk('public')->delete($oldImage);
-                }
+                StorageService::deleteMultiple($product->images);
             }
             
-            $images = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $images[] = $path;
-            }
+            $images = StorageService::storeMultiple($request->file('images'), 'products');
             $productData['images'] = $images;
         }
 
@@ -167,9 +159,7 @@ class ProductController extends Controller
 
         // Delete product images
         if ($product->images) {
-            foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image);
-            }
+            StorageService::deleteMultiple($product->images);
         }
 
         $product->delete();

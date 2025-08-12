@@ -190,7 +190,7 @@
             <div class="space-y-4">
                 @if($order->proof_of_delivery_path)
                     <div class="flex justify-center">
-                        <img src="{{ asset('storage/' . $order->proof_of_delivery_path) }}" alt="Proof of Delivery" class="max-w-md h-auto rounded-md">
+                        <img src="@fileUrl($order->proof_of_delivery_path)" alt="Proof of Delivery" class="max-w-md h-auto rounded-md">
                     </div>
                 @else
                     <p class="text-sm text-gray-500">No proof of delivery uploaded yet.</p>

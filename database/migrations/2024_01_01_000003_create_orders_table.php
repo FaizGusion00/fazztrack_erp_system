@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id('order_id');
             $table->foreignId('client_id')->constrained('clients', 'client_id')->onDelete('cascade');
-            $table->foreignId('product_id')->nullable()->constrained('products', 'product_id')->onDelete('set null');
             $table->string('job_name');
             $table->enum('delivery_method', ['Self Collect', 'Shipping']);
             $table->enum('status', ['Pending', 'Approved', 'On Hold', 'In Progress', 'Completed']);

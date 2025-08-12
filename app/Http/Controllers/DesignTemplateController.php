@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DesignTemplate;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -88,9 +89,7 @@ class DesignTemplateController extends Controller
         
         // Handle template file uploads
         if ($request->hasFile('template_files')) {
-            foreach ($request->file('template_files') as $file) {
-                $templateFiles[] = $file->store('templates', 'public');
-            }
+            $templateFiles = StorageService::storeMultiple($request->file('template_files'), 'templates');
         }
 
         $template = DesignTemplate::create([
@@ -173,11 +172,9 @@ class DesignTemplateController extends Controller
 
         // Handle new template file uploads
         if ($request->hasFile('template_files')) {
-            $templateFiles = $template->template_files ?? [];
-            foreach ($request->file('template_files') as $file) {
-                $templateFiles[] = $file->store('templates', 'public');
-            }
-            $templateData['template_files'] = $templateFiles;
+            $existingFiles = $template->template_files ?? [];
+            $newFiles = StorageService::storeMultiple($request->file('template_files'), 'templates');
+            $templateData['template_files'] = array_merge($existingFiles, $newFiles);
         }
 
         $template->update($templateData);

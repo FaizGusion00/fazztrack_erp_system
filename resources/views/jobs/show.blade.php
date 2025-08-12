@@ -78,7 +78,7 @@
                         <div>
                             <h4 class="text-sm font-medium text-gray-700 mb-2">Design front</h4>
                             <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="{{ Storage::url($job->order->design_front) }}" 
+                                <img src="@fileUrl($job->order->design_front)" 
                                      alt="Front Design" 
                                      class="w-full h-full object-cover">
                             </div>
@@ -89,20 +89,34 @@
                         <div>
                             <h4 class="text-sm font-medium text-gray-700 mb-2">Design left</h4>
                             <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="{{ Storage::url($job->order->design_left) }}" 
+                                <img src="@fileUrl($job->order->design_left)" 
                                      alt="Left Design" 
                                      class="w-full h-full object-cover">
                             </div>
                         </div>
                         @endif
-                    </div>
 
-                    <!-- Sales Manager Signature -->
-                    <div class="pt-4 border-t border-gray-200">
-                        <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-500">Sales manager name:</span>
-                            <span class="text-sm text-gray-900">{{ auth()->user()->name }}</span>
+                        @if($job->order->design_back)
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design back</h4>
+                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                                <img src="@fileUrl($job->order->design_back)" 
+                                     alt="Back Design" 
+                                     class="w-full h-full object-cover">
+                            </div>
                         </div>
+                        @endif
+
+                        @if($job->order->design_right)
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design right</h4>
+                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                                <img src="@fileUrl($job->order->design_right)" 
+                                     alt="Right Design" 
+                                     class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -136,33 +150,18 @@
                                 <p class="text-xs text-blue-600 mt-1">Enter this ID manually in the scanner</p>
                             </div>
                         </div>
+
+                        <!-- Sales Manager Name -->
+                        <div class="mt-4 pt-4 border-t border-blue-200">
+                            <div class="text-center">
+                                <div class="flex justify-center space-x-2">
+                                    <span class="text-sm font-medium text-blue-800">Sales manager name:</span>
+                                    <span class="text-sm font-bold text-blue-900">{{ auth()->user()->name }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     @endif
-
-                    <!-- Design Previews - Right Side -->
-                    <div class="space-y-4">
-                        @if($job->order->design_back)
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design back</h4>
-                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="{{ Storage::url($job->order->design_back) }}" 
-                                     alt="Back Design" 
-                                     class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($job->order->design_right)
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design right</h4>
-                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="{{ Storage::url($job->order->design_right) }}" 
-                                     alt="Right Design" 
-                                     class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                        @endif
-                    </div>
 
                     <!-- Job Details -->
                     <div class="pt-4 border-t border-gray-200">

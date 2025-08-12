@@ -122,10 +122,10 @@
                 <div>
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Front Design</h4>
                     <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ Storage::url($designFiles['design_front']) }}" 
+                        <img src="@fileUrl($designFiles['design_front'])" 
                              alt="Front Design" 
                              class="w-full h-48 object-cover rounded-lg">
-                        <a href="{{ Storage::url($designFiles['design_front']) }}" 
+                        <a href="@fileUrl($designFiles['design_front'])" 
                            target="_blank"
                            class="inline-flex items-center mt-2 text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
@@ -139,10 +139,10 @@
                 <div>
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Back Design</h4>
                     <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ Storage::url($designFiles['design_back']) }}" 
+                        <img src="@fileUrl($designFiles['design_back'])" 
                              alt="Back Design" 
                              class="w-full h-48 object-cover rounded-lg">
-                        <a href="{{ Storage::url($designFiles['design_back']) }}" 
+                        <a href="@fileUrl($designFiles['design_back'])" 
                            target="_blank"
                            class="inline-flex items-center mt-2 text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
@@ -156,10 +156,10 @@
                 <div>
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Left Design</h4>
                     <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ Storage::url($designFiles['design_left']) }}" 
+                        <img src="@fileUrl($designFiles['design_left'])" 
                              alt="Left Design" 
                              class="w-full h-48 object-cover rounded-lg">
-                        <a href="{{ Storage::url($designFiles['design_left']) }}" 
+                        <a href="@fileUrl($designFiles['design_left'])" 
                            target="_blank"
                            class="inline-flex items-center mt-2 text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
@@ -173,10 +173,10 @@
                 <div>
                     <h4 class="text-sm font-medium text-gray-700 mb-2">Right Design</h4>
                     <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ Storage::url($designFiles['design_right']) }}" 
+                        <img src="@fileUrl($designFiles['design_right'])" 
                              alt="Right Design" 
                              class="w-full h-48 object-cover rounded-lg">
-                        <a href="{{ Storage::url($designFiles['design_right']) }}" 
+                        <a href="@fileUrl($designFiles['design_right'])" 
                            target="_blank"
                            class="inline-flex items-center mt-2 text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>

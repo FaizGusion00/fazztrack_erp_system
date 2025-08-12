@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -157,7 +158,7 @@ class DeliveryController extends Controller
         if ($request->hasFile('proof_of_delivery')) {
             $image = $request->file('proof_of_delivery');
             $imageName = 'proof_' . time() . '_' . $image->getClientOriginalName();
-            $imagePath = $image->storeAs('delivery_proofs', $imageName, 'public');
+            $imagePath = StorageService::store($image, 'delivery_proofs', $imageName);
             
             $order->update(['proof_of_delivery_path' => $imagePath]);
 

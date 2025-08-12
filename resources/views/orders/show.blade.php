@@ -408,7 +408,7 @@
                                 $receipts = json_decode($order->receipts, true) ?: [$order->receipts];
                             @endphp
                             @foreach($receipts as $receipt)
-                                <a href="{{ Storage::url($receipt) }}" 
+                                <a href="@fileUrl($receipt)" 
                                    target="_blank"
                                    class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                                     <i class="fas fa-file-pdf mr-1"></i>
@@ -422,7 +422,7 @@
                     @if($order->job_sheet)
                         <div class="border border-gray-200 rounded-lg p-4">
                             <h4 class="font-medium text-gray-900 mb-2">Job Sheet</h4>
-                            <a href="{{ Storage::url($order->job_sheet) }}" 
+                            <a href="@fileUrl($order->job_sheet)" 
                                target="_blank"
                                class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                                 <i class="fas fa-file-alt mr-1"></i>
@@ -438,7 +438,7 @@
                                 $designFiles = json_decode($order->download_link, true) ?: [];
                             @endphp
                             @foreach($designFiles as $type => $file)
-                                <a href="{{ Storage::url($file) }}" 
+                                <a href="@fileUrl($file)" 
                                    target="_blank"
                                    class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                                     <i class="fas fa-image mr-1"></i>
@@ -470,11 +470,11 @@
                     <div class="space-y-3">
                         <h4 class="text-sm font-medium text-gray-700">Front View</h4>
                         <div class="relative group">
-                            <img src="{{ Storage::url($order->design_front) }}" 
+                            <img src="@fileUrl($order->design_front)" 
                                  alt="Front Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                                 onclick="openImageModal('{{ Storage::url($order->design_front) }}', 'Front Design')">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
+                                 data-title="Front Design">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
                                 <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
                             </div>
                         </div>
@@ -486,11 +486,11 @@
                     <div class="space-y-3">
                         <h4 class="text-sm font-medium text-gray-700">Back View</h4>
                         <div class="relative group">
-                            <img src="{{ Storage::url($order->design_back) }}" 
+                            <img src="@fileUrl($order->design_back)" 
                                  alt="Back Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                                 onclick="openImageModal('{{ Storage::url($order->design_back) }}', 'Back Design')">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
+                                 data-title="Back Design">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
                                 <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
                             </div>
                         </div>
@@ -502,11 +502,11 @@
                     <div class="space-y-3">
                         <h4 class="text-sm font-medium text-gray-700">Left View</h4>
                         <div class="relative group">
-                            <img src="{{ Storage::url($order->design_left) }}" 
+                            <img src="@fileUrl($order->design_left)" 
                                  alt="Left Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                                 onclick="openImageModal('{{ Storage::url($order->design_left) }}', 'Left Design')">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
+                                 data-title="Left Design">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
                                 <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
                             </div>
                         </div>
@@ -518,11 +518,11 @@
                     <div class="space-y-3">
                         <h4 class="text-sm font-medium text-gray-700">Right View</h4>
                         <div class="relative group">
-                            <img src="{{ Storage::url($order->design_right) }}" 
+                            <img src="@fileUrl($order->design_right)" 
                                  alt="Right Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                                 onclick="openImageModal('{{ Storage::url($order->design_right) }}', 'Right Design')">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
+                                 data-title="Right Design">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
                                 <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
                             </div>
                         </div>
@@ -613,17 +613,47 @@
 </div>
 
 <!-- Image Modal -->
-<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
-    <div class="relative max-w-4xl max-h-full mx-4">
-        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl">
-            <i class="fas fa-times"></i>
-        </button>
-        <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain">
-        <h3 id="modalTitle" class="absolute bottom-4 left-4 text-white text-lg font-medium"></h3>
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-50 flex items-center justify-center p-4">
+    <div class="relative w-full h-full max-w-7xl max-h-full">
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full h-full flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+                <h3 id="modalTitle" class="text-xl font-semibold text-gray-900"></h3>
+                <div class="flex items-center space-x-2">
+                    <button onclick="downloadImage()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" title="Download Image">
+                        <i class="fas fa-download text-lg"></i>
+                    </button>
+                    <button onclick="closeImageModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" title="Close">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 p-4 flex items-center justify-center overflow-hidden bg-gray-900">
+                <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain rounded-lg shadow-lg cursor-zoom-in" onclick="toggleZoom()">
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-200">
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <span id="imageInfo"></span>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="rotateImage(-90)" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" title="Rotate Left">
+                            <i class="fas fa-undo text-lg"></i>
+                        </button>
+                        <button onclick="rotateImage(90)" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" title="Rotate Right">
+                            <i class="fas fa-redo text-lg"></i>
+                        </button>
+                        <button onclick="resetImage()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" title="Reset">
+                            <i class="fas fa-sync-alt text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
+let currentImageRotation = 0;
+let isZoomed = false;
+
 function showCreateJobsModal() {
     document.getElementById('createJobsModal').classList.remove('hidden');
 }
@@ -633,13 +663,182 @@ function hideCreateJobsModal() {
 }
 
 function openImageModal(imageSrc, title) {
-    document.getElementById('modalImage').src = imageSrc;
-    document.getElementById('modalTitle').textContent = title;
-    document.getElementById('imageModal').classList.remove('hidden');
+    console.log('Opening modal for:', imageSrc, title);
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalTitle = document.getElementById('modalTitle');
+    const imageInfo = document.getElementById('imageInfo');
+    
+    if (!modal || !modalImage || !modalTitle) {
+        console.error('Modal elements not found:', { modal, modalImage, modalTitle });
+        return;
+    }
+    
+    // Reset image state
+    currentImageRotation = 0;
+    isZoomed = false;
+    
+    modalImage.src = imageSrc;
+    modalTitle.textContent = title;
+    
+    // Get image filename for info display
+    const filename = imageSrc.split('/').pop();
+    imageInfo.textContent = `File: ${filename}`;
+    
+    // Reset image transform
+    modalImage.style.transform = 'rotate(0deg)';
+    modalImage.classList.remove('cursor-zoom-out');
+    modalImage.classList.add('cursor-zoom-in');
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    console.log('Modal opened successfully');
 }
 
 function closeImageModal() {
     document.getElementById('imageModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function toggleZoom() {
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    if (isZoomed) {
+        modalImage.style.transform = `rotate(${currentImageRotation}deg) scale(1)`;
+        modalImage.classList.remove('cursor-zoom-out');
+        modalImage.classList.add('cursor-zoom-in');
+        isZoomed = false;
+    } else {
+        modalImage.style.transform = `rotate(${currentImageRotation}deg) scale(2)`;
+        modalImage.classList.remove('cursor-zoom-in');
+        modalImage.classList.add('cursor-zoom-out');
+        isZoomed = true;
+    }
+}
+
+function rotateImage(degrees) {
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    currentImageRotation += degrees;
+    const scale = isZoomed ? 2 : 1;
+    modalImage.style.transform = `rotate(${currentImageRotation}deg) scale(${scale})`;
+}
+
+function resetImage() {
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage) return;
+    
+    currentImageRotation = 0;
+    isZoomed = false;
+    modalImage.style.transform = 'rotate(0deg) scale(1)';
+    modalImage.classList.remove('cursor-zoom-out');
+    modalImage.classList.add('cursor-zoom-in');
+}
+
+function downloadImage() {
+    const modalImage = document.getElementById('modalImage');
+    if (!modalImage || !modalImage.src) {
+        console.error('No image to download');
+        return;
+    }
+    
+    console.log('Attempting to download image:', modalImage.src);
+    
+    // Get the image title for better filename
+    const modalTitle = document.getElementById('modalTitle');
+    const title = modalTitle ? modalTitle.textContent : 'Design Image';
+    
+    // Create a more descriptive filename
+    let filename = title.replace(/[^a-zA-Z0-9]/g, '_') + '.png';
+    
+    // Try to extract original filename from URL
+    try {
+        const url = new URL(modalImage.src);
+        const pathParts = url.pathname.split('/');
+        const originalFilename = pathParts[pathParts.length - 1];
+        if (originalFilename && originalFilename.includes('.')) {
+            filename = originalFilename;
+        }
+    } catch (e) {
+        console.log('Could not parse URL, using default filename');
+    }
+    
+    console.log('Downloading as:', filename);
+    
+    // Method 1: Try direct download first (works for same-origin images)
+    try {
+        const link = document.createElement('a');
+        link.href = modalImage.src;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('Download initiated via direct link');
+        return;
+    } catch (e) {
+        console.log('Direct download failed, trying canvas method:', e);
+    }
+    
+    // Method 2: Canvas method for cross-origin images
+    try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size to match image
+        canvas.width = modalImage.naturalWidth || modalImage.width;
+        canvas.height = modalImage.naturalHeight || modalImage.height;
+        
+        // Draw the image to canvas
+        ctx.drawImage(modalImage, 0, 0);
+        
+        // Convert to blob and download
+        canvas.toBlob(function(blob) {
+            if (blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                console.log('Download completed via canvas method');
+            } else {
+                console.error('Failed to create blob from canvas');
+                showDownloadError();
+            }
+        }, 'image/png');
+        
+    } catch (e) {
+        console.error('Canvas method failed:', e);
+        showDownloadError();
+    }
+}
+
+function showDownloadError() {
+    // Show user-friendly error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+    errorDiv.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span>Download failed. Right-click image and "Save as..." instead.</span>
+        </div>
+    `;
+    document.body.appendChild(errorDiv);
+    
+    // Remove error message after 5 seconds
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.parentNode.removeChild(errorDiv);
+        }
+    }, 5000);
 }
 
 // Close modal when clicking outside
@@ -654,6 +853,68 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeImageModal();
     }
+});
+
+// Add click event listeners to all design images
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Setting up image modal functionality...');
+    
+    // Function to setup image click events
+    function setupImageEvents() {
+        const designImages = document.querySelectorAll('.design-image');
+        console.log('Found design images:', designImages.length);
+        
+        designImages.forEach(function(img, index) {
+            console.log(`Setting up image ${index + 1}:`, img.src, img.getAttribute('data-title'));
+            
+            // Remove any existing click events to prevent duplicates
+            img.removeEventListener('click', handleImageClick);
+            
+            // Add click event
+            img.addEventListener('click', handleImageClick);
+            
+            // Ensure cursor shows pointer and add hover effect
+            img.style.cursor = 'pointer';
+            img.classList.add('hover:opacity-90', 'transition-opacity', 'duration-200');
+            
+            console.log(`Image ${index + 1} setup complete`);
+        });
+    }
+    
+    // Handle image clicks
+    function handleImageClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Image clicked!', this.src, this.getAttribute('data-title'));
+        
+        const imageSrc = this.src;
+        const title = this.getAttribute('data-title') || 'Design Image';
+        
+        openImageModal(imageSrc, title);
+    }
+    
+    // Initial setup
+    setupImageEvents();
+    
+    // Fallback: If no images found initially, try again after a short delay
+    setTimeout(function() {
+        const designImages = document.querySelectorAll('.design-image');
+        if (designImages.length === 0) {
+            console.log('No images found initially, retrying...');
+            setupImageEvents();
+        }
+    }, 500);
+    
+    // Also try to setup events when images load
+    document.addEventListener('load', function(e) {
+        if (e.target.tagName === 'IMG' && e.target.classList.contains('design-image')) {
+            console.log('Image loaded, setting up event:', e.target.src);
+            setupImageEvents();
+        }
+    }, true);
+    
+    console.log('Image modal setup complete');
 });
 </script>
 @endsection 

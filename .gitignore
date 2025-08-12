@@ -39,8 +39,10 @@ yarn-error.log*
 # Environment files
 .env
 .env.local
+.env.development
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 
 # IDE and Editor files

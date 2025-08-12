@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use App\Services\StorageService;
 
 class Product extends Model
 {
@@ -47,7 +48,7 @@ class Product extends Model
     public function getFirstImageUrlAttribute()
     {
         if ($this->images && count($this->images) > 0) {
-            return Storage::url($this->images[0]);
+            return StorageService::url($this->images[0]);
         }
         return null;
     }
@@ -62,7 +63,7 @@ class Product extends Model
         }
         
         return collect($this->images)->map(function ($image) {
-            return Storage::url($image);
+            return StorageService::url($image);
         })->toArray();
     }
 

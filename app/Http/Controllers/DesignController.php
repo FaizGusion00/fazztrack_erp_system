@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Design;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -100,7 +101,7 @@ class DesignController extends Controller
         $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
         foreach ($designFields as $field) {
             if ($request->hasFile($field)) {
-                $designFiles[$field] = $request->file($field)->store('designs/draft', 'public');
+                $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
             }
         }
 
@@ -189,9 +190,9 @@ class DesignController extends Controller
             if ($request->hasFile($field)) {
                 // Delete old file if exists
                 if (isset($designFiles[$field])) {
-                    Storage::disk('public')->delete($designFiles[$field]);
+                    StorageService::delete($designFiles[$field]);
                 }
-                $designFiles[$field] = $request->file($field)->store('designs/draft', 'public');
+                $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
             }
         }
 

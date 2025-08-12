@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Job;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -89,10 +90,10 @@ class OrderController extends Controller
             'remarks' => 'nullable|string',
             'receipts.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'job_sheet' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
         ]);
 
@@ -106,16 +107,13 @@ class OrderController extends Controller
 
         // Handle multiple receipts upload
         if ($request->hasFile('receipts')) {
-            $receiptPaths = [];
-            foreach ($request->file('receipts') as $receipt) {
-                $receiptPaths[] = $receipt->store('receipts', 'public');
-            }
+            $receiptPaths = StorageService::storeMultiple($request->file('receipts'), 'receipts');
             $orderData['receipts'] = json_encode($receiptPaths);
         }
 
         // Handle job sheet upload
         if ($request->hasFile('job_sheet')) {
-            $orderData['job_sheet'] = $request->file('job_sheet')->store('job_sheets', 'public');
+            $orderData['job_sheet'] = StorageService::store($request->file('job_sheet'), 'job_sheets');
         }
 
         // Handle design files upload
@@ -124,7 +122,7 @@ class OrderController extends Controller
         
         foreach ($designFields as $field) {
             if ($request->hasFile($field)) {
-                $designFiles[$field] = $request->file($field)->store('designs/final', 'public');
+                $designFiles[$field] = StorageService::store($request->file($field), 'designs/final');
             }
         }
         
@@ -193,10 +191,10 @@ class OrderController extends Controller
             'remarks' => 'nullable|string',
             'receipts.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'job_sheet' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
         ]);
 
@@ -208,10 +206,7 @@ class OrderController extends Controller
 
         // Handle multiple receipts upload
         if ($request->hasFile('receipts')) {
-            $receiptPaths = [];
-            foreach ($request->file('receipts') as $receipt) {
-                $receiptPaths[] = $receipt->store('receipts', 'public');
-            }
+            $receiptPaths = StorageService::storeMultiple($request->file('receipts'), 'receipts');
             $orderData['receipts'] = json_encode($receiptPaths);
         }
 
@@ -219,9 +214,9 @@ class OrderController extends Controller
         if ($request->hasFile('job_sheet')) {
             // Delete old file if exists
             if ($order->job_sheet) {
-                Storage::disk('public')->delete($order->job_sheet);
+                StorageService::delete($order->job_sheet);
             }
-            $orderData['job_sheet'] = $request->file('job_sheet')->store('job_sheets', 'public');
+            $orderData['job_sheet'] = StorageService::store($request->file('job_sheet'), 'job_sheets');
         }
 
         // Handle design files upload (finalized design by Sales Manager)
@@ -230,30 +225,30 @@ class OrderController extends Controller
         if ($request->hasFile('design_front')) {
             // Delete old file if exists
             if (isset($designFiles['design_front'])) {
-                Storage::disk('public')->delete($designFiles['design_front']);
+                StorageService::delete($designFiles['design_front']);
             }
-            $designFiles['design_front'] = $request->file('design_front')->store('designs/final', 'public');
+            $designFiles['design_front'] = StorageService::store($request->file('design_front'), 'designs/final');
         }
         if ($request->hasFile('design_back')) {
             // Delete old file if exists
             if (isset($designFiles['design_back'])) {
-                Storage::disk('public')->delete($designFiles['design_back']);
+                StorageService::delete($designFiles['design_back']);
             }
-            $designFiles['design_back'] = $request->file('design_back')->store('designs/final', 'public');
+            $designFiles['design_back'] = StorageService::store($request->file('design_back'), 'designs/final');
         }
         if ($request->hasFile('design_left')) {
             // Delete old file if exists
             if (isset($designFiles['design_left'])) {
-                Storage::disk('public')->delete($designFiles['design_left']);
+                StorageService::delete($designFiles['design_left']);
             }
-            $designFiles['design_left'] = $request->file('design_left')->store('designs/final', 'public');
+            $designFiles['design_left'] = StorageService::store($request->file('design_left'), 'designs/final');
         }
         if ($request->hasFile('design_right')) {
             // Delete old file if exists
             if (isset($designFiles['design_right'])) {
-                Storage::disk('public')->delete($designFiles['design_right']);
+                StorageService::delete($designFiles['design_right']);
             }
-            $designFiles['design_right'] = $request->file('design_right')->store('designs/final', 'public');
+            $designFiles['design_right'] = StorageService::store($request->file('design_right'), 'designs/final');
         }
         
         if (!empty($designFiles)) {
@@ -376,10 +371,11 @@ class OrderController extends Controller
     {
         // Delete associated files
         if ($order->receipts) {
-            Storage::disk('public')->delete($order->receipts);
+            $receipts = json_decode($order->receipts, true) ?: [];
+            StorageService::deleteMultiple($receipts);
         }
         if ($order->job_sheet) {
-            Storage::disk('public')->delete($order->job_sheet);
+            StorageService::delete($order->job_sheet);
         }
 
         $order->delete();

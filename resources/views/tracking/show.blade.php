@@ -350,7 +350,7 @@
                         @if($order->proof_of_delivery_path)
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Proof of Delivery:</span>
-                                <a href="{{ asset('storage/' . $order->proof_of_delivery_path) }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium" data-proof-of-delivery>
+                                <a href="@fileUrl($order->proof_of_delivery_path)" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium" data-proof-of-delivery>
                                     <i class="fas fa-image mr-1"></i>View Image
                                 </a>
                             </div>
