@@ -25,12 +25,5 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('fileUrl', function ($expression) {
             return "<?php echo \App\Services\StorageService::url($expression); ?>";
         });
-
-        // Register global helper function for file URLs
-        if (!function_exists('storage_url')) {
-            function storage_url($path) {
-                return StorageService::url($path);
-            }
-        }
     }
 }

@@ -70,14 +70,61 @@
                             <h4 class="text-sm font-medium text-gray-500 mb-2">Delivery Method</h4>
                             <p class="text-lg text-gray-900">{{ $order->delivery_method }}</p>
                         </div>
-                        @if($order->product)
+                        @if($order->orderProducts && $order->orderProducts->count() > 0)
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-500 mb-3">Order Products</h4>
+                            <div class="space-y-3">
+                                @foreach($order->orderProducts as $orderProduct)
+                                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <!-- Product Image -->
+                                    <div class="flex-shrink-0">
+                                        @if($orderProduct->product->first_image_url)
+                                            <img src="{{ $orderProduct->product->first_image_url }}" 
+                                                 alt="{{ $orderProduct->product->name }}" 
+                                                 class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm">
+                                        @else
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center">
+                                                <i class="fas fa-box text-gray-400"></i>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    
+                                    <!-- Product Details -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <p class="text-sm font-medium text-gray-900 truncate">
+                                                    {{ $orderProduct->product->name }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    Size: {{ $orderProduct->product->size }} | 
+                                                    Stock: {{ $orderProduct->product->stock }}
+                                                </p>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    Qty: {{ $orderProduct->quantity }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        @if($orderProduct->comments)
+                                        <div class="mt-2">
+                                            <p class="text-xs text-gray-600 bg-white px-2 py-1 rounded border">
+                                                <i class="fas fa-comment mr-1 text-gray-400"></i>
+                                                {{ $orderProduct->comments }}
+                                            </p>
+                                        </div>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @elseif($order->product)
                         <div>
                             <h4 class="text-sm font-medium text-gray-500 mb-2">Product</h4>
                             <p class="text-lg text-gray-900">{{ $order->product->name }} ({{ $order->product->size }})</p>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-500 mb-2">Product Price</h4>
-                            <p class="text-lg text-gray-900">RM {{ number_format($order->product->price, 2) }}</p>
                         </div>
                         @endif
                     </div>

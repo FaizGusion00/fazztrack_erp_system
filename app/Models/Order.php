@@ -79,11 +79,29 @@ class Order extends Model
     }
 
     /**
-     * Get the product for this order.
+     * Get the product for this order (legacy - for backward compatibility).
      */
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
+
+    /**
+     * Get all products for this order.
+     */
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'order_products', 'order_id', 'product_id')
+                    ->withPivot('quantity', 'comments')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get the order products with pivot data.
+     */
+    public function orderProducts()
+    {
+        return $this->hasMany(OrderProduct::class, 'order_id', 'order_id');
     }
 
     /**

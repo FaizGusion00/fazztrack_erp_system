@@ -79,7 +79,10 @@ class OrderController extends Controller
     {
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
-            'product_id' => 'required|exists:products,product_id',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,product_id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.comments' => 'nullable|string|max:500',
             'job_name' => 'required|string|max:255',
             'delivery_method' => 'required|in:Self Collect,Shipping',
             'design_deposit' => 'required|numeric|min:0',
@@ -97,12 +100,17 @@ class OrderController extends Controller
             'download_link' => 'nullable|url',
         ]);
 
+        // For backward compatibility, use the first product as the main product_id
+        $firstProduct = $request->products[0];
+        
         $orderData = $request->only([
-            'client_id', 'product_id', 'job_name', 'delivery_method', 'design_deposit',
+            'client_id', 'job_name', 'delivery_method', 'design_deposit',
             'production_deposit', 'balance_payment', 'due_date_design',
             'due_date_production', 'remarks', 'download_link'
         ]);
-
+        
+        // Set the first product as the main product_id for backward compatibility
+        $orderData['product_id'] = $firstProduct['product_id'];
         $orderData['status'] = 'Order Created';
 
         // Handle multiple receipts upload
@@ -132,6 +140,33 @@ class OrderController extends Controller
 
         $order = Order::create($orderData);
 
+        // Attach all products with their quantities and comments
+        // Handle duplicate products by combining them
+        $productGroups = [];
+        foreach ($request->products as $productData) {
+            $productId = $productData['product_id'];
+            if (isset($productGroups[$productId])) {
+                // Combine quantities and merge comments
+                $productGroups[$productId]['quantity'] += $productData['quantity'];
+                if ($productData['comments']) {
+                    $existingComments = $productGroups[$productId]['comments'];
+                    $productGroups[$productId]['comments'] = $existingComments ? 
+                        $existingComments . ' | ' . $productData['comments'] : 
+                        $productData['comments'];
+                }
+            } else {
+                $productGroups[$productId] = $productData;
+            }
+        }
+        
+        // Attach the combined products
+        foreach ($productGroups as $productData) {
+            $order->products()->attach($productData['product_id'], [
+                'quantity' => $productData['quantity'],
+                'comments' => $productData['comments'] ?? null,
+            ]);
+        }
+
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order created successfully with all uploaded files.');
     }
@@ -159,7 +194,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $order->load(['client.contacts', 'jobs.assignedUser']);
+        $order->load(['client.contacts', 'jobs.assignedUser', 'orderProducts.product']);
         return view('orders.show', compact('order'));
     }
 
@@ -170,6 +205,7 @@ class OrderController extends Controller
     {
         $clients = Client::all();
         $products = Product::active()->orderBy('name')->get();
+        $order->load('orderProducts.product'); // Load existing order products
         return view('orders.edit', compact('order', 'clients', 'products'));
     }
 
@@ -180,7 +216,10 @@ class OrderController extends Controller
     {
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
-            'product_id' => 'required|exists:products,product_id',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,product_id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.comments' => 'nullable|string|max:500',
             'job_name' => 'required|string|max:255',
             'delivery_method' => 'required|in:Self Collect,Shipping',
             'design_deposit' => 'required|numeric|min:0',
@@ -198,11 +237,17 @@ class OrderController extends Controller
             'download_link' => 'nullable|url',
         ]);
 
+        // For backward compatibility, use the first product as the main product_id
+        $firstProduct = $request->products[0];
+        
         $orderData = $request->only([
-            'client_id', 'product_id', 'job_name', 'delivery_method', 'design_deposit',
+            'client_id', 'job_name', 'delivery_method', 'design_deposit',
             'production_deposit', 'balance_payment', 'due_date_design',
             'due_date_production', 'remarks', 'download_link'
         ]);
+        
+        // Set the first product as the main product_id for backward compatibility
+        $orderData['product_id'] = $firstProduct['product_id'];
 
         // Handle multiple receipts upload
         if ($request->hasFile('receipts')) {
@@ -256,6 +301,35 @@ class OrderController extends Controller
         }
 
         $order->update($orderData);
+
+        // Update products - first detach all existing, then attach new ones
+        $order->products()->detach();
+        
+        // Handle duplicate products by combining them
+        $productGroups = [];
+        foreach ($request->products as $productData) {
+            $productId = $productData['product_id'];
+            if (isset($productGroups[$productId])) {
+                // Combine quantities and merge comments
+                $productGroups[$productId]['quantity'] += $productData['quantity'];
+                if ($productData['comments']) {
+                    $existingComments = $productGroups[$productId]['comments'];
+                    $productGroups[$productId]['comments'] = $existingComments ? 
+                        $existingComments . ' | ' . $productData['comments'] : 
+                        $productData['comments'];
+                }
+            } else {
+                $productGroups[$productId] = $productData;
+            }
+        }
+        
+        // Attach the combined products
+        foreach ($productGroups as $productData) {
+            $order->products()->attach($productData['product_id'], [
+                'quantity' => $productData['quantity'],
+                'comments' => $productData['comments'] ?? null,
+            ]);
+        }
 
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order updated successfully.');

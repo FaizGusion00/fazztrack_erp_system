@@ -196,10 +196,6 @@
                                 <span class="text-sm font-medium text-gray-500">Product:</span>
                                 <span class="text-sm text-gray-900">{{ $job->order->product->name }} ({{ $job->order->product->size }})</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm font-medium text-gray-500">Product Price:</span>
-                                <span class="text-sm text-gray-900">RM {{ number_format($job->order->product->price, 2) }}</span>
-                            </div>
                             @if($job->order->product->comments)
                             <div class="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
                                 <span class="text-xs font-medium text-blue-800">Product Notes:</span>

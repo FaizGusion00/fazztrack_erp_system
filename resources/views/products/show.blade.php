@@ -83,10 +83,6 @@
                                 <p class="text-sm text-gray-900">{{ $product->size }}</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-500 mb-1">Price</label>
-                                <p class="text-sm text-gray-900 font-semibold">RM {{ number_format($product->price, 2) }}</p>
-                            </div>
-                            <div>
                                 <label class="block text-sm font-medium text-gray-500 mb-1">Color</label>
                                 <p class="text-sm text-gray-900">{{ $product->color ?? 'N/A' }}</p>
                             </div>

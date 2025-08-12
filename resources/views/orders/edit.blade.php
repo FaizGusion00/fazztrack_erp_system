@@ -58,24 +58,133 @@
                         @enderror
                     </div>
 
-                    <div>
-                        <label for="product_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Product <span class="text-red-500">*</span>
-                        </label>
-                        <select id="product_id" 
-                                name="product_id" 
-                                class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 @error('product_id') border-red-300 @enderror"
-                                required>
-                            <option value="">Select Product</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->product_id }}" {{ old('product_id', $order->product_id) == $product->product_id ? 'selected' : '' }}>
-                                    {{ $product->name }} ({{ $product->size }}) - RM {{ number_format($product->price, 2) }} - Stock: {{ $product->stock }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('product_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                    <!-- Multiple Products Selection -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-sm font-medium text-gray-700">
+                                Products <span class="text-red-500">*</span>
+                            </label>
+                            <button type="button" 
+                                    onclick="addProductRow()"
+                                    class="inline-flex items-center px-3 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Product
+                            </button>
+                        </div>
+                        
+                        <div id="products-container" class="space-y-4">
+                            @if($order->orderProducts && $order->orderProducts->count() > 0)
+                                @foreach($order->orderProducts as $index => $orderProduct)
+                                <div class="product-row bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                                            <select name="products[{{ $index }}][product_id]" required 
+                                                    class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 product-select">
+                                                <option value="">Select a product</option>
+                                                @foreach($products as $product)
+                                                    <option value="{{ $product->product_id }}" 
+                                                            {{ $orderProduct->product_id == $product->product_id ? 'selected' : '' }}>
+                                                        {{ $product->name }} ({{ $product->size }}) - Stock: {{ $product->stock }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                            <input type="number" 
+                                                   name="products[{{ $index }}][quantity]" 
+                                                   value="{{ $orderProduct->quantity }}" 
+                                                   min="1" 
+                                                   required
+                                                   class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 quantity-input">
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Comments</label>
+                                            <input type="text" 
+                                                   name="products[{{ $index }}][comments]" 
+                                                   value="{{ $orderProduct->comments }}"
+                                                   placeholder="Special instructions..."
+                                                   class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3 flex items-center justify-between">
+                                        <!-- <div class="text-sm text-gray-600">
+                                            <span class="stock-info">Stock: <span class="font-medium">-</span></span>
+                                        </div> -->
+                                        <button type="button" 
+                                                onclick="removeProductRow(this)"
+                                                class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                                @endforeach
+                            @else
+                                <!-- Default product row if no existing products -->
+                                <div class="product-row bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                                            <select name="products[0][product_id]" required 
+                                                    class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 product-select">
+                                                <option value="">Select a product</option>
+                                                @foreach($products as $product)
+                                                    <option value="{{ $product->product_id }}" 
+                                                            {{ old('product_id', $order->product_id) == $product->product_id ? 'selected' : '' }}>
+                                                        {{ $product->name }} ({{ $product->size }}) - Stock: {{ $product->stock }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                            <input type="number" 
+                                                   name="products[0][quantity]" 
+                                                   value="1" 
+                                                   min="1" 
+                                                   required
+                                                   class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500 quantity-input">
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Comments</label>
+                                            <input type="text" 
+                                                   name="products[0][comments]" 
+                                                   placeholder="Special instructions..."
+                                                   class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3 flex items-center justify-between">
+                                        <div class="text-sm text-gray-600">
+                                            <span class="stock-info">Stock: <span class="font-medium">-</span></span>
+                                        </div>
+                                        <button type="button" 
+                                                onclick="removeProductRow(this)"
+                                                class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                <div class="text-sm text-blue-800">
+                                    <p class="font-medium">Multiple Products Support</p>
+                                    <p>You can add multiple products to this order. Each product can have its own quantity and special instructions.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -914,6 +1023,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize upload counter
     updateUploadCounter();
     
+    // Setup product management
+    setupProductManagement();
+    
     // Function to setup image click events
     function setupImageEvents() {
         const designImages = document.querySelectorAll('.design-image');
@@ -971,6 +1083,132 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Image modal setup complete (Edit Page)');
 });
+
+// Product management functions
+let productRowCounter = {{ $order->orderProducts ? $order->orderProducts->count() : 1 }};
+
+function setupProductManagement() {
+    // Add event listeners to existing product rows
+    document.querySelectorAll('.product-row').forEach(row => {
+        addProductRowEventListeners(row);
+    });
+    
+    // Check for duplicates initially
+    checkForDuplicateProducts();
+}
+
+function addProductRow() {
+    const productsContainer = document.getElementById('products-container');
+    const productRow = document.querySelector('.product-row').cloneNode(true);
+    
+    // Update the index for the new row
+    const newIndex = productRowCounter++;
+    
+    // Update all the name attributes
+    productRow.querySelectorAll('[name]').forEach(element => {
+        element.name = element.name.replace(/\[\d+\]/, `[${newIndex}]`);
+    });
+    
+    // Clear the values
+    productRow.querySelector('.product-select').value = '';
+    productRow.querySelector('.quantity-input').value = '1';
+    productRow.querySelector('input[name*="comments"]').value = '';
+    productRow.querySelector('.stock-info .font-medium').textContent = '-';
+    
+    // Add event listeners
+    addProductRowEventListeners(productRow);
+    
+    productsContainer.appendChild(productRow);
+    
+    // Check for duplicate products
+    checkForDuplicateProducts();
+}
+
+function removeProductRow(button) {
+    const productRow = button.closest('.product-row');
+    if (document.querySelectorAll('.product-row').length > 1) {
+        productRow.remove();
+    }
+}
+
+function addProductRowEventListeners(productRow) {
+    const productSelect = productRow.querySelector('.product-select');
+    const quantityInput = productRow.querySelector('.quantity-input');
+    const stockInfo = productRow.querySelector('.stock-info .font-medium');
+    
+    productSelect.addEventListener('change', function() {
+        updateStockInfo(this, stockInfo);
+        checkForDuplicateProducts();
+    });
+    
+    quantityInput.addEventListener('input', function() {
+        updateStockInfo(productSelect, stockInfo);
+    });
+}
+
+function updateStockInfo(productSelect, stockInfoElement) {
+    const productId = productSelect.value;
+    if (productId) {
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const stockText = selectedOption.text.match(/Stock: (\d+)/);
+        if (stockText) {
+            const stock = parseInt(stockText[1]);
+            const quantity = parseInt(productSelect.closest('.product-row').querySelector('.quantity-input').value) || 1;
+            stockInfoElement.textContent = stock;
+            
+            // Show warning if quantity exceeds stock
+            if (quantity > stock) {
+                stockInfoElement.classList.add('text-red-600');
+                stockInfoElement.textContent += ` (Warning: Quantity exceeds stock)`;
+            } else {
+                stockInfoElement.classList.remove('text-red-600');
+            }
+        }
+    } else {
+        stockInfoElement.textContent = '-';
+        stockInfoElement.classList.remove('text-red-600');
+    }
+}
+
+function checkForDuplicateProducts() {
+    const selectedProducts = new Set();
+    const duplicateWarnings = [];
+    
+    document.querySelectorAll('.product-select').forEach((select, index) => {
+        const productId = select.value;
+        if (productId) {
+            if (selectedProducts.has(productId)) {
+                duplicateWarnings.push(`Row ${index + 1}: Duplicate product selected`);
+                select.classList.add('border-red-500');
+            } else {
+                selectedProducts.add(productId);
+                select.classList.remove('border-red-500');
+            }
+        }
+    });
+    
+    // Show or hide duplicate warning
+    let warningDiv = document.getElementById('duplicate-warning');
+    if (duplicateWarnings.length > 0) {
+        if (!warningDiv) {
+            warningDiv = document.createElement('div');
+            warningDiv.id = 'duplicate-warning';
+            warningDiv.className = 'bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4';
+            warningDiv.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                    <div class="text-sm text-yellow-800">
+                        <p class="font-medium">Duplicate Products Detected</p>
+                        <p>You have selected the same product multiple times. The system will automatically combine quantities and merge comments.</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('products-container').parentNode.appendChild(warningDiv);
+        }
+    } else if (warningDiv) {
+        warningDiv.remove();
+    }
+}
 </script>
 
 @endsection 

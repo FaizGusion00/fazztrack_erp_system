@@ -17,7 +17,6 @@ class Product extends Model
         'name',
         'description',
         'size',
-        'price',
         'stock',
         'images',
         'comments',
@@ -35,11 +34,19 @@ class Product extends Model
     ];
 
     /**
-     * Get the orders that use this product.
+     * Get the orders that use this product (legacy - for backward compatibility).
      */
     public function orders()
     {
         return $this->hasMany(Order::class, 'product_id', 'product_id');
+    }
+
+    /**
+     * Get all orders that use this product through the pivot table.
+     */
+    public function orderProducts()
+    {
+        return $this->hasMany(OrderProduct::class, 'product_id', 'product_id');
     }
 
     /**
@@ -128,7 +135,7 @@ class Product extends Model
     }
 
     /**
-     * Scope for low stock products
+     * Scope for low stock
      */
     public function scopeLowStock($query)
     {
@@ -136,7 +143,7 @@ class Product extends Model
     }
 
     /**
-     * Scope for out of stock products
+     * Scope for out of stock
      */
     public function scopeOutOfStock($query)
     {
