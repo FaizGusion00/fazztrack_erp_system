@@ -65,7 +65,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/jobs/{job}/start', [JobController::class, 'startJob'])->name('jobs.start');
     Route::post('/jobs/{job}/end', [JobController::class, 'endJob'])->name('jobs.end');
     Route::post('/jobs/{job}/assign', [JobController::class, 'assign'])->name('jobs.assign');
-    Route::get('/jobs/{job}/assign', [JobController::class, 'assign'])->name('jobs.assign.get');
+    Route::get('/jobs/{job}/assign', [JobController::class, 'assign'])->name('jobs.assign.show');
     Route::get('/jobs/{job}/qr', [JobController::class, 'generateQr'])->name('jobs.qr');
     Route::get('/jobs/{job}/print', [JobController::class, 'printJob'])->name('jobs.print');
     Route::get('/jobs/{job}/details', [JobController::class, 'getJobDetails'])->name('jobs.details');
@@ -75,8 +75,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Design routes (Added)
     Route::resource('designs', DesignController::class);
-    Route::get('/designs/create/{order}', [DesignController::class, 'create'])->name('designs.create');
-    Route::post('/designs/{order}', [DesignController::class, 'store'])->name('designs.store');
+    Route::get('/designs/create-for-order/{order}', [DesignController::class, 'create'])->name('designs.create-for-order');
+    Route::post('/designs/store-for-order/{order}', [DesignController::class, 'store'])->name('designs.store-for-order');
     Route::post('/designs/{design}/approve', [DesignController::class, 'approve'])->name('designs.approve');
     Route::post('/designs/{design}/reject', [DesignController::class, 'reject'])->name('designs.reject');
 
