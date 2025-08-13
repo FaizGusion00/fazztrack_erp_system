@@ -71,12 +71,6 @@
                         <span class="hidden sm:inline">Track Another Order</span>
                         <span class="sm:hidden">Track</span>
                     </a>
-                    <a href="{{ route('login') }}" 
-                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        <span class="hidden sm:inline">Staff Login</span>
-                        <span class="sm:hidden">Login</span>
-                    </a>
                 </div>
             </div>
         </div>

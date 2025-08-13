@@ -60,12 +60,7 @@
                     <span class="text-xl font-bold text-gray-900">Fazztrack</span>
                 </a>
                 <div class="flex items-center space-x-4">
-                    <a href="{{ route('login') }}" 
-                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        <span class="hidden sm:inline">Staff Login</span>
-                        <span class="sm:hidden">Login</span>
-                    </a>
+                    <!-- Staff login removed for external customer view -->
                 </div>
             </div>
         </div>
