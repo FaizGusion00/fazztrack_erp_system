@@ -25,8 +25,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Install ImageMagick extension
-RUN pecl install imagick && docker-php-ext-enable imagick
+# Install ImageMagick and Redis extensions
+RUN pecl install imagick redis && docker-php-ext-enable imagick redis
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Order;
 use App\Models\Job;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -105,6 +106,58 @@ class DatabaseSeeder extends Seeder
             User::create($userData);
         }
 
+        // Create sample products
+        $products = [
+            [
+                'name' => 'Basic Cotton T-Shirt',
+                'description' => 'High-quality 100% cotton t-shirt perfect for printing',
+                'size' => 'M',
+                'price' => 15.00,
+                'stock' => 100,
+                'category' => 'T-Shirt',
+                'color' => 'White',
+                'material' => '100% Cotton',
+                'status' => 'Active',
+            ],
+            [
+                'name' => 'Premium Polo Shirt',
+                'description' => 'Professional polo shirt with collar',
+                'size' => 'L',
+                'price' => 25.00,
+                'stock' => 50,
+                'category' => 'Polo',
+                'color' => 'Navy Blue',
+                'material' => 'Cotton Blend',
+                'status' => 'Active',
+            ],
+            [
+                'name' => 'Hoodie',
+                'description' => 'Comfortable hoodie for casual wear',
+                'size' => 'XL',
+                'price' => 35.00,
+                'stock' => 30,
+                'category' => 'Hoodie',
+                'color' => 'Black',
+                'material' => 'Fleece',
+                'status' => 'Active',
+            ],
+            [
+                'name' => 'Tank Top',
+                'description' => 'Sleeveless tank top for summer',
+                'size' => 'S',
+                'price' => 12.00,
+                'stock' => 75,
+                'category' => 'Tank Top',
+                'color' => 'Gray',
+                'material' => 'Cotton',
+                'status' => 'Active',
+            ],
+        ];
+
+        foreach ($products as $productData) {
+            Product::create($productData);
+        }
+
         // Create sample clients
         $clients = [
             [
@@ -149,6 +202,7 @@ class DatabaseSeeder extends Seeder
         $orders = [
             [
                 'client_id' => 1,
+                'product_id' => 1,
                 'job_name' => 'Company T-Shirts',
                 'delivery_method' => 'Self Collect',
                 'status' => 'Order Created',
@@ -161,6 +215,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'client_id' => 2,
+                'product_id' => 2,
                 'job_name' => 'Event T-Shirts',
                 'delivery_method' => 'Shipping',
                 'status' => 'Order Approved',
@@ -173,6 +228,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'client_id' => 3,
+                'product_id' => 1,
                 'job_name' => 'Personal T-Shirt',
                 'delivery_method' => 'Self Collect',
                 'status' => 'Design Review',
@@ -185,6 +241,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'client_id' => 1,
+                'product_id' => 3,
                 'job_name' => 'test',
                 'delivery_method' => 'Self Collect',
                 'status' => 'Job Start',
