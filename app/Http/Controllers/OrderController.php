@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Job;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -78,7 +79,10 @@ class OrderController extends Controller
     {
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
-            'product_id' => 'required|exists:products,product_id',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,product_id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.comments' => 'nullable|string|max:500',
             'job_name' => 'required|string|max:255',
             'delivery_method' => 'required|in:Self Collect,Shipping',
             'design_deposit' => 'required|numeric|min:0',
@@ -89,33 +93,35 @@ class OrderController extends Controller
             'remarks' => 'nullable|string',
             'receipts.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'job_sheet' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
         ]);
 
+        // For backward compatibility, use the first product as the main product_id
+        $firstProduct = $request->products[0];
+        
         $orderData = $request->only([
-            'client_id', 'product_id', 'job_name', 'delivery_method', 'design_deposit',
+            'client_id', 'job_name', 'delivery_method', 'design_deposit',
             'production_deposit', 'balance_payment', 'due_date_design',
             'due_date_production', 'remarks', 'download_link'
         ]);
-
+        
+        // Set the first product as the main product_id for backward compatibility
+        $orderData['product_id'] = $firstProduct['product_id'];
         $orderData['status'] = 'Order Created';
 
         // Handle multiple receipts upload
         if ($request->hasFile('receipts')) {
-            $receiptPaths = [];
-            foreach ($request->file('receipts') as $receipt) {
-                $receiptPaths[] = $receipt->store('receipts', 'public');
-            }
+            $receiptPaths = StorageService::storeMultiple($request->file('receipts'), 'receipts');
             $orderData['receipts'] = json_encode($receiptPaths);
         }
 
         // Handle job sheet upload
         if ($request->hasFile('job_sheet')) {
-            $orderData['job_sheet'] = $request->file('job_sheet')->store('job_sheets', 'public');
+            $orderData['job_sheet'] = StorageService::store($request->file('job_sheet'), 'job_sheets');
         }
 
         // Handle design files upload
@@ -124,7 +130,7 @@ class OrderController extends Controller
         
         foreach ($designFields as $field) {
             if ($request->hasFile($field)) {
-                $designFiles[$field] = $request->file($field)->store('designs/final', 'public');
+                $designFiles[$field] = StorageService::store($request->file($field), 'designs/final');
             }
         }
         
@@ -133,6 +139,33 @@ class OrderController extends Controller
         }
 
         $order = Order::create($orderData);
+
+        // Attach all products with their quantities and comments
+        // Handle duplicate products by combining them
+        $productGroups = [];
+        foreach ($request->products as $productData) {
+            $productId = $productData['product_id'];
+            if (isset($productGroups[$productId])) {
+                // Combine quantities and merge comments
+                $productGroups[$productId]['quantity'] += $productData['quantity'];
+                if ($productData['comments']) {
+                    $existingComments = $productGroups[$productId]['comments'];
+                    $productGroups[$productId]['comments'] = $existingComments ? 
+                        $existingComments . ' | ' . $productData['comments'] : 
+                        $productData['comments'];
+                }
+            } else {
+                $productGroups[$productId] = $productData;
+            }
+        }
+        
+        // Attach the combined products
+        foreach ($productGroups as $productData) {
+            $order->products()->attach($productData['product_id'], [
+                'quantity' => $productData['quantity'],
+                'comments' => $productData['comments'] ?? null,
+            ]);
+        }
 
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order created successfully with all uploaded files.');
@@ -161,7 +194,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $order->load(['client.contacts', 'jobs.assignedUser']);
+        $order->load(['client.contacts', 'jobs.assignedUser', 'orderProducts.product']);
         return view('orders.show', compact('order'));
     }
 
@@ -172,6 +205,7 @@ class OrderController extends Controller
     {
         $clients = Client::all();
         $products = Product::active()->orderBy('name')->get();
+        $order->load('orderProducts.product'); // Load existing order products
         return view('orders.edit', compact('order', 'clients', 'products'));
     }
 
@@ -182,7 +216,10 @@ class OrderController extends Controller
     {
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
-            'product_id' => 'required|exists:products,product_id',
+            'products' => 'required|array|min:1',
+            'products.*.product_id' => 'required|exists:products,product_id',
+            'products.*.quantity' => 'required|integer|min:1',
+            'products.*.comments' => 'nullable|string|max:500',
             'job_name' => 'required|string|max:255',
             'delivery_method' => 'required|in:Self Collect,Shipping',
             'design_deposit' => 'required|numeric|min:0',
@@ -193,25 +230,28 @@ class OrderController extends Controller
             'remarks' => 'nullable|string',
             'receipts.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'job_sheet' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
         ]);
 
+        // For backward compatibility, use the first product as the main product_id
+        $firstProduct = $request->products[0];
+        
         $orderData = $request->only([
-            'client_id', 'product_id', 'job_name', 'delivery_method', 'design_deposit',
+            'client_id', 'job_name', 'delivery_method', 'design_deposit',
             'production_deposit', 'balance_payment', 'due_date_design',
             'due_date_production', 'remarks', 'download_link'
         ]);
+        
+        // Set the first product as the main product_id for backward compatibility
+        $orderData['product_id'] = $firstProduct['product_id'];
 
         // Handle multiple receipts upload
         if ($request->hasFile('receipts')) {
-            $receiptPaths = [];
-            foreach ($request->file('receipts') as $receipt) {
-                $receiptPaths[] = $receipt->store('receipts', 'public');
-            }
+            $receiptPaths = StorageService::storeMultiple($request->file('receipts'), 'receipts');
             $orderData['receipts'] = json_encode($receiptPaths);
         }
 
@@ -219,9 +259,9 @@ class OrderController extends Controller
         if ($request->hasFile('job_sheet')) {
             // Delete old file if exists
             if ($order->job_sheet) {
-                Storage::disk('public')->delete($order->job_sheet);
+                StorageService::delete($order->job_sheet);
             }
-            $orderData['job_sheet'] = $request->file('job_sheet')->store('job_sheets', 'public');
+            $orderData['job_sheet'] = StorageService::store($request->file('job_sheet'), 'job_sheets');
         }
 
         // Handle design files upload (finalized design by Sales Manager)
@@ -230,30 +270,30 @@ class OrderController extends Controller
         if ($request->hasFile('design_front')) {
             // Delete old file if exists
             if (isset($designFiles['design_front'])) {
-                Storage::disk('public')->delete($designFiles['design_front']);
+                StorageService::delete($designFiles['design_front']);
             }
-            $designFiles['design_front'] = $request->file('design_front')->store('designs/final', 'public');
+            $designFiles['design_front'] = StorageService::store($request->file('design_front'), 'designs/final');
         }
         if ($request->hasFile('design_back')) {
             // Delete old file if exists
             if (isset($designFiles['design_back'])) {
-                Storage::disk('public')->delete($designFiles['design_back']);
+                StorageService::delete($designFiles['design_back']);
             }
-            $designFiles['design_back'] = $request->file('design_back')->store('designs/final', 'public');
+            $designFiles['design_back'] = StorageService::store($request->file('design_back'), 'designs/final');
         }
         if ($request->hasFile('design_left')) {
             // Delete old file if exists
             if (isset($designFiles['design_left'])) {
-                Storage::disk('public')->delete($designFiles['design_left']);
+                StorageService::delete($designFiles['design_left']);
             }
-            $designFiles['design_left'] = $request->file('design_left')->store('designs/final', 'public');
+            $designFiles['design_left'] = StorageService::store($request->file('design_left'), 'designs/final');
         }
         if ($request->hasFile('design_right')) {
             // Delete old file if exists
             if (isset($designFiles['design_right'])) {
-                Storage::disk('public')->delete($designFiles['design_right']);
+                StorageService::delete($designFiles['design_right']);
             }
-            $designFiles['design_right'] = $request->file('design_right')->store('designs/final', 'public');
+            $designFiles['design_right'] = StorageService::store($request->file('design_right'), 'designs/final');
         }
         
         if (!empty($designFiles)) {
@@ -261,6 +301,35 @@ class OrderController extends Controller
         }
 
         $order->update($orderData);
+
+        // Update products - first detach all existing, then attach new ones
+        $order->products()->detach();
+        
+        // Handle duplicate products by combining them
+        $productGroups = [];
+        foreach ($request->products as $productData) {
+            $productId = $productData['product_id'];
+            if (isset($productGroups[$productId])) {
+                // Combine quantities and merge comments
+                $productGroups[$productId]['quantity'] += $productData['quantity'];
+                if ($productData['comments']) {
+                    $existingComments = $productGroups[$productId]['comments'];
+                    $productGroups[$productId]['comments'] = $existingComments ? 
+                        $existingComments . ' | ' . $productData['comments'] : 
+                        $productData['comments'];
+                }
+            } else {
+                $productGroups[$productId] = $productData;
+            }
+        }
+        
+        // Attach the combined products
+        foreach ($productGroups as $productData) {
+            $order->products()->attach($productData['product_id'], [
+                'quantity' => $productData['quantity'],
+                'comments' => $productData['comments'] ?? null,
+            ]);
+        }
 
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order updated successfully.');
@@ -376,10 +445,11 @@ class OrderController extends Controller
     {
         // Delete associated files
         if ($order->receipts) {
-            Storage::disk('public')->delete($order->receipts);
+            $receipts = json_decode($order->receipts, true) ?: [];
+            StorageService::deleteMultiple($receipts);
         }
         if ($order->job_sheet) {
-            Storage::disk('public')->delete($order->job_sheet);
+            StorageService::delete($order->job_sheet);
         }
 
         $order->delete();

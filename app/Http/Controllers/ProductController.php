@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -51,14 +52,13 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'size' => 'required|string|max:50',
-            'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'category' => 'nullable|string|max:100',
-            'color' => 'nullable|string|max:100',
-            'material' => 'nullable|string|max:100',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'comments' => 'nullable|string',
             'status' => 'required|in:Active,Inactive',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'category' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:50',
+            'material' => 'nullable|string|max:100',
         ]);
 
         $productData = $request->except('images');
@@ -66,10 +66,7 @@ class ProductController extends Controller
         // Handle image uploads
         $images = [];
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $images[] = $path;
-            }
+            $images = StorageService::storeMultiple($request->file('images'), 'products');
         }
         
         $productData['images'] = $images;
@@ -120,14 +117,13 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'size' => 'required|string|max:50',
-            'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'category' => 'nullable|string|max:100',
-            'color' => 'nullable|string|max:100',
-            'material' => 'nullable|string|max:100',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'comments' => 'nullable|string',
             'status' => 'required|in:Active,Inactive',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'category' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:50',
+            'material' => 'nullable|string|max:100',
         ]);
 
         $productData = $request->except('images');
@@ -136,16 +132,10 @@ class ProductController extends Controller
         if ($request->hasFile('images')) {
             // Delete old images
             if ($product->images) {
-                foreach ($product->images as $oldImage) {
-                    Storage::disk('public')->delete($oldImage);
-                }
+                StorageService::deleteMultiple($product->images);
             }
             
-            $images = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $images[] = $path;
-            }
+            $images = StorageService::storeMultiple($request->file('images'), 'products');
             $productData['images'] = $images;
         }
 
@@ -167,9 +157,7 @@ class ProductController extends Controller
 
         // Delete product images
         if ($product->images) {
-            foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image);
-            }
+            StorageService::deleteMultiple($product->images);
         }
 
         $product->delete();
@@ -209,7 +197,7 @@ class ProductController extends Controller
         }
 
         $products = Product::active()->inStock()
-            ->select('product_id', 'name', 'size', 'price', 'stock', 'category', 'color')
+            ->select('product_id', 'name', 'size', 'stock', 'category', 'color')
             ->orderBy('name')
             ->get();
 
@@ -231,7 +219,6 @@ class ProductController extends Controller
             'name' => $product->name,
             'description' => $product->description,
             'size' => $product->size,
-            'price' => $product->price,
             'stock' => $product->stock,
             'category' => $product->category,
             'color' => $product->color,

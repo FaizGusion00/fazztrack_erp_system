@@ -70,19 +70,9 @@
 
                         <div>
                             <label for="size" class="block text-sm font-medium text-gray-700 mb-2">Size *</label>
-                            <select id="size" name="size" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                <option value="">Select Size</option>
-                                <option value="XS" {{ old('size', $product->size) == 'XS' ? 'selected' : '' }}>XS</option>
-                                <option value="S" {{ old('size', $product->size) == 'S' ? 'selected' : '' }}>S</option>
-                                <option value="M" {{ old('size', $product->size) == 'M' ? 'selected' : '' }}>M</option>
-                                <option value="L" {{ old('size', $product->size) == 'L' ? 'selected' : '' }}>L</option>
-                                <option value="XL" {{ old('size', $product->size) == 'XL' ? 'selected' : '' }}>XL</option>
-                                <option value="XXL" {{ old('size', $product->size) == 'XXL' ? 'selected' : '' }}>XXL</option>
-                                <option value="3XL" {{ old('size', $product->size) == '3XL' ? 'selected' : '' }}>3XL</option>
-                                <option value="4XL" {{ old('size', $product->size) == '4XL' ? 'selected' : '' }}>4XL</option>
-                                <option value="Free Size" {{ old('size', $product->size) == 'Free Size' ? 'selected' : '' }}>Free Size</option>
-                            </select>
+                            <input type="text" id="size" name="size" value="{{ old('size', $product->size) }}" required
+                                   class="block w-full border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                   placeholder="e.g., S, M, L, XL, XXL">
                             @error('size')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -91,15 +81,6 @@
 
                     <!-- Pricing and Stock -->
                     <div class="space-y-6">
-                        <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (RM) *</label>
-                            <input type="number" id="price" name="price" value="{{ old('price', $product->price) }}" step="0.01" min="0" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            @error('price')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
                         <div>
                             <label for="stock" class="block text-sm font-medium text-gray-700 mb-2">Current Stock *</label>
                             <input type="number" id="stock" name="stock" value="{{ old('stock', $product->stock) }}" min="0" required

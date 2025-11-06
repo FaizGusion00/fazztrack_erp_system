@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\StorageService;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register custom Blade directive for file URLs
+        Blade::directive('fileUrl', function ($expression) {
+            return "<?php echo \App\Services\StorageService::url($expression); ?>";
+        });
     }
 }

@@ -83,7 +83,7 @@
                     @if($client->image)
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Current Image</label>
-                            <img src="{{ asset('storage/' . $client->image) }}" alt="{{ $client->name }}" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
+                            <img src="@fileUrl($client->image)" alt="{{ $client->name }}" class="w-32 h-32 object-cover rounded-lg border border-gray-300">
                         </div>
                     @endif
                     

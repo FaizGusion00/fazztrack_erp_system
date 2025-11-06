@@ -73,7 +73,7 @@
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center space-x-3">
                             @if($client->image)
-                                <img src="{{ asset('storage/' . $client->image) }}" alt="{{ $client->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
+                                <img src="@fileUrl($client->image)" alt="{{ $client->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
                             @else
                                 <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-user text-primary-500 text-lg"></i>

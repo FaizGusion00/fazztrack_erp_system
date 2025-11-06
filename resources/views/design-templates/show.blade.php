@@ -139,14 +139,14 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                <a href="{{ Storage::url($filePath) }}" 
+                                <a href="@fileUrl($filePath)" 
                                    target="_blank"
                                    class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                                     <i class="fas fa-download mr-1"></i>
                                     Download
                                 </a>
                                 @if($isImage)
-                                    <a href="{{ Storage::url($filePath) }}" 
+                                    <a href="@fileUrl($filePath)" 
                                        target="_blank"
                                        class="inline-flex items-center px-3 py-1 border border-primary-300 text-xs font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors">
                                         <i class="fas fa-eye mr-1"></i>

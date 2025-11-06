@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Client;
 use App\Models\Contact;
+use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -92,7 +93,7 @@ class ClientController extends Controller
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = time() . '_' . $image->getClientOriginalName();
-            $imagePath = $image->storeAs('clients', $imageName, 'public');
+            $imagePath = StorageService::store($image, 'clients', $imageName);
             $clientData['image'] = $imagePath;
         }
 
@@ -149,13 +150,13 @@ class ClientController extends Controller
         // Handle image upload
         if ($request->hasFile('image')) {
             // Delete old image if exists
-            if ($client->image && Storage::disk('public')->exists($client->image)) {
-                Storage::disk('public')->delete($client->image);
+            if ($client->image && StorageService::exists($client->image)) {
+                StorageService::delete($client->image);
             }
             
             $image = $request->file('image');
             $imageName = time() . '_' . $image->getClientOriginalName();
-            $imagePath = $image->storeAs('clients', $imageName, 'public');
+            $imagePath = StorageService::store($image, 'clients', $imageName);
             $clientData['image'] = $imagePath;
         }
 

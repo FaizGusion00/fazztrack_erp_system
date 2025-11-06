@@ -71,12 +71,6 @@
                         <span class="hidden sm:inline">Track Another Order</span>
                         <span class="sm:hidden">Track</span>
                     </a>
-                    <a href="{{ route('login') }}" 
-                       class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        <span class="hidden sm:inline">Staff Login</span>
-                        <span class="sm:hidden">Login</span>
-                    </a>
                 </div>
             </div>
         </div>
@@ -350,7 +344,7 @@
                         @if($order->proof_of_delivery_path)
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Proof of Delivery:</span>
-                                <a href="{{ asset('storage/' . $order->proof_of_delivery_path) }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium" data-proof-of-delivery>
+                                <a href="@fileUrl($order->proof_of_delivery_path)" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium" data-proof-of-delivery>
                                     <i class="fas fa-image mr-1"></i>View Image
                                 </a>
                             </div>

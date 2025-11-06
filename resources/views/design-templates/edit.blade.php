@@ -119,7 +119,7 @@
                                             <p class="text-sm font-medium text-gray-900">{{ $fileName }}</p>
                                         </div>
                                     </div>
-                                    <a href="{{ Storage::url($filePath) }}" 
+                                    <a href="@fileUrl($filePath)" 
                                        target="_blank"
                                        class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                                         <i class="fas fa-download mr-1"></i>

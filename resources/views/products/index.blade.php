@@ -92,9 +92,6 @@
                                     Size
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Price
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Stock
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -119,9 +116,10 @@
                                                     <i class="fas fa-image text-gray-400"></i>
                                                 </div>
                                             @endif
-                                            <div>
-                                                <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
-                                                <div class="text-sm text-gray-500">{{ Str::limit($product->description, 50) }}</div>
+                                            &nbsp;&nbsp;
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-sm font-semibold text-gray-900 mb-1 leading-tight">{{ $product->name }}</div>
+                                                <div class="text-xs text-gray-500 leading-relaxed">{{ Str::limit($product->description, 40) }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -132,9 +130,6 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $product->size }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        RM {{ number_format($product->price, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">

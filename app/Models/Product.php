@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use App\Services\StorageService;
 
 class Product extends Model
 {
@@ -16,7 +17,6 @@ class Product extends Model
         'name',
         'description',
         'size',
-        'price',
         'stock',
         'images',
         'comments',
@@ -34,11 +34,19 @@ class Product extends Model
     ];
 
     /**
-     * Get the orders that use this product.
+     * Get the orders that use this product (legacy - for backward compatibility).
      */
     public function orders()
     {
         return $this->hasMany(Order::class, 'product_id', 'product_id');
+    }
+
+    /**
+     * Get all orders that use this product through the pivot table.
+     */
+    public function orderProducts()
+    {
+        return $this->hasMany(OrderProduct::class, 'product_id', 'product_id');
     }
 
     /**
@@ -47,7 +55,7 @@ class Product extends Model
     public function getFirstImageUrlAttribute()
     {
         if ($this->images && count($this->images) > 0) {
-            return Storage::url($this->images[0]);
+            return StorageService::url($this->images[0]);
         }
         return null;
     }
@@ -62,7 +70,7 @@ class Product extends Model
         }
         
         return collect($this->images)->map(function ($image) {
-            return Storage::url($image);
+            return StorageService::url($image);
         })->toArray();
     }
 
@@ -127,7 +135,7 @@ class Product extends Model
     }
 
     /**
-     * Scope for low stock products
+     * Scope for low stock
      */
     public function scopeLowStock($query)
     {
@@ -135,7 +143,7 @@ class Product extends Model
     }
 
     /**
-     * Scope for out of stock products
+     * Scope for out of stock
      */
     public function scopeOutOfStock($query)
     {
