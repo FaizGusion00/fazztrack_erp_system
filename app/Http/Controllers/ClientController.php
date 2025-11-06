@@ -79,9 +79,9 @@ class ClientController extends Controller
             'customer_type' => 'required|in:Individual,Agent,Organisation',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'contacts' => 'nullable|array',
-            'contacts.*.contact_name' => 'required|string|max:255',
-            'contacts.*.contact_phone' => 'required|string|max:20',
-            'contacts.*.contact_email' => 'required|email',
+            'contacts.*.contact_name' => 'nullable|string|max:255',
+            'contacts.*.contact_phone' => 'nullable|string|max:20',
+            'contacts.*.contact_email' => 'nullable|email',
         ]);
 
         $clientData = $request->only([
@@ -99,10 +99,13 @@ class ClientController extends Controller
 
         $client = Client::create($clientData);
 
-        // Create contacts if provided
+        // Create contacts if provided (only if contact has data)
         if ($request->has('contacts')) {
             foreach ($request->contacts as $contactData) {
-                $client->contacts()->create($contactData);
+                // Only create contact if at least one field is filled
+                if (!empty($contactData['contact_name']) || !empty($contactData['contact_phone']) || !empty($contactData['contact_email'])) {
+                    $client->contacts()->create($contactData);
+                }
             }
         }
 

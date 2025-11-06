@@ -437,7 +437,7 @@
     </div>
 
     <!-- File Downloads -->
-    @if($order->receipts || $order->job_sheet || $order->download_link)
+    @if($order->receipts()->count() > 0 || $order->job_sheet || $order->download_link)
     <div class="mt-8">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
@@ -448,21 +448,33 @@
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @if($order->receipts)
+                    @if($order->receipts()->count() > 0)
                         <div class="border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-medium text-gray-900 mb-2">Receipts</h4>
-                            @php
-                                $receipts = json_decode($order->receipts, true) ?: [$order->receipts];
-                            @endphp
-                            @foreach($receipts as $receipt)
-                                <a href="@fileUrl($receipt)" 
-                                   target="_blank"
-                                   class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
-                                    <i class="fas fa-file-pdf mr-1"></i>
-                                    Receipt {{ $loop->iteration }}
-                                </a>
-                                @if(!$loop->last)<br>@endif
-                            @endforeach
+                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                <i class="fas fa-receipt mr-2 text-primary-500"></i>
+                                Receipts ({{ $order->receipts()->count() }})
+                            </h4>
+                            <div class="space-y-2">
+                                @foreach($order->receipts()->orderBy('uploaded_at', 'desc')->get() as $receipt)
+                                    <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                        <div class="flex-1">
+                                            <a href="{{ asset('storage/' . $receipt->file_path) }}" 
+                                               target="_blank"
+                                               class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                                <i class="fas fa-file-pdf mr-1"></i>
+                                                {{ $receipt->file_name }}
+                                            </a>
+                                            <p class="text-xs text-gray-500 mt-1">
+                                                <i class="far fa-clock mr-1"></i>
+                                                Uploaded: {{ $receipt->uploaded_at->format('d M Y, h:i A') }}
+                                            </p>
+                                        </div>
+                                        <div class="ml-3 text-xs text-gray-400">
+                                            {{ number_format($receipt->file_size / 1024, 1) }} KB
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     @endif
 

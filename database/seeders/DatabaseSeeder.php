@@ -88,7 +88,7 @@ class DatabaseSeeder extends Seeder
                 'username' => 'qc',
                 'name' => 'QC Staff',
                 'email' => 'qc@fazztrack.com',
-                'password' => Hash::make('qc123'),
+                'password' => Hash::make('qc1234'),
                 'role' => 'Production Staff',
                 'phase' => 'QC',
             ],

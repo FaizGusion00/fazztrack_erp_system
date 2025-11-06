@@ -300,6 +300,91 @@
                 </div>
             </div>
 
+            <!-- Payment Information -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-money-bill-wave mr-2 text-blue-500"></i>
+                    Payment Information
+                </h3>
+                <div class="space-y-4">
+                    <!-- Payment Breakdown -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="text-sm text-blue-600 font-medium mb-1">Design Deposit</div>
+                            <div class="text-xl font-bold text-blue-900">RM {{ number_format($order->design_deposit, 2) }}</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <div class="text-sm text-green-600 font-medium mb-1">Production Deposit</div>
+                            <div class="text-xl font-bold text-green-900">RM {{ number_format($order->production_deposit, 2) }}</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <div class="text-sm text-purple-600 font-medium mb-1">Balance Payment</div>
+                            <div class="text-xl font-bold text-purple-900">RM {{ number_format($order->balance_payment, 2) }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Total Amount -->
+                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg p-4 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium opacity-90 mb-1">Total Amount</div>
+                                <div class="text-3xl font-bold">RM {{ number_format($order->total_amount, 2) }}</div>
+                            </div>
+                            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-receipt text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Status -->
+                    @if(isset($order->payment_status))
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-600">Payment Status:</span>
+                                @php
+                                    $paymentStatusColors = [
+                                        'Pending' => 'bg-yellow-100 text-yellow-800',
+                                        'Partial' => 'bg-blue-100 text-blue-800',
+                                        'Completed' => 'bg-green-100 text-green-800',
+                                        'Overdue' => 'bg-red-100 text-red-800',
+                                    ];
+                                @endphp
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $paymentStatusColors[$order->payment_status] ?? 'bg-gray-100 text-gray-800' }}" data-payment-status>
+                                    {{ $order->payment_status }}
+                                </span>
+                            </div>
+                            @if($order->paid_amount > 0)
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Paid Amount:</span>
+                                    <span class="text-sm font-bold text-gray-900" data-paid-amount>RM {{ number_format($order->paid_amount, 2) }}</span>
+                                </div>
+                                @if($order->total_amount > $order->paid_amount)
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600">Remaining Balance:</span>
+                                        <span class="text-sm font-bold text-red-600" data-remaining-balance>RM {{ number_format($order->total_amount - $order->paid_amount, 2) }}</span>
+                                    </div>
+                                @endif
+                            @endif
+                            @if($order->last_payment_date)
+                                <div class="mt-2 text-xs text-gray-500">
+                                    <i class="far fa-clock mr-1"></i>
+                                    Last Payment: {{ $order->last_payment_date->format('d M Y, h:i A') }}
+                                </div>
+                            @endif
+                            @if($order->payment_due_date)
+                                <div class="mt-1 text-xs {{ $order->payment_due_date->isPast() ? 'text-red-600' : 'text-gray-500' }}">
+                                    <i class="fas fa-calendar-alt mr-1"></i>
+                                    Payment Due: {{ $order->payment_due_date->format('d M Y') }}
+                                    @if($order->payment_due_date->isPast() && $order->payment_status !== 'Completed')
+                                        <span class="ml-2 text-red-600 font-medium">(Overdue)</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             <!-- Delivery Status (for shipping orders) -->
             @if($order->delivery_method === 'Shipping' && $order->status === 'Order Finished')
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6" data-delivery-section>
@@ -464,6 +549,36 @@
                         }
                     }
                 });
+                
+                // Update payment information if payment section exists
+                if (data.payment) {
+                    // Update payment status badge
+                    const paymentStatusBadge = document.querySelector('[data-payment-status]');
+                    if (paymentStatusBadge) {
+                        const paymentColors = {
+                            'Pending': 'bg-yellow-100 text-yellow-800',
+                            'Partial': 'bg-blue-100 text-blue-800',
+                            'Completed': 'bg-green-100 text-green-800',
+                            'Overdue': 'bg-red-100 text-red-800'
+                        };
+                        paymentStatusBadge.textContent = data.payment.payment_status || 'Pending';
+                        paymentStatusBadge.className = `inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${paymentColors[data.payment.payment_status] || 'bg-gray-100 text-gray-800'}`;
+                    }
+                    
+                    // Update paid amount
+                    const paidAmountElement = document.querySelector('[data-paid-amount]');
+                    if (paidAmountElement && data.payment.paid_amount > 0) {
+                        paidAmountElement.textContent = 'RM ' + parseFloat(data.payment.paid_amount).toFixed(2);
+                        paidAmountElement.parentElement.style.display = 'flex';
+                    }
+                    
+                    // Update remaining balance
+                    const balanceElement = document.querySelector('[data-remaining-balance]');
+                    if (balanceElement && data.payment.remaining_balance > 0) {
+                        balanceElement.textContent = 'RM ' + parseFloat(data.payment.remaining_balance).toFixed(2);
+                        balanceElement.parentElement.style.display = 'flex';
+                    }
+                }
                 
                 // Update delivery status if delivery section exists
                 const deliverySection = document.querySelector('[data-delivery-section]');

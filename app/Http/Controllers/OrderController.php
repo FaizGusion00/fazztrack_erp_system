@@ -84,7 +84,7 @@ class OrderController extends Controller
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.comments' => 'nullable|string|max:500',
             'job_name' => 'required|string|max:255',
-            'delivery_method' => 'required|in:Self Collect,Shipping',
+            'delivery_method' => 'required|in:Self Collect,Shipping,Grab,Lalamove',
             'design_deposit' => 'required|numeric|min:0',
             'production_deposit' => 'required|numeric|min:0',
             'balance_payment' => 'required|numeric|min:0',
@@ -139,6 +139,21 @@ class OrderController extends Controller
         }
 
         $order = Order::create($orderData);
+
+        // Handle multiple receipts upload - store each in separate table with dates
+        if ($request->hasFile('receipts')) {
+            foreach ($request->file('receipts') as $receiptFile) {
+                $filePath = StorageService::store($receiptFile, 'receipts');
+                \App\Models\OrderReceipt::create([
+                    'order_id' => $order->order_id,
+                    'file_path' => $filePath,
+                    'file_name' => $receiptFile->getClientOriginalName(),
+                    'file_type' => $receiptFile->getClientMimeType(),
+                    'file_size' => $receiptFile->getSize(),
+                    'uploaded_at' => now(),
+                ]);
+            }
+        }
 
         // Attach all products with their quantities and comments
         // Handle duplicate products by combining them
@@ -221,7 +236,7 @@ class OrderController extends Controller
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.comments' => 'nullable|string|max:500',
             'job_name' => 'required|string|max:255',
-            'delivery_method' => 'required|in:Self Collect,Shipping',
+            'delivery_method' => 'required|in:Self Collect,Shipping,Grab,Lalamove',
             'design_deposit' => 'required|numeric|min:0',
             'production_deposit' => 'required|numeric|min:0',
             'balance_payment' => 'required|numeric|min:0',
@@ -248,12 +263,6 @@ class OrderController extends Controller
         
         // Set the first product as the main product_id for backward compatibility
         $orderData['product_id'] = $firstProduct['product_id'];
-
-        // Handle multiple receipts upload
-        if ($request->hasFile('receipts')) {
-            $receiptPaths = StorageService::storeMultiple($request->file('receipts'), 'receipts');
-            $orderData['receipts'] = json_encode($receiptPaths);
-        }
 
         // Handle job sheet upload
         if ($request->hasFile('job_sheet')) {
@@ -329,6 +338,21 @@ class OrderController extends Controller
                 'quantity' => $productData['quantity'],
                 'comments' => $productData['comments'] ?? null,
             ]);
+        }
+
+        // Handle multiple receipts upload - add new receipts without deleting old ones
+        if ($request->hasFile('receipts')) {
+            foreach ($request->file('receipts') as $receiptFile) {
+                $filePath = StorageService::store($receiptFile, 'receipts');
+                \App\Models\OrderReceipt::create([
+                    'order_id' => $order->order_id,
+                    'file_path' => $filePath,
+                    'file_name' => $receiptFile->getClientOriginalName(),
+                    'file_type' => $receiptFile->getClientMimeType(),
+                    'file_size' => $receiptFile->getSize(),
+                    'uploaded_at' => now(),
+                ]);
+            }
         }
 
         return redirect()->route('orders.show', $order)

@@ -12,9 +12,17 @@ class TrackingController extends Controller
      */
     public function show($orderId)
     {
+        // Trim whitespace to handle potential input issues
+        $orderId = trim($orderId);
+        
         $order = Order::with(['client', 'jobs.assignedUser', 'product'])
             ->where('order_id', $orderId)
-            ->firstOrFail();
+            ->first();
+        
+        // If order not found, show a custom 404 page with helpful information
+        if (!$order) {
+            abort(404, "Order #{$orderId} not found. Please check your order ID and try again.");
+        }
 
         // If it's an AJAX request, return JSON for live updates
         if (request()->ajax()) {
@@ -30,6 +38,17 @@ class TrackingController extends Controller
                     'in_progress' => $order->jobs->where('status', 'In Progress')->count(),
                     'pending' => $order->jobs->where('status', 'Pending')->count(),
                     'percentage' => $order->jobs->where('status', 'Completed')->count() / 6 * 100
+                ],
+                'payment' => [
+                    'design_deposit' => $order->design_deposit,
+                    'production_deposit' => $order->production_deposit,
+                    'balance_payment' => $order->balance_payment,
+                    'total_amount' => $order->total_amount,
+                    'payment_status' => $order->payment_status,
+                    'paid_amount' => $order->paid_amount,
+                    'remaining_balance' => $order->total_amount - $order->paid_amount,
+                    'last_payment_date' => $order->last_payment_date ? $order->last_payment_date->format('M d, Y H:i') : null,
+                    'payment_due_date' => $order->payment_due_date ? $order->payment_due_date->format('M d, Y') : null,
                 ],
                 'delivery' => [
                     'status' => $order->delivery_status,
@@ -58,12 +77,28 @@ class TrackingController extends Controller
             'order_id' => 'required|string',
         ]);
 
+        // Trim whitespace and convert to integer to handle string inputs
+        $orderId = trim($request->order_id);
+
         $order = Order::with(['client', 'jobs.assignedUser'])
-            ->where('order_id', $request->order_id)
+            ->where('order_id', $orderId)
             ->first();
 
         if (!$order) {
-            return back()->withErrors(['order_id' => 'Order not found']);
+            // Provide helpful error message with suggestions
+            $nearbyOrders = Order::whereBetween('order_id', [max(1, $orderId - 5), $orderId + 5])
+                ->pluck('order_id')
+                ->take(5)
+                ->implode(', ');
+            
+            $errorMessage = "Order #{$orderId} not found.";
+            if ($nearbyOrders) {
+                $errorMessage .= " Did you mean one of these: {$nearbyOrders}?";
+            }
+            
+            return back()
+                ->withInput()
+                ->withErrors(['order_id' => $errorMessage]);
         }
 
         return redirect()->route('tracking.show', $order->order_id);

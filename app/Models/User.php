@@ -97,9 +97,8 @@ class User extends Authenticatable
      */
     public function isActive(): bool
     {
-        // For now, all users are active by default
-        // You can add an 'is_active' column to the users table later
-        return true;
+        // Check the is_active column if it exists
+        return $this->is_active ?? true;
     }
 
     /**

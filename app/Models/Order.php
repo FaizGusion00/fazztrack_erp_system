@@ -118,6 +118,14 @@ class Order extends Model
     }
 
     /**
+     * Get the receipts for the order
+     */
+    public function receipts()
+    {
+        return $this->hasMany(OrderReceipt::class, 'order_id', 'order_id');
+    }
+
+    /**
      * Check if order is overdue
      */
     public function isOverdue()
