@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    <!-- Search and Filters -->
+    <!-- Search, Filters & View Toggle -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <form method="GET" action="{{ route('clients.index') }}" class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
@@ -61,116 +61,116 @@
                     </a>
                 @endif
             </div>
+            <div class="md:ml-auto flex items-end space-x-2">
+                @php $view = request('view', 'table'); @endphp
+                <a href="{{ route('clients.index', array_merge(request()->except('page'), ['view' => 'table'])) }}"
+                   class="px-3 py-2 rounded-md border text-sm font-medium {{ $view === 'table' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                    <i class="fas fa-table mr-1"></i> Table
+                </a>
+                <a href="{{ route('clients.index', array_merge(request()->except('page'), ['view' => 'cards'])) }}"
+                   class="px-3 py-2 rounded-md border text-sm font-medium {{ $view === 'cards' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                    <i class="fas fa-th-large mr-1"></i> Cards
+                </a>
+            </div>
         </form>
     </div>
-
-    <!-- Clients Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @forelse($clients as $client)
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-                <div class="p-6">
-                    <!-- Client Header -->
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center space-x-3">
-                            @if($client->image)
-                                <img src="@fileUrl($client->image)" alt="{{ $client->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
-                            @else
-                                <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-primary-500 text-lg"></i>
+    @php($view = request('view', 'table'))
+    @if($view === 'table')
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($clients as $client)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    @if($client->image)
+                                        <img src="@fileUrl($client->image)" alt="{{ $client->name }}" class="w-8 h-8 rounded-full object-cover border mr-3">
+                                    @else
+                                        <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3"><i class="fas fa-user text-xs"></i></div>
+                                    @endif
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $client->name }}</div>
+                                        @if($client->address)
+                                            <div class="text-xs text-gray-500 truncate max-w-xs">{{ $client->address }}</div>
+                                        @endif
+                                    </div>
                                 </div>
-                            @endif
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">{{ $client->name }}</h3>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->phone ?: '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->email ?: '—' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                     @if($client->customer_type === 'Individual') bg-blue-100 text-blue-800
                                     @elseif($client->customer_type === 'Agent') bg-green-100 text-green-800
-                                    @else bg-purple-100 text-purple-800 @endif">
-                                    {{ $client->customer_type }}
-                                </span>
+                                    @else bg-purple-100 text-purple-800 @endif">{{ $client->customer_type }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <a href="{{ route('clients.show', $client) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-2"><i class="fas fa-eye mr-1"></i>View</a>
+                                <a href="{{ route('clients.edit', $client) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"><i class="fas fa-edit mr-1"></i>Edit</a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">No clients found.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @else
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @forelse($clients as $client)
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                @if($client->image)
+                                    <img src="@fileUrl($client->image)" alt="{{ $client->name }}" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
+                                @else
+                                    <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-primary-500 text-lg"></i>
+                                    </div>
+                                @endif
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">{{ $client->name }}</h3>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                        @if($client->customer_type === 'Individual') bg-blue-100 text-blue-800
+                                        @elseif($client->customer_type === 'Agent') bg-green-100 text-green-800
+                                        @else bg-purple-100 text-purple-800 @endif">{{ $client->customer_type }}</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <a href="{{ route('clients.show', $client) }}" 
-                               class="text-primary-600 hover:text-primary-700 p-1">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('clients.edit', $client) }}" 
-                               class="text-gray-600 hover:text-gray-700 p-1">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form method="POST" action="{{ route('clients.destroy', $client) }}" 
-                                  class="inline" onsubmit="return confirm('Are you sure you want to delete this client?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-700 p-1">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex items-center"><i class="fas fa-phone w-4 mr-2"></i><span>{{ $client->phone ?: 'N/A' }}</span></div>
+                            <div class="flex items-center"><i class="fas fa-envelope w-4 mr-2"></i><span>{{ $client->email ?: 'N/A' }}</span></div>
+                            @if($client->address)
+                                <div class="flex items-start"><i class="fas fa-map-marker-alt w-4 mr-2 mt-0.5"></i><span class="truncate">{{ $client->address }}</span></div>
+                            @endif
                         </div>
-                    </div>
-
-                    <!-- Client Details -->
-                    <div class="space-y-3">
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-envelope w-4 mr-2"></i>
-                            <span class="truncate">{{ $client->email }}</span>
+                        <div class="mt-4 flex space-x-2">
+                            <a href="{{ route('clients.show', $client) }}" class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors"><i class="fas fa-eye mr-1"></i>View</a>
+                            <a href="{{ route('clients.edit', $client) }}" class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"><i class="fas fa-edit mr-1"></i>Edit</a>
                         </div>
-                        <div class="flex items-center text-sm text-gray-600">
-                            <i class="fas fa-phone w-4 mr-2"></i>
-                            <span>{{ $client->phone }}</span>
-                        </div>
-                        <div class="flex items-start text-sm text-gray-600">
-                            <i class="fas fa-map-marker-alt w-4 mr-2 mt-0.5"></i>
-                            <span class="line-clamp-2">{{ $client->billing_address }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Contacts Count -->
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-500">
-                                <i class="fas fa-address-book mr-1"></i>
-                                {{ $client->contacts->count() }} contact{{ $client->contacts->count() !== 1 ? 's' : '' }}
-                            </span>
-                            <span class="text-sm text-gray-500">
-                                {{ $client->orders->count() }} order{{ $client->orders->count() !== 1 ? 's' : '' }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="mt-4 flex space-x-2">
-                        <a href="{{ route('clients.show', $client) }}" 
-                           class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors">
-                            <i class="fas fa-eye mr-1"></i>
-                            View
-                        </a>
-                        <a href="{{ route('clients.edit', $client) }}" 
-                           class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-edit mr-1"></i>
-                            Edit
-                        </a>
                     </div>
                 </div>
-            </div>
-        @empty
-            <!-- Empty State -->
-            <div class="col-span-full">
-                <div class="text-center py-12">
-                    <div class="mx-auto h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-users text-gray-400 text-3xl"></i>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">No clients yet</h3>
-                    <p class="text-gray-500 mb-6">Get started by adding your first client to the system.</p>
-                    <a href="{{ route('clients.create') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-lg font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                        <i class="fas fa-plus mr-2"></i>
-                        Add First Client
-                    </a>
+            @empty
+                <div class="col-span-full">
+                    <div class="text-center py-12 text-gray-500">No clients found.</div>
                 </div>
-            </div>
-        @endforelse
-    </div>
+            @endforelse
+        </div>
+    @endif
 
     <!-- Pagination -->
     @if($clients->hasPages())

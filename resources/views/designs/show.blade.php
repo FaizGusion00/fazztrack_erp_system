@@ -214,7 +214,7 @@
     @endif
 
     <!-- Action Buttons -->
-    @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager())
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager())
         @if($design->status === 'Pending Review')
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">

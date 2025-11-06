@@ -129,12 +129,18 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">{{ $fileName }}</p>
+                                    @php
+                                        $bytes = \App\Services\StorageService::size($filePath);
+                                        $sizeText = $bytes !== null ? ( $bytes >= 1048576
+                                            ? number_format($bytes/1048576, 2) . ' MB'
+                                            : number_format($bytes/1024, 1) . ' KB') : 'Unknown size';
+                                    @endphp
                                     <p class="text-xs text-gray-500">
                                         @if($isImage) Image file
                                         @elseif($isDesignFile) Design file
                                         @elseif($isArchive) Archive file
                                         @else Document
-                                        @endif
+                                        @endif · {{ $sizeText }}
                                     </p>
                                 </div>
                             </div>

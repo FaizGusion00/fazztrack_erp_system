@@ -39,11 +39,11 @@
                 </div>
                 <div>
                     <span class="text-sm font-medium text-gray-500">Client:</span>
-                    <span class="text-sm text-gray-900 ml-2">{{ $order->client->name }}</span>
+                    <span class="text-sm text-gray-900 ml-2">{{ $order->client ? $order->client->name : 'N/A' }}</span>
                 </div>
                 <div>
                     <span class="text-sm font-medium text-gray-500">Due Date:</span>
-                    <span class="text-sm text-gray-900 ml-2">{{ $order->due_date_design->format('M d, Y') }}</span>
+                    <span class="text-sm text-gray-900 ml-2">{{ $order->due_date_design ? $order->due_date_design->format('M d, Y') : 'N/A' }}</span>
                 </div>
             </div>
         </div>
@@ -56,6 +56,7 @@
         </div>
         <form method="POST" action="{{ route('designs.store', $order) }}" enctype="multipart/form-data" class="p-6">
             @csrf
+            <input type="hidden" name="order_id" value="{{ $order->order_id }}">
             
             <!-- Design Files -->
             <div class="mb-6">

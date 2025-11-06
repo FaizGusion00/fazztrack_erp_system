@@ -60,7 +60,7 @@ class DesignController extends Controller
     /**
      * Show the form for uploading design for an order
      */
-    public function create(Order $order)
+    public function create(Request $request, Order $order = null)
     {
         $user = Auth::user();
         
@@ -69,8 +69,49 @@ class DesignController extends Controller
             abort(403, 'Access denied. Only designers can upload designs.');
         }
         
-        // Load the client relationship
+        // Handle query parameter if order is not provided via route model binding
+        if (!$order) {
+            // Try order_id query parameter first
+            if ($request->has('order_id')) {
+                $orderId = $request->get('order_id');
+                $order = Order::find($orderId);
+            } else {
+                // Try to find numeric value in query parameters (e.g., ?2 means order_id=2)
+                $queryParams = $request->query();
+                foreach ($queryParams as $key => $value) {
+                    // Check if key is numeric (e.g., ?2) or value is numeric (e.g., ?order=2)
+                    $orderId = null;
+                    if (is_numeric($key)) {
+                        $orderId = $key;
+                    } elseif (is_numeric($value)) {
+                        $orderId = $value;
+                    }
+                    
+                    if ($orderId) {
+                        $order = Order::find($orderId);
+                        if ($order) {
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If still no order, try to get from route parameter name
+            if (!$order && $request->route() && $request->route()->hasParameter('order')) {
+                $order = $request->route('order');
+            }
+        }
+        
+        if (!$order) {
+            abort(404, 'Order is required. Please specify an order ID.');
+        }
+        
+        // Load the client relationship and ensure it exists
         $order->load('client');
+        
+        if (!$order->client) {
+            abort(404, 'Client information not found for this order.');
+        }
         
         return view('designs.create', compact('order'));
     }
@@ -78,13 +119,51 @@ class DesignController extends Controller
     /**
      * Store a newly uploaded design
      */
-    public function store(Request $request, Order $order)
+    public function store(Request $request, Order $order = null)
     {
         $user = Auth::user();
         
         // Only Designer can upload designs
         if (!$user->isDesigner()) {
             abort(403, 'Access denied. Only designers can upload designs.');
+        }
+        
+        // Handle order parameter if not provided via route model binding
+        if (!$order) {
+            // Try order_id from request input
+            if ($request->has('order_id')) {
+                $orderId = $request->get('order_id');
+                $order = Order::find($orderId);
+            } else {
+                // Try to find numeric value in query parameters or route parameters
+                $queryParams = $request->query();
+                foreach ($queryParams as $key => $value) {
+                    $orderId = null;
+                    if (is_numeric($key)) {
+                        $orderId = $key;
+                    } elseif (is_numeric($value)) {
+                        $orderId = $value;
+                    }
+                    
+                    if ($orderId) {
+                        $order = Order::find($orderId);
+                        if ($order) {
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If still no order, try to get from route parameter name
+            if (!$order && $request->route() && $request->route()->hasParameter('order')) {
+                $order = $request->route('order');
+            }
+        }
+        
+        if (!$order) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['order_id' => 'Order is required. Please specify an order ID.']);
         }
         
         $request->validate([
@@ -213,9 +292,9 @@ class DesignController extends Controller
     {
         $user = Auth::user();
         
-        // Only Admin, Sales Manager, SuperAdmin can approve designs
-        if (!$user->isAdmin() && !$user->isSuperAdmin() && !$user->isSalesManager()) {
-            abort(403, 'Access denied. Only admins and sales managers can approve designs.');
+        // Only Sales Manager and SuperAdmin can approve designs
+        if (!$user->isSuperAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only sales managers and super admins can approve designs.');
         }
         
         $design->update([
@@ -238,9 +317,9 @@ class DesignController extends Controller
     {
         $user = Auth::user();
         
-        // Only Admin, Sales Manager, SuperAdmin can reject designs
-        if (!$user->isAdmin() && !$user->isSuperAdmin() && !$user->isSalesManager()) {
-            abort(403, 'Access denied. Only admins and sales managers can reject designs.');
+        // Only Sales Manager and SuperAdmin can reject designs
+        if (!$user->isSuperAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only sales managers and super admins can reject designs.');
         }
         
         $request->validate([

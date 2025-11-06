@@ -53,17 +53,17 @@
                                 <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-box mr-1"></i>Products
                                 </a>
-                                <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-palette mr-1"></i>Designs
-                                </a>
                                 <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-shopping-cart mr-1"></i>Orders
                                 </a>
-                                <a href="{{ route('deliveries.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-truck mr-1"></i>Deliveries
+                                <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-palette mr-1"></i>Designs
                                 </a>
                                 <a href="{{ route('jobs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-tasks mr-1"></i>Jobs
+                                    <i class="fas fa-industry mr-1"></i>Production
+                                </a>
+                                <a href="{{ route('deliveries.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-truck mr-1"></i>Deliveries
                                 </a>
                                 <a href="{{ route('users.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-users-cog mr-1"></i>Users
@@ -78,11 +78,11 @@
                                 <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-box mr-1"></i>Products
                                 </a>
-                                <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-palette mr-1"></i>Designs
-                                </a>
                                 <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-shopping-cart mr-1"></i>Orders
+                                </a>
+                                <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-palette mr-1"></i>Designs
                                 </a>
                                 <a href="{{ route('deliveries.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-truck mr-1"></i>Deliveries
@@ -94,21 +94,21 @@
                                 <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-box mr-1"></i>Products
                                 </a>
-                                <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-palette mr-1"></i>Designs
-                                </a>
                                 <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-shopping-cart mr-1"></i>Orders
                                 </a>
+                                <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-palette mr-1"></i>Designs
+                                </a>
                                 <a href="{{ route('jobs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-tasks mr-1"></i>Jobs
+                                    <i class="fas fa-industry mr-1"></i>Production
                                 </a>
                                                     @elseif(auth()->user()->isDesigner())
-                            <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                <i class="fas fa-palette mr-1"></i>Designs
-                            </a>
                             <a href="{{ route('orders.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 <i class="fas fa-shopping-cart mr-1"></i>Orders
+                            </a>
+                            <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <i class="fas fa-palette mr-1"></i>Designs
                             </a>
                         @elseif(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager())
                             <a href="{{ route('designs.index') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -222,17 +222,17 @@
                                     </div>
                                     <span class="font-medium">Orders</span>
                                 </a>
+                                <a href="{{ route('jobs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
+                                        <i class="fas fa-industry text-gray-600 group-hover:text-primary-600"></i>
+                                    </div>
+                                    <span class="font-medium">Production</span>
+                                </a>
                                 <a href="{{ route('deliveries.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
                                     <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
                                         <i class="fas fa-truck text-gray-600 group-hover:text-primary-600"></i>
                                     </div>
                                     <span class="font-medium">Deliveries</span>
-                                </a>
-                                <a href="{{ route('jobs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
-                                    <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
-                                        <i class="fas fa-tasks text-gray-600 group-hover:text-primary-600"></i>
-                                    </div>
-                                    <span class="font-medium">Jobs</span>
                                 </a>
                                 <a href="{{ route('designs.index') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
                                     <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">

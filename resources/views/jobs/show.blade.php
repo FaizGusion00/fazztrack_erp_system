@@ -134,7 +134,7 @@
                         <h4 class="text-sm font-medium text-gray-700">QR Code</h4>
                         <div class="w-full h-48 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
                             <div class="text-center">
-                                {!! QrCode::size(150)->generate($job->qr_code) !!}
+                                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(150)->generate($job->qr_code) !!}
                                 <p class="text-xs text-gray-500 mt-2">{{ $job->qr_code }}</p>
                             </div>
                         </div>

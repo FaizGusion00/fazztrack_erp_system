@@ -22,22 +22,33 @@
         </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="mb-6">
+    <!-- Tabs & View Toggle -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <nav class="flex space-x-8" aria-label="Tabs">
-            <a href="{{ route('orders.index', ['tab' => 'active'] + request()->except('tab')) }}" 
+            <a href="{{ route('orders.index', array_merge(request()->except('tab'), ['tab' => 'active'])) }}" 
                class="border-primary-500 text-primary-600 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'active' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 <i class="fas fa-clock mr-2"></i>
                 Active Orders
                 <span class="ml-2 bg-primary-100 text-primary-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $activeCount }}</span>
             </a>
-            <a href="{{ route('orders.index', ['tab' => 'completed'] + request()->except('tab')) }}" 
+            <a href="{{ route('orders.index', array_merge(request()->except('tab'), ['tab' => 'completed'])) }}" 
                class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ $activeTab === 'completed' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                 <i class="fas fa-check-circle mr-2"></i>
                 Completed Orders
                 <span class="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $completedCount }}</span>
             </a>
         </nav>
+        <div class="mt-3 sm:mt-0 sm:ml-auto flex items-center space-x-2">
+            @php $view = request('view', 'table'); @endphp
+            <a href="{{ route('orders.index', array_merge(request()->except('page'), ['view' => 'table'])) }}"
+               class="px-3 py-2 rounded-md border text-sm font-medium {{ $view === 'table' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                <i class="fas fa-table mr-1"></i> Table
+            </a>
+            <a href="{{ route('orders.index', array_merge(request()->except('page'), ['view' => 'cards'])) }}"
+               class="px-3 py-2 rounded-md border text-sm font-medium {{ $view === 'cards' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                <i class="fas fa-th-large mr-1"></i> Cards
+            </a>
+        </div>
     </div>
 
     <!-- Search and Filters -->
@@ -101,8 +112,48 @@
         </form>
     </div>
 
-    <!-- Orders Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    @php $view = request('view', 'table'); @endphp
+    @if($view === 'table')
+        <!-- Orders Table (default) -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order #</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($orders as $order)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ $order->order_id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->job_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->client->name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->delivery_method }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $order->status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">{{ $order->status }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-2"><i class="fas fa-eye mr-1"></i>View</a>
+                                <a href="{{ route('orders.edit', $order) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"><i class="fas fa-edit mr-1"></i>Edit</a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">No orders found.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @else
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         @forelse($orders as $order)
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow" data-order-id="{{ $order->order_id }}">
                 <div class="p-6">
@@ -304,7 +355,8 @@
                 </div>
             </div>
         @endforelse
-    </div>
+        </div>
+    @endif
 
     <!-- Pagination -->
     @if($orders->hasPages())

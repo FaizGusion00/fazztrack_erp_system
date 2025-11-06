@@ -299,8 +299,10 @@
                     @endif
                 </div>
             </div>
+        </div>
 
-            <!-- Payment Information -->
+        <!-- Payment Information - Full Width -->
+        <div class="mt-6">
             <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <i class="fas fa-money-bill-wave mr-2 text-blue-500"></i>
@@ -384,9 +386,11 @@
                     @endif
                 </div>
             </div>
+        </div>
 
-            <!-- Delivery Status (for shipping orders) -->
-            @if($order->delivery_method === 'Shipping' && $order->status === 'Order Finished')
+        <!-- Delivery Status (shown for any third-party delivery or when tracking info exists) -->
+        @if(($order->delivery_method !== 'Self Collect') || $order->tracking_number || $order->delivery_status)
+            <div class="mt-6">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 p-6" data-delivery-section>
                     <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                         <i class="fas fa-truck mr-2 text-blue-500"></i>
@@ -436,8 +440,8 @@
                         @endif
                     </div>
                 </div>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 
     <!-- Footer -->

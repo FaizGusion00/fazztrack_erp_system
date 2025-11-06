@@ -81,7 +81,10 @@ class DesignTemplateController extends Controller
             'description' => 'nullable|string|max:1000',
             'category' => 'nullable|string|max:100',
             'tags' => 'nullable|string|max:500',
-            'template_files.*' => 'required|file|mimes:jpg,jpeg,png,pdf,psd,ai,zip|max:61440',
+            // Ensure at least one file and respect PHP upload_max_filesize (50M in docker/php/local.ini)
+            'template_files' => 'required|array',
+            // Allow up to 200 MB per file (value is in kilobytes)
+            'template_files.*' => 'file|mimes:jpg,jpeg,png,pdf,psd,ai,zip|max:204800',
             'is_public' => 'boolean'
         ]);
 
@@ -163,7 +166,9 @@ class DesignTemplateController extends Controller
             'description' => 'nullable|string|max:1000',
             'category' => 'nullable|string|max:100',
             'tags' => 'nullable|string|max:500',
-            'template_files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,psd,ai,zip|max:61440',
+            'template_files' => 'nullable|array',
+            // Allow up to 200 MB per file for updates as well
+            'template_files.*' => 'file|mimes:jpg,jpeg,png,pdf,psd,ai,zip|max:204800',
             'is_public' => 'boolean'
         ]);
 

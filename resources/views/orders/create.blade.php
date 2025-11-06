@@ -142,8 +142,9 @@
                                 <option value="">Select delivery method</option>
                                 <option value="Self Collect" {{ old('delivery_method') == 'Self Collect' ? 'selected' : '' }}>Self Collect</option>
                                 <option value="Shipping" {{ old('delivery_method') == 'Shipping' ? 'selected' : '' }}>Shipping</option>
-                                <option value="Grab" {{ old('delivery_method') == 'Grab' ? 'selected' : '' }}>Grab</option>
-                                <option value="Lalamove" {{ old('delivery_method') == 'Lalamove' ? 'selected' : '' }}>Lalamove</option>
+                    <option value="Grab" {{ old('delivery_method') == 'Grab' ? 'selected' : '' }}>Grab</option>
+                    <option value="Lalamove" {{ old('delivery_method') == 'Lalamove' ? 'selected' : '' }}>Lalamove</option>
+                    <option value="Bus" {{ old('delivery_method') == 'Bus' ? 'selected' : '' }}>Bus</option>
                             </select>
                             @error('delivery_method')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

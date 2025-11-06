@@ -60,7 +60,7 @@
         
         <div class="qr-code">
             @if($job->qr_code)
-                <img src="data:image/png;base64,{{ base64_encode(QrCode::format('png')->size(200)->generate($job->qr_code)) }}" alt="QR Code">
+                <img src="data:image/png;base64,{{ base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(200)->generate($job->qr_code)) }}" alt="QR Code">
             @else
                 <p>QR Code not generated</p>
             @endif

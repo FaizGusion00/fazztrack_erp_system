@@ -96,7 +96,7 @@
                                             <p class="mb-2 text-sm text-gray-500">
                                                 <span class="font-semibold">Click to upload</span> or drag and drop
                                             </p>
-                                            <p class="text-xs text-gray-500">JPG, PNG, PDF, PSD, AI, ZIP (MAX. 60MB each)</p>
+                                            <p class="text-xs text-gray-500">JPG, PNG, PDF, PSD, AI, ZIP (MAX. 200MB each)</p>
                                         </div>
                                         <input id="template_files" name="template_files[]" type="file" class="hidden" multiple accept=".jpg,.jpeg,.png,.pdf,.psd,.ai,.zip" required>
                                     </label>

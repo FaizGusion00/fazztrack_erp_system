@@ -30,8 +30,10 @@ class StorageService
         // Ensure directory doesn't have leading/trailing slashes
         $directory = trim($directory, '/');
         
-        // Store the file
-        $path = $file->storeAs($directory, $filename, config('filesystems.default'));
+        // Use 'public' disk for storing files that need to be publicly accessible
+        // This ensures files are stored in storage/app/public instead of storage/app/private
+        $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+        $path = $file->storeAs($directory, $filename, $disk);
         
         return $path;
     }
@@ -68,10 +70,13 @@ class StorageService
             return null;
         }
 
-        $disk = Storage::disk(config('filesystems.default'));
+        // Use 'public' disk for generating URLs for files stored in public storage
+        // This ensures URLs point to storage/app/public via the public/storage symlink
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        $disk = Storage::disk($diskName);
         
         // For S3 storage, use the disk's URL method
-        if (config('filesystems.default') === 's3') {
+        if ($diskName === 's3') {
             $url = $disk->url($path);
             
             // For path-style endpoints, ensure bucket name is included
@@ -88,8 +93,8 @@ class StorageService
             return $url;
         }
         
-        // For local storage, use the Storage::url method
-        return Storage::url($path);
+        // For local/public storage, use the public disk's URL method
+        return $disk->url($path);
     }
 
     /**
@@ -104,7 +109,9 @@ class StorageService
             return false;
         }
 
-        return Storage::disk(config('filesystems.default'))->delete($path);
+        // Use 'public' disk for deleting files from public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->delete($path);
     }
 
     /**
@@ -121,7 +128,9 @@ class StorageService
             return false;
         }
 
-        return Storage::disk(config('filesystems.default'))->delete($paths);
+        // Use 'public' disk for deleting files from public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->delete($paths);
     }
 
     /**
@@ -136,7 +145,9 @@ class StorageService
             return false;
         }
 
-        return Storage::disk(config('filesystems.default'))->exists($path);
+        // Use 'public' disk for checking files in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->exists($path);
     }
 
     /**
@@ -147,11 +158,18 @@ class StorageService
      */
     public static function size(?string $path): ?int
     {
-        if (!$path || !self::exists($path)) {
+        if (!$path) {
             return null;
         }
 
-        return Storage::disk(config('filesystems.default'))->size($path);
+        // Use 'public' disk for checking file size in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        
+        if (!Storage::disk($diskName)->exists($path)) {
+            return null;
+        }
+
+        return Storage::disk($diskName)->size($path);
     }
 
     /**
@@ -167,7 +185,9 @@ class StorageService
             return false;
         }
 
-        return Storage::disk(config('filesystems.default'))->copy($from, $to);
+        // Use 'public' disk for copying files in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->copy($from, $to);
     }
 
     /**
@@ -183,7 +203,9 @@ class StorageService
             return false;
         }
 
-        return Storage::disk(config('filesystems.default'))->move($from, $to);
+        // Use 'public' disk for moving files in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->move($from, $to);
     }
 
     /**
@@ -194,11 +216,18 @@ class StorageService
      */
     public static function mimeType(?string $path): ?string
     {
-        if (!$path || !self::exists($path)) {
+        if (!$path) {
             return null;
         }
 
-        return Storage::disk(config('filesystems.default'))->mimeType($path);
+        // Use 'public' disk for checking MIME type in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        
+        if (!Storage::disk($diskName)->exists($path)) {
+            return null;
+        }
+
+        return Storage::disk($diskName)->mimeType($path);
     }
 
     /**
@@ -209,7 +238,9 @@ class StorageService
      */
     public static function files(string $directory): array
     {
-        return Storage::disk(config('filesystems.default'))->files($directory);
+        // Use 'public' disk for listing files in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->files($directory);
     }
 
     /**
@@ -220,6 +251,8 @@ class StorageService
      */
     public static function directories(string $directory): array
     {
-        return Storage::disk(config('filesystems.default'))->directories($directory);
+        // Use 'public' disk for listing directories in public storage
+        $diskName = config('filesystems.default') === 's3' ? 's3' : 'public';
+        return Storage::disk($diskName)->directories($directory);
     }
 }
