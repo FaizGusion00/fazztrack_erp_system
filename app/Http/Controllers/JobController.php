@@ -51,6 +51,22 @@ class JobController extends Controller
             $query->where('phase', $request->phase);
         }
         
+        // Sorting functionality
+        $sort = $request->get('sort', 'latest_added');
+        switch ($sort) {
+            case 'latest_added':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'latest_updated':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'alphabetical':
+                $query->orderBy('phase', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+        
         $jobs = $query->paginate(15)->withQueryString();
         return view('jobs.index', compact('jobs'));
     }

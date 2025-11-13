@@ -130,6 +130,15 @@
                     </select>
                 </div>
                 
+                <div>
+                    <label for="sort" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                    <select id="sort" name="sort" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="latest_added" {{ request('sort', 'latest_added') == 'latest_added' ? 'selected' : '' }}>Latest Added</option>
+                        <option value="latest_updated" {{ request('sort') == 'latest_updated' ? 'selected' : '' }}>Latest Updated</option>
+                        <option value="alphabetical" {{ request('sort') == 'alphabetical' ? 'selected' : '' }}>Alphabetical</option>
+                    </select>
+                </div>
+                
                 <div class="flex items-end">
                     <button type="submit" class="w-full px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors">
                         <i class="fas fa-search mr-2"></i>Filter

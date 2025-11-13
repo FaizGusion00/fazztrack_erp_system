@@ -13,14 +13,32 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Check if user has access to products
         if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can access products.');
         }
 
-        $products = Product::orderBy('created_at', 'desc')->paginate(10);
+        $query = Product::query();
+        
+        // Sorting functionality
+        $sort = $request->get('sort', 'latest_added');
+        switch ($sort) {
+            case 'latest_added':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'latest_updated':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'alphabetical':
+                $query->orderBy('name', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+        
+        $products = $query->paginate(10)->withQueryString();
         
         return view('products.index', compact('products'));
     }

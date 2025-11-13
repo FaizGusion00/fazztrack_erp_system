@@ -70,12 +70,21 @@
                         <option value="IRON/PACKING" {{ request('phase') == 'IRON/PACKING' ? 'selected' : '' }}>IRON/PACKING</option>
                     </select>
                 </div>
+                <div>
+                    <label for="sort" class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Sort By</label>
+                    <select id="sort" name="sort" 
+                            class="block w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="latest_added" {{ request('sort', 'latest_added') == 'latest_added' ? 'selected' : '' }}>Latest Added</option>
+                        <option value="latest_updated" {{ request('sort') == 'latest_updated' ? 'selected' : '' }}>Latest Updated</option>
+                        <option value="alphabetical" {{ request('sort') == 'alphabetical' ? 'selected' : '' }}>Alphabetical</option>
+                    </select>
+                </div>
                 <div class="lg:col-span-4 flex items-end space-x-2">
                     <button type="submit" class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 text-xs sm:text-sm font-medium">
                         <i class="fas fa-search mr-1"></i>
                         Search
                     </button>
-                    @if(request('search') || request('status') || request('phase'))
+                    @if(request('search') || request('status') || request('phase') || request('sort'))
                         <a href="{{ route('jobs.index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-300 text-xs sm:text-sm font-medium">
                             <i class="fas fa-times mr-1"></i>
                             Clear

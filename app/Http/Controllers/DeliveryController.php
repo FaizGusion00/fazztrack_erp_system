@@ -48,7 +48,23 @@ class DeliveryController extends Controller
             $query->where('delivery_method', $request->delivery_method);
         }
         
-        $deliveries = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        // Sorting functionality
+        $sort = $request->get('sort', 'latest_added');
+        switch ($sort) {
+            case 'latest_added':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'latest_updated':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'alphabetical':
+                $query->orderBy('order_id', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+        
+        $deliveries = $query->paginate(15)->withQueryString();
         
         return view('deliveries.index', compact('deliveries'));
     }

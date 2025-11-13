@@ -47,7 +47,23 @@ class UserController extends Controller
             }
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        // Sorting functionality
+        $sort = $request->get('sort', 'latest_added');
+        switch ($sort) {
+            case 'latest_added':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'latest_updated':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'alphabetical':
+                $query->orderBy('name', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+
+        $users = $query->paginate(15)->withQueryString();
 
         // Get user statistics
         $stats = [

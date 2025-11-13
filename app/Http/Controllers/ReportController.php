@@ -54,8 +54,11 @@ class ReportController extends Controller
         
         // Get chart data
         $chartData = $this->getChartData($startDate, $endDate);
+        
+        // Sorting functionality (for any list data in reports)
+        $sort = $request->get('sort', 'latest_added');
 
-        return view('reports.index', compact('stats', 'chartData', 'startDate', 'endDate', 'period'));
+        return view('reports.index', compact('stats', 'chartData', 'startDate', 'endDate', 'period', 'sort'));
     }
 
     /**

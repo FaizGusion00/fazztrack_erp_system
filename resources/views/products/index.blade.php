@@ -71,6 +71,22 @@
             </div>
         </div>
 
+        <!-- Search and Sort -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <form method="GET" action="{{ route('products.index') }}" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="sort" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                    <select id="sort" name="sort" 
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            onchange="this.form.submit()">
+                        <option value="latest_added" {{ request('sort', 'latest_added') == 'latest_added' ? 'selected' : '' }}>Latest Added</option>
+                        <option value="latest_updated" {{ request('sort') == 'latest_updated' ? 'selected' : '' }}>Latest Updated</option>
+                        <option value="alphabetical" {{ request('sort') == 'alphabetical' ? 'selected' : '' }}>Alphabetical</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
         <!-- Products Table -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200">

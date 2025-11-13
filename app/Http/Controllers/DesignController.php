@@ -53,6 +53,22 @@ class DesignController extends Controller
             });
         }
         
+        // Sorting functionality
+        $sort = $request->get('sort', 'latest_added');
+        switch ($sort) {
+            case 'latest_added':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'latest_updated':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'alphabetical':
+                $query->orderBy('job_name', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+        
         $orders = $query->paginate(15)->withQueryString();
         return view('designs.index', compact('orders'));
     }
