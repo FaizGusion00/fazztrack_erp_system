@@ -974,8 +974,7 @@ function updateRejectStatusOptions(phase) {
             'Measurement Issue',
             'Size Mismatch',
             'Material Defect',
-            'Pattern Error',
-            'Other'
+            'Pattern Error'
         ],
         'QC': [
             'Quality Issue',
@@ -983,8 +982,7 @@ function updateRejectStatusOptions(phase) {
             'Color Issue',
             'Size Mismatch',
             'Stitching Issue',
-            'Finishing Defect',
-            'Other'
+            'Finishing Defect'
         ],
         'PRINT': [
             'Print Error',
@@ -1135,6 +1133,9 @@ function startJobImmediately(startQuantity) {
     }
     
     console.log('🔵 [JOB] Starting job:', currentJob.job_id);
+    console.log('🔵 [JOB] Job phase:', currentJob.phase);
+    console.log('🔵 [JOB] Job status:', currentJob.status);
+    
     const button = document.getElementById('start-job');
     if (!button) {
         console.error('❌ [JOB] Start job button not found');
@@ -1157,9 +1158,23 @@ function startJobImmediately(startQuantity) {
         return;
     }
     
+    // For CUT and QC phases, start_quantity is required
+    const phasesRequiringStartQuantity = ['CUT', 'QC'];
+    if (phasesRequiringStartQuantity.includes(currentJob.phase) && (!startQuantity || startQuantity <= 0)) {
+        console.error('❌ [JOB] Start quantity is required for', currentJob.phase, 'phase');
+        showError(`Start quantity is required for ${currentJob.phase} phase. Please enter a valid start quantity.`);
+        button.disabled = false;
+        button.innerHTML = originalText;
+        return;
+    }
+    
     const startUrl = `/jobs/${currentJob.job_id}/start`;
+    const requestBody = {
+        start_quantity: startQuantity || null
+    };
+    
     console.log('🔵 [JOB] Sending start job request to:', startUrl);
-    console.log('🔵 [JOB] Request body:', { start_quantity: startQuantity || null });
+    console.log('🔵 [JOB] Request body:', requestBody);
     
     fetch(startUrl, {
         method: 'POST',
@@ -1168,29 +1183,52 @@ function startJobImmediately(startQuantity) {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
         },
-        body: JSON.stringify({
-            start_quantity: startQuantity || null
-        })
+        body: JSON.stringify(requestBody)
     })
         .then(response => {
             console.log('🔵 [JOB] Start job response status:', response.status);
+            console.log('🔵 [JOB] Response ok:', response.ok);
+            
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                return response.json().then(errorData => {
+                    console.error('❌ [JOB] Error response:', errorData);
+                    throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+                }).catch(() => {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                });
             }
+            
             return response.json();
         })
         .then(data => {
             console.log('✅ [JOB] Start job response data:', data);
-            if (data.message) {
-                let message = 'Job started successfully';
+            
+            // Check for errors in response
+            if (data.error) {
+                console.error('❌ [JOB] Error in start job response:', data.error);
+                showError(data.error || data.message || 'Failed to start job');
+                button.disabled = false;
+                button.innerHTML = originalText;
+                return;
+            }
+            if (data.message || data.job) {
+                let message = data.message || 'Job started successfully';
                 if (data.order_status) {
                     message += ` (Order status: ${data.order_status})`;
                 }
                 showSuccess(message);
                 
-                // Immediately update the current job status
-                currentJob.status = 'In Progress';
-                currentJob.start_time = data.start_time;
+                // Update current job with fresh data from server
+                if (data.job) {
+                    currentJob = data.job;
+                    console.log('✅ [JOB] Updated current job from server:', currentJob);
+                } else {
+                    // Fallback: update manually
+                    currentJob.status = 'In Progress';
+                    if (data.start_time) {
+                        currentJob.start_time = data.start_time;
+                    }
+                }
                 
                 // Hide start job form if it was shown
                 const startJobForm = document.getElementById('start-job-form');
@@ -1864,12 +1902,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 const originalText = button.innerHTML;
                 
                 // Get form data
-                const endQuantity = document.getElementById('end-quantity').value;
-                const rejectQuantity = document.getElementById('reject-quantity').value;
-                const rejectStatus = document.getElementById('reject-status').value;
-                const remarks = document.getElementById('remarks').value;
+                const endQuantityInput = document.getElementById('end-quantity').value.trim();
+                const rejectQuantityInput = document.getElementById('reject-quantity').value.trim();
+                const rejectStatus = document.getElementById('reject-status').value.trim();
+                const remarks = document.getElementById('remarks').value.trim();
                 
-                console.log('🔵 [JOB] End job form data:', { endQuantity, rejectQuantity, rejectStatus, remarks });
+                // Convert to integers (null if empty)
+                const endQuantity = endQuantityInput ? parseInt(endQuantityInput, 10) : null;
+                const rejectQuantity = rejectQuantityInput ? parseInt(rejectQuantityInput, 10) : null;
+                
+                console.log('🔵 [JOB] End job form data (raw):', { 
+                    endQuantityInput, 
+                    rejectQuantityInput, 
+                    rejectStatus, 
+                    remarks 
+                });
+                console.log('🔵 [JOB] End job form data (processed):', { 
+                    endQuantity, 
+                    rejectQuantity, 
+                    rejectStatus, 
+                    remarks 
+                });
                 
                 // Validate form data
                 if (!endQuantity && !rejectQuantity) {
@@ -1877,7 +1930,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                if (rejectQuantity > 0 && !rejectStatus) {
+                // Validate numeric values
+                if (endQuantityInput && (isNaN(endQuantity) || endQuantity < 0)) {
+                    showError('End quantity must be a valid number (0 or greater)');
+                    return;
+                }
+                
+                if (rejectQuantityInput && (isNaN(rejectQuantity) || rejectQuantity < 0)) {
+                    showError('Reject quantity must be a valid number (0 or greater)');
+                    return;
+                }
+                
+                if (rejectQuantity && rejectQuantity > 0 && !rejectStatus) {
                     showError('Please select a reject status when there are rejected items');
                     return;
                 }
@@ -1887,100 +1951,244 @@ document.addEventListener('DOMContentLoaded', function() {
                 button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
                 
                 // Get CSRF token from meta tag
-                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    console.error('❌ [JOB] CSRF token not found');
+                    showError('Security token not found. Please refresh the page.');
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                    return;
+                }
                 
-                console.log('🔵 [JOB] Sending end job request...');
-                fetch(`/jobs/${currentJob.job_id}/end`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        end_quantity: endQuantity || null,
-                        reject_quantity: rejectQuantity || null,
-                        reject_status: rejectStatus || null,
-                        remarks: remarks || null
-                    })
-                })
-                .then(response => {
-                    console.log('🔵 [JOB] End job response status:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('✅ [JOB] End job response data:', data);
-                    if (data.message) {
-                        // Show completion message with time tracking
-                        let message = 'Job completed successfully';
-                        if (data.duration_formatted) {
-                            message += ` (Time taken: ${data.duration_formatted})`;
-                        }
-                        if (data.order_status) {
-                            message += ` (Order status: ${data.order_status})`;
-                        }
-                        showSuccess(message);
-                        
-                        // Immediately update the current job status
-                        currentJob.status = 'Completed';
-                        currentJob.end_time = data.end_time;
-                        currentJob.duration = data.duration;
-                        
-                        // Update button states immediately
-                        updateButtonStates(currentJob);
-                        
-                        // Update time tracking
-                        const timeTracking = document.getElementById('time-tracking');
-                        const timeInfo = document.getElementById('time-info');
-                        timeTracking.classList.remove('hidden');
-                        
-                        const startTime = new Date(currentJob.start_time);
-                        const endTime = new Date(data.end_time);
-                        const duration = Math.floor((endTime - startTime) / (1000 * 60)); // minutes
-                        
-                        timeInfo.innerHTML = `
-                            <div class="space-y-1">
-                                <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
-                                <div>Completed: <strong>${endTime.toLocaleString()}</strong></div>
-                                <div>Total Time: <strong>${duration} minutes</strong></div>
-                            </div>
-                        `;
-                        
-                        // Update status badge in modal
-                        const statusBadge = document.querySelector('#job-details .inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
-                        if (statusBadge) {
-                            statusBadge.textContent = 'Completed';
-                            statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
-                        }
-                        
-                        addRecentScan(currentJob.job_id, 'Completed');
-                        
-                        // Refresh the job data to show updated status (but keep modal open)
-                        setTimeout(() => {
-                            fetch(`/jobs/${currentJob.job_id}/details`)
-                                .then(response => response.json())
-                                .then(jobData => {
-                                    if (jobData.success) {
-                                        currentJob = jobData.job;
-                                        updateButtonStates(currentJob);
+                // Prepare request body
+                const requestBody = {
+                    end_quantity: endQuantity,
+                    reject_quantity: rejectQuantity,
+                    reject_status: rejectStatus || null,
+                    remarks: remarks || null
+                };
+                
+                // Verify job status before sending request
+                console.log('🔵 [JOB] Current job status:', currentJob.status);
+                console.log('🔵 [JOB] Current job ID:', currentJob.job_id);
+                console.log('🔵 [JOB] Current job phase:', currentJob.phase);
+                
+                // Refresh job status from server to ensure we have latest data
+                console.log('🔵 [JOB] Refreshing job status from server...');
+                fetch(`/jobs/${currentJob.job_id}/details`)
+                    .then(response => response.json())
+                    .then(jobData => {
+                        if (jobData.success && jobData.job) {
+                            // Update current job with latest data
+                            currentJob = jobData.job;
+                            console.log('🔵 [JOB] Refreshed job status:', currentJob.status);
+                            
+                            // Check if job is in progress
+                            if (currentJob.status !== 'In Progress') {
+                                console.error('❌ [JOB] Job is not in progress. Current status:', currentJob.status);
+                                
+                                let errorMsg = `Job cannot be ended. Current status: "${currentJob.status}". `;
+                                
+                                if (currentJob.status === 'Pending') {
+                                    errorMsg += 'You must start the job first. ';
+                                    // Check if it's CUT or QC phase
+                                    if (currentJob.phase === 'CUT' || currentJob.phase === 'QC') {
+                                        errorMsg += `Click "Start Job" and enter the start quantity for ${currentJob.phase} phase.`;
+                                    } else {
+                                        errorMsg += 'Click "Start Job" to begin.';
                                     }
-                                });
-                        }, 1000);
-                    } else {
-                        // Show detailed error message
-                        if (data.error && data.job_phase) {
-                            showError(`${data.error} Job phase: ${data.job_phase}, Your phase: ${data.user_phase}`);
-                        } else if (data.error && data.assigned_user_id) {
-                            showError(`${data.error} This job is assigned to user ID: ${data.assigned_user_id}`);
+                                } else if (currentJob.status === 'Completed') {
+                                    errorMsg += 'This job is already completed.';
+                                } else {
+                                    errorMsg += 'Please start the job first.';
+                                }
+                                
+                                showError(errorMsg);
+                                button.disabled = false;
+                                button.innerHTML = originalText;
+                                
+                                // Update button states to reflect actual status
+                                updateButtonStates(currentJob);
+                                return;
+                            }
+                            
+                            // Job is in progress, proceed with ending
+                            console.log('🔵 [JOB] Job is in progress, proceeding to end job...');
+                            console.log('🔵 [JOB] Sending end job request to:', `/jobs/${currentJob.job_id}/end`);
+                            console.log('🔵 [JOB] Request body:', requestBody);
+                            
+                            return fetch(`/jobs/${currentJob.job_id}/end`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify(requestBody)
+                            });
                         } else {
-                            showError(data.error || data.message || 'Error ending job');
+                            throw new Error('Failed to refresh job status');
                         }
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ [JOB] End job error:', error);
-                    showError('Error ending job: ' + error.message);
-                })
+                    })
+                    .then(response => {
+                        if (!response) {
+                            // Response was null (job not in progress, already handled)
+                            return null;
+                        }
+                        
+                        console.log('🔵 [JOB] End job response status:', response.status);
+                        console.log('🔵 [JOB] Response ok:', response.ok);
+                        
+                        // Check if response is ok before parsing JSON
+                        if (!response.ok) {
+                            // Try to get error message from response
+                            return response.json().then(errorData => {
+                                console.error('❌ [JOB] Error response:', errorData);
+                                throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+                            }).catch(() => {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            });
+                        }
+                        
+                        return response.json();
+                    })
+                    .then(data => {
+                        // If data is null, job status check already handled it
+                        if (!data) {
+                            return;
+                        }
+                        
+                        console.log('✅ [JOB] End job response data:', data);
+                        
+                        // Check if there's an error in the response
+                        if (data.error) {
+                            console.error('❌ [JOB] Error in response:', data.error);
+                            console.error('❌ [JOB] Error details:', data);
+                            
+                            // Show more detailed error message
+                            let errorMessage = data.error;
+                            if (data.message) {
+                                errorMessage = data.message;
+                            } else if (data.current_status) {
+                                errorMessage = `${data.error}. Current status: "${data.current_status}". ${data.message || 'Please start the job first.'}`;
+                            }
+                            
+                            showError(errorMessage);
+                            button.disabled = false;
+                            button.innerHTML = originalText;
+                            
+                            // If job status is wrong, refresh the job data
+                            if (data.current_status && data.current_status !== 'In Progress') {
+                                console.log('🔵 [JOB] Refreshing job data due to status mismatch...');
+                                setTimeout(() => {
+                                    fetch(`/jobs/${currentJob.job_id}/details`)
+                                        .then(response => response.json())
+                                        .then(jobData => {
+                                            if (jobData.success) {
+                                                currentJob = jobData.job;
+                                                updateButtonStates(currentJob);
+                                                showJobModal(currentJob);
+                                            }
+                                        });
+                                }, 1000);
+                            }
+                            return;
+                        }
+                        
+                        if (data.message) {
+                            // Show completion message with time tracking
+                            let message = 'Job completed successfully';
+                            if (data.duration_formatted) {
+                                message += ` (Time taken: ${data.duration_formatted})`;
+                            }
+                            if (data.order_status) {
+                                message += ` (Order status: ${data.order_status})`;
+                            }
+                            showSuccess(message);
+                            
+                            // Immediately update the current job status
+                            currentJob.status = 'Completed';
+                            currentJob.end_time = data.end_time;
+                            currentJob.duration = data.duration;
+                            
+                            // Update button states immediately
+                            updateButtonStates(currentJob);
+                            
+                            // Update time tracking
+                            const timeTracking = document.getElementById('time-tracking');
+                            const timeInfo = document.getElementById('time-info');
+                            timeTracking.classList.remove('hidden');
+                            
+                            const startTime = new Date(currentJob.start_time);
+                            const endTime = new Date(data.end_time);
+                            const duration = Math.floor((endTime - startTime) / (1000 * 60)); // minutes
+                            
+                            timeInfo.innerHTML = `
+                                <div class="space-y-1">
+                                    <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
+                                    <div>Completed: <strong>${endTime.toLocaleString()}</strong></div>
+                                    <div>Total Time: <strong>${duration} minutes</strong></div>
+                                </div>
+                            `;
+                            
+                            // Update status badge in modal
+                            const statusBadge = document.querySelector('#job-details .inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
+                            if (statusBadge) {
+                                statusBadge.textContent = 'Completed';
+                                statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                            }
+                            
+                            addRecentScan(currentJob.job_id, 'Completed');
+                            
+                            // Refresh the job data to show updated status (but keep modal open)
+                            setTimeout(() => {
+                                fetch(`/jobs/${currentJob.job_id}/details`)
+                                    .then(response => response.json())
+                                    .then(jobData => {
+                                        if (jobData.success) {
+                                            currentJob = jobData.job;
+                                            updateButtonStates(currentJob);
+                                        }
+                                    });
+                            }, 1000);
+                        } else {
+                            // Show detailed error message
+                            if (data.error && data.job_phase) {
+                                showError(`${data.error} Job phase: ${data.job_phase}, Your phase: ${data.user_phase}`);
+                            } else if (data.error && data.assigned_user_id) {
+                                showError(`${data.error} This job is assigned to user ID: ${data.assigned_user_id}`);
+                            } else {
+                                showError(data.error || data.message || 'Error ending job');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ [JOB] End job error:', error);
+                        console.error('❌ [JOB] Error name:', error.name);
+                        console.error('❌ [JOB] Error message:', error.message);
+                        console.error('❌ [JOB] Error stack:', error.stack);
+                        
+                        let errorMessage = 'Error ending job: ' + error.message;
+                        
+                        // Provide more specific error messages
+                        if (error.message.includes('403')) {
+                            errorMessage = 'Access denied. This job is not assigned to you or does not match your phase.';
+                        } else if (error.message.includes('400')) {
+                            if (error.message.includes('Job cannot be ended')) {
+                                errorMessage = 'Job cannot be ended. The job must be "In Progress" to be ended. Please start the job first.';
+                            } else {
+                                errorMessage = 'Invalid request. Please check your input values.';
+                            }
+                        } else if (error.message.includes('404')) {
+                            errorMessage = 'Job not found. Please refresh and try again.';
+                        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                            errorMessage = 'Network error. Please check your connection and try again.';
+                        }
+                        
+                        showError(errorMessage);
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                    })
                 .finally(() => {
                     // Only restore button state if job wasn't successfully completed
                     if (!currentJob || currentJob.status !== 'Completed') {

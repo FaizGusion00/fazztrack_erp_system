@@ -196,9 +196,17 @@ class JobController extends Controller
             ], 400);
         }
 
-        $request->validate([
-            'start_quantity' => 'nullable|integer|min:1',
-        ]);
+        // For CUT and QC phases, start_quantity is required
+        $phasesRequiringStartQuantity = ['CUT', 'QC'];
+        $validationRules = [];
+        
+        if (in_array($job->phase, $phasesRequiringStartQuantity)) {
+            $validationRules['start_quantity'] = 'required|integer|min:1';
+        } else {
+            $validationRules['start_quantity'] = 'nullable|integer|min:1';
+        }
+        
+        $request->validate($validationRules);
 
         // Start the job with timestamp
         $job->startJob($request->start_quantity);
@@ -263,23 +271,52 @@ class JobController extends Controller
             }
         }
 
+        // Refresh job from database to get latest status
+        $job->refresh();
+        
         if ($job->status !== 'In Progress') {
-            return response()->json(['error' => 'Job cannot be ended'], 400);
+            return response()->json([
+                'error' => 'Job cannot be ended',
+                'current_status' => $job->status,
+                'required_status' => 'In Progress',
+                'message' => "Job status is '{$job->status}'. Job must be 'In Progress' to be ended. Please start the job first."
+            ], 400);
         }
 
-        $request->validate([
+        // Validate and convert input data
+        $validated = $request->validate([
             'end_quantity' => 'nullable|integer|min:0',
             'reject_quantity' => 'nullable|integer|min:0',
             'reject_status' => 'nullable|string|max:255',
             'remarks' => 'nullable|string',
         ]);
 
+        // Convert empty strings to null for nullable fields
+        $endQuantity = $request->filled('end_quantity') ? (int)$request->end_quantity : null;
+        $rejectQuantity = $request->filled('reject_quantity') ? (int)$request->reject_quantity : null;
+        $rejectStatus = $request->filled('reject_status') && $request->reject_status !== '' ? $request->reject_status : null;
+        $remarks = $request->filled('remarks') && $request->remarks !== '' ? $request->remarks : null;
+
+        // Additional validation: if reject_quantity is provided and > 0, reject_status is required
+        if ($rejectQuantity !== null && $rejectQuantity > 0 && empty($rejectStatus)) {
+            return response()->json([
+                'error' => 'Reject status is required when reject quantity is greater than 0.'
+            ], 422);
+        }
+
+        // Additional validation: at least one quantity must be provided
+        if ($endQuantity === null && $rejectQuantity === null) {
+            return response()->json([
+                'error' => 'Either end quantity or reject quantity must be provided.'
+            ], 422);
+        }
+
         // End the job with timestamp and calculate duration
         $job->endJob(
-            $request->end_quantity,
-            $request->reject_quantity,
-            $request->reject_status,
-            $request->remarks
+            $endQuantity,
+            $rejectQuantity,
+            $rejectStatus,
+            $remarks
         );
 
         // Get the duration from the model (already calculated)
