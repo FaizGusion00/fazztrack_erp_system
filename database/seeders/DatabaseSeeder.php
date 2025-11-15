@@ -112,7 +112,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Basic Cotton T-Shirt',
                 'description' => 'High-quality 100% cotton t-shirt perfect for printing',
                 'size' => 'M',
-                'price' => 15.00,
                 'stock' => 100,
                 'category' => 'T-Shirt',
                 'color' => 'White',
@@ -123,7 +122,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Premium Polo Shirt',
                 'description' => 'Professional polo shirt with collar',
                 'size' => 'L',
-                'price' => 25.00,
                 'stock' => 50,
                 'category' => 'Polo',
                 'color' => 'Navy Blue',
@@ -134,7 +132,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Hoodie',
                 'description' => 'Comfortable hoodie for casual wear',
                 'size' => 'XL',
-                'price' => 35.00,
                 'stock' => 30,
                 'category' => 'Hoodie',
                 'color' => 'Black',
@@ -145,7 +142,6 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Tank Top',
                 'description' => 'Sleeveless tank top for summer',
                 'size' => 'S',
-                'price' => 12.00,
                 'stock' => 75,
                 'category' => 'Tank Top',
                 'color' => 'Gray',
@@ -198,65 +194,94 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Create sample orders
-        $orders = [
+        // Create sample orders with products
+        $orderData = [
             [
-                'client_id' => 1,
-                'product_id' => 1,
-                'job_name' => 'Company T-Shirts',
-                'delivery_method' => 'Self Collect',
-                'status' => 'Order Created',
-                'design_deposit' => 500,
-                'production_deposit' => 1000,
-                'balance_payment' => 1000,
-                'due_date_design' => now()->addDays(3),
-                'due_date_production' => now()->addDays(7),
-                'remarks' => '50 pieces of company branded t-shirts',
+                'order' => [
+                    'client_id' => 1,
+                    'job_name' => 'Company T-Shirts',
+                    'delivery_method' => 'Self Collect',
+                    'status' => 'Order Created',
+                    'design_deposit' => 500,
+                    'production_deposit' => 1000,
+                    'balance_payment' => 1000,
+                    'total_amount' => 2500,
+                    'due_date_design' => now()->addDays(3),
+                    'due_date_production' => now()->addDays(7),
+                    'remarks' => '50 pieces of company branded t-shirts',
+                ],
+                'products' => [
+                    ['product_id' => 1, 'quantity' => 50]
+                ]
             ],
             [
-                'client_id' => 2,
-                'product_id' => 2,
-                'job_name' => 'Event T-Shirts',
-                'delivery_method' => 'Shipping',
-                'status' => 'Order Approved',
-                'design_deposit' => 300,
-                'production_deposit' => 800,
-                'balance_payment' => 500,
-                'due_date_design' => now()->addDays(2),
-                'due_date_production' => now()->addDays(5),
-                'remarks' => '100 pieces for corporate event',
+                'order' => [
+                    'client_id' => 2,
+                    'job_name' => 'Event T-Shirts',
+                    'delivery_method' => 'Shipping',
+                    'status' => 'Order Approved',
+                    'design_deposit' => 300,
+                    'production_deposit' => 800,
+                    'balance_payment' => 500,
+                    'total_amount' => 1600,
+                    'due_date_design' => now()->addDays(2),
+                    'due_date_production' => now()->addDays(5),
+                    'remarks' => '100 pieces for corporate event',
+                ],
+                'products' => [
+                    ['product_id' => 2, 'quantity' => 100]
+                ]
             ],
             [
-                'client_id' => 3,
-                'product_id' => 1,
-                'job_name' => 'Personal T-Shirt',
-                'delivery_method' => 'Self Collect',
-                'status' => 'Design Review',
-                'design_deposit' => 100,
-                'production_deposit' => 200,
-                'balance_payment' => 100,
-                'due_date_design' => now()->addDays(1),
-                'due_date_production' => now()->addDays(3),
-                'remarks' => 'Custom design for personal use',
+                'order' => [
+                    'client_id' => 3,
+                    'job_name' => 'Personal T-Shirt',
+                    'delivery_method' => 'Self Collect',
+                    'status' => 'Design Review',
+                    'design_deposit' => 100,
+                    'production_deposit' => 200,
+                    'balance_payment' => 100,
+                    'total_amount' => 400,
+                    'due_date_design' => now()->addDays(1),
+                    'due_date_production' => now()->addDays(3),
+                    'remarks' => 'Custom design for personal use',
+                ],
+                'products' => [
+                    ['product_id' => 1, 'quantity' => 1]
+                ]
             ],
             [
-                'client_id' => 1,
-                'product_id' => 3,
-                'job_name' => 'test',
-                'delivery_method' => 'Self Collect',
-                'status' => 'Job Start',
-                'design_deposit' => 100,
-                'production_deposit' => 200,
-                'balance_payment' => 100,
-                'due_date_design' => now()->addDays(1),
-                'due_date_production' => now()->addDays(3),
-                'remarks' => 'Test order',
+                'order' => [
+                    'client_id' => 1,
+                    'job_name' => 'Test Order',
+                    'delivery_method' => 'Self Collect',
+                    'status' => 'Job Start',
+                    'design_deposit' => 100,
+                    'production_deposit' => 200,
+                    'balance_payment' => 100,
+                    'total_amount' => 400,
+                    'due_date_design' => now()->addDays(1),
+                    'due_date_production' => now()->addDays(3),
+                    'remarks' => 'Test order',
+                ],
+                'products' => [
+                    ['product_id' => 3, 'quantity' => 10]
+                ]
             ],
         ];
 
-        foreach ($orders as $orderData) {
-            $order = Order::create($orderData);
-            
+        foreach ($orderData as $data) {
+            $order = Order::create($data['order']);
+
+            // Create order products
+            foreach ($data['products'] as $productData) {
+                \App\Models\OrderProduct::create([
+                    'order_id' => $order->order_id,
+                    'product_id' => $productData['product_id'],
+                    'quantity' => $productData['quantity'],
+                ]);
+            }
+
             // Create jobs for each order
             $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
             foreach ($phases as $phase) {

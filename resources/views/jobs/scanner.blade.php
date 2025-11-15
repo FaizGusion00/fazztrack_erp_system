@@ -41,8 +41,15 @@
 
                 <!-- Enhanced Video Container -->
                 <div id="camera-container" class="relative mb-6">
-                    <video id="qr-video" class="w-full h-48 sm:h-64 lg:h-80 bg-gray-100 rounded-xl sm:rounded-2xl" autoplay></video>
-                    <div id="scanner-overlay" class="absolute inset-0 flex items-center justify-center hidden bg-black/20 rounded-xl sm:rounded-2xl">
+                    <video id="qr-video" class="w-full h-48 sm:h-64 lg:h-80 bg-gray-100 rounded-xl sm:rounded-2xl hidden" autoplay playsinline></video>
+                    <div id="camera-placeholder" class="w-full h-48 sm:h-64 lg:h-80 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl sm:rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300">
+                        <div class="text-center p-6">
+                            <i class="fas fa-camera text-4xl text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-2">Camera Ready</h3>
+                            <p class="text-sm text-gray-500 mb-4">Click "Start Scanner" to begin scanning QR codes</p>
+                        </div>
+                    </div>
+                    <div id="scanner-overlay" class="absolute inset-0 flex items-center justify-center hidden bg-black/20 rounded-xl sm:rounded-2xl z-10">
                         <div class="bg-white p-6 rounded-xl shadow-lg">
                             <div class="flex items-center space-x-3">
                                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -240,121 +247,489 @@ let videoStream = null;
 
 // Initialize scanner with proper permission handling
 function initScanner() {
+    console.log('🔵 [SCANNER] initScanner() called');
     const video = document.getElementById('qr-video');
     const statusIndicator = document.getElementById('scanner-status');
     const statusText = document.getElementById('status-text');
+    const cameraContainer = document.getElementById('camera-container');
+    
+    console.log('🔵 [SCANNER] Video element:', video ? 'Found' : 'Not found');
+    console.log('🔵 [SCANNER] Status indicator:', statusIndicator ? 'Found' : 'Not found');
+    console.log('🔵 [SCANNER] Camera container:', cameraContainer ? 'Found' : 'Not found');
+    
+    // Stop any existing stream
+    if (videoStream) {
+        console.log('🔵 [SCANNER] Stopping existing video stream');
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(function(stream) {
-            videoStream = stream;
-            video.srcObject = stream;
-            video.play();
-
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            function scanQR() {
-                if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.height = video.videoHeight;
-                    canvas.width = video.videoWidth;
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    
-                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height);
-                    
-                    if (code) {
-                        handleQRCode(code.data);
-                    }
-                }
-                requestAnimationFrame(scanQR);
+    // Reset video element
+    if (video) {
+        video.srcObject = null;
+    }
+    
+    // Check if getUserMedia is available
+    console.log('🔵 [SCANNER] Checking getUserMedia support...');
+    console.log('🔵 [SCANNER] navigator.mediaDevices:', navigator.mediaDevices ? 'Available' : 'Not available');
+    console.log('🔵 [SCANNER] getUserMedia:', navigator.mediaDevices?.getUserMedia ? 'Available' : 'Not available');
+    
+    // Check protocol (HTTPS required for camera in most browsers, except localhost)
+    const isHTTPS = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    console.log('🔵 [SCANNER] Protocol:', window.location.protocol);
+    console.log('🔵 [SCANNER] Hostname:', window.location.hostname);
+    console.log('🔵 [SCANNER] HTTPS/Localhost:', isHTTPS);
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('❌ [SCANNER] Camera API not supported');
+        if (statusIndicator) {
+            statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full';
+        }
+        if (statusText) {
+            statusText.textContent = 'Camera Not Supported';
+        }
+        if (video) {
+            video.classList.add('hidden');
+        }
+        const placeholder = document.getElementById('camera-placeholder');
+        if (placeholder) {
+            placeholder.classList.remove('hidden');
+            let protocolWarning = '';
+            if (!isHTTPS) {
+                protocolWarning = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">Note:</p>
+                        <p class="text-xs text-yellow-700">Camera access requires HTTPS in most browsers. Please use HTTPS or access via localhost.</p>
+                    </div>
+                `;
             }
+            placeholder.innerHTML = `
+                <div class="text-center p-6">
+                    <i class="fas fa-camera-slash text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Camera Not Supported</h3>
+                    <p class="text-sm text-gray-600 mb-2">Your browser does not support camera access.</p>
+                    ${protocolWarning}
+                    <button onclick="document.getElementById('manual-qr').focus()" 
+                            class="mt-4 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                        <i class="fas fa-keyboard mr-2"></i>Use Manual Input
+                    </button>
+                </div>
+            `;
+        }
+        return;
+    }
 
-            scanQR();
-            statusIndicator.className = 'w-3 h-3 bg-green-500 rounded-full';
-            statusText.textContent = 'Scanner Active';
+    // Check camera permission status first (if supported)
+    if (navigator.permissions && navigator.permissions.query) {
+        console.log('🔵 [SCANNER] Checking camera permission status...');
+        navigator.permissions.query({ name: 'camera' })
+            .then(function(result) {
+                console.log('🔵 [SCANNER] Camera permission status:', result.state);
+                if (result.state === 'denied') {
+                    console.error('❌ [SCANNER] Camera permission is denied');
+                    showPermissionDeniedError();
+                    return;
+                }
+                // If permission is 'prompt' or 'granted', proceed with request
+                requestCameraAccess();
+            })
+            .catch(function(err) {
+                console.warn('⚠️ [SCANNER] Permission query not supported, proceeding with request:', err);
+                // If permission query is not supported, proceed with request
+                requestCameraAccess();
+            });
+    } else {
+        console.log('🔵 [SCANNER] Permission query API not available, proceeding with request');
+        requestCameraAccess();
+    }
+    
+    // Function to request camera access
+    function requestCameraAccess() {
+        // Request camera access with better error handling
+        const constraints = {
+            video: {
+                facingMode: 'environment', // Use back camera on mobile
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+
+        console.log('🔵 [SCANNER] Requesting camera access with constraints:', constraints);
+        navigator.mediaDevices.getUserMedia(constraints)
+        .then(function(stream) {
+            console.log('✅ [SCANNER] Camera access granted, stream received');
+            videoStream = stream;
+            console.log('🔵 [SCANNER] Video stream tracks:', stream.getTracks().length);
+            
+            if (video) {
+                video.srcObject = stream;
+                
+                // Hide placeholder and show video
+                const placeholder = document.getElementById('camera-placeholder');
+                if (placeholder) {
+                    placeholder.classList.add('hidden');
+                }
+                video.classList.remove('hidden');
+                
+                // Wait for video to be ready
+                video.onloadedmetadata = function() {
+                    console.log('✅ [SCANNER] Video metadata loaded');
+                    console.log('🔵 [SCANNER] Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+                    video.play().then(() => {
+                        console.log('✅ [SCANNER] Video playback started');
+                        if (statusIndicator) {
+                            statusIndicator.className = 'w-3 h-3 bg-green-500 rounded-full animate-pulse';
+                        }
+                        if (statusText) {
+                            statusText.textContent = 'Scanner Active';
+                        }
+                        
+                        // Start scanning
+                        console.log('🔵 [SCANNER] Starting QR code scanning...');
+                        startScanning();
+                    }).catch(err => {
+                        console.error('❌ [SCANNER] Error playing video:', err);
+                        if (statusIndicator) {
+                            statusIndicator.className = 'w-3 h-3 bg-yellow-500 rounded-full';
+                        }
+                        if (statusText) {
+                            statusText.textContent = 'Camera Ready (Click to Start)';
+                        }
+                    });
+                };
+            } else {
+                console.error('❌ [SCANNER] Video element not found');
+            }
         })
         .catch(function(err) {
-            console.error('Error accessing camera:', err);
-            statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full';
-            statusText.textContent = 'Camera Error';
+            console.error('❌ [SCANNER] Error accessing camera:', err);
+            console.error('❌ [SCANNER] Error name:', err.name);
+            console.error('❌ [SCANNER] Error message:', err.message);
             
-            // Show error message but keep it simple
-            const cameraContainer = document.getElementById('camera-container');
-            cameraContainer.innerHTML = `
-                <div class="flex items-center justify-center h-full bg-red-50 rounded-xl">
+            if (statusIndicator) {
+                statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full';
+            }
+            if (statusText) {
+                statusText.textContent = 'Camera Error';
+            }
+            
+            // Check if we're on HTTP (camera requires HTTPS in most browsers)
+            const isHTTPS = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            
+            let errorMessage = 'Camera access failed. Please use manual input below.';
+            let instructions = '';
+            
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Camera permission denied.';
+                instructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Look for the camera icon in your browser's address bar</li>
+                            <li>Click it and select "Allow" for camera access</li>
+                            <li>Or go to your browser settings → Privacy → Site Settings → Camera</li>
+                            <li>Make sure this site is allowed to use the camera</li>
+                        </ol>
+                    </div>
+                `;
+                console.error('❌ [SCANNER] Permission denied by user');
+            } else if (err.name === 'NotFoundError') {
+                errorMessage = 'No camera found.';
+                instructions = '<p class="text-sm text-gray-600 mt-2">Please connect a camera device or use manual input below.</p>';
+                console.error('❌ [SCANNER] No camera device found');
+            } else if (err.name === 'NotReadableError') {
+                errorMessage = 'Camera is being used by another application.';
+                instructions = '<p class="text-sm text-gray-600 mt-2">Please close other applications using the camera and try again.</p>';
+                console.error('❌ [SCANNER] Camera is busy');
+            } else if (err.message && (err.message.includes('Permissions policy') || err.message.includes('permissions policy'))) {
+                errorMessage = 'Camera permissions policy violation.';
+                instructions = `
+                    <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-red-800 mb-2">⚠️ Permissions Policy Error:</p>
+                        <p class="text-xs text-red-700 mb-2">The browser is blocking camera access due to security policies.</p>
+                        <p class="text-sm font-semibold text-red-800 mt-3 mb-2">Solutions:</p>
+                        <ul class="text-xs text-red-700 mt-2 space-y-1 list-disc list-inside">
+                            <li><strong>Use HTTPS:</strong> Camera access requires HTTPS (except localhost)</li>
+                            <li><strong>Check URL:</strong> Make sure you're accessing via <code class="bg-red-100 px-1 rounded">https://</code> or <code class="bg-red-100 px-1 rounded">http://localhost</code></li>
+                            <li><strong>Browser Settings:</strong> Check if your browser has strict security policies enabled</li>
+                            <li><strong>Try Different Browser:</strong> Some browsers have different security policies</li>
+                        </ul>
+                        <p class="text-xs text-red-600 mt-3 italic">Current URL: ${window.location.href}</p>
+                    </div>
+                `;
+                console.error('❌ [SCANNER] Permissions policy violation');
+                console.error('❌ [SCANNER] Current URL:', window.location.href);
+                console.error('❌ [SCANNER] Protocol:', window.location.protocol);
+            } else {
+                console.error('❌ [SCANNER] Unknown camera error:', err);
+                if (!isHTTPS && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                    instructions = `
+                        <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-blue-800 mb-2">Note:</p>
+                            <p class="text-xs text-blue-700">Most browsers require HTTPS for camera access. If you're on HTTP, please use HTTPS or access via localhost.</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Hide video and show error message
+            if (video) {
+                video.classList.add('hidden');
+            }
+            const placeholder = document.getElementById('camera-placeholder');
+            if (placeholder) {
+                placeholder.classList.remove('hidden');
+                placeholder.innerHTML = `
                     <div class="text-center p-6">
                         <i class="fas fa-camera-slash text-4xl text-red-500 mb-4"></i>
                         <h3 class="text-lg font-semibold text-gray-800 mb-2">Camera Access Failed</h3>
-                        <p class="text-sm text-gray-600 mb-4">Please use manual input below</p>
+                        <p class="text-sm text-gray-600 mb-4">${errorMessage}</p>
+                        ${instructions}
+                        <div class="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
+                            <button onclick="initScanner()" 
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-redo mr-2"></i>Try Again
+                            </button>
+                            <button onclick="document.getElementById('manual-qr').focus()" 
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-keyboard mr-2"></i>Use Manual Input
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    // Function to show permission denied error with detailed instructions
+    function showPermissionDeniedError() {
+        if (statusIndicator) {
+            statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full';
+        }
+        if (statusText) {
+            statusText.textContent = 'Camera Permission Denied';
+        }
+        
+        if (video) {
+            video.classList.add('hidden');
+        }
+        const placeholder = document.getElementById('camera-placeholder');
+        if (placeholder) {
+            placeholder.classList.remove('hidden');
+            placeholder.innerHTML = `
+                <div class="text-center p-6">
+                    <i class="fas fa-camera-slash text-4xl text-red-500 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Camera Permission Denied</h3>
+                    <p class="text-sm text-gray-600 mb-4">Please enable camera access in your browser settings.</p>
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
+                        <div class="text-xs text-yellow-700 space-y-2">
+                            <div>
+                                <strong>Chrome/Edge:</strong>
+                                <ol class="list-decimal list-inside ml-2 mt-1 space-y-1">
+                                    <li>Click the lock/camera icon in the address bar</li>
+                                    <li>Select "Allow" for Camera</li>
+                                    <li>Or go to Settings → Privacy → Site Settings → Camera</li>
+                                    <li>Find this site and set to "Allow"</li>
+                                </ol>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Firefox:</strong>
+                                <ol class="list-decimal list-inside ml-2 mt-1 space-y-1">
+                                    <li>Click the lock icon in the address bar</li>
+                                    <li>Click "More Information"</li>
+                                    <li>Go to Permissions tab</li>
+                                    <li>Set Camera to "Allow"</li>
+                                </ol>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Safari:</strong>
+                                <ol class="list-decimal list-inside ml-2 mt-1 space-y-1">
+                                    <li>Safari → Settings → Websites → Camera</li>
+                                    <li>Find this site and set to "Allow"</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
                         <button onclick="initScanner()" 
-                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
                             <i class="fas fa-redo mr-2"></i>Try Again
+                        </button>
+                        <button onclick="document.getElementById('manual-qr').focus()" 
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-keyboard mr-2"></i>Use Manual Input
                         </button>
                     </div>
                 </div>
             `;
-        });
+        }
+    }
+}
+
+// Start scanning QR codes from video stream
+let scanning = false;
+function startScanning() {
+    console.log('🔵 [SCANNER] startScanning() called');
+    if (scanning) {
+        console.log('⚠️ [SCANNER] Already scanning, skipping...');
+        return;
+    }
+    
+    scanning = true;
+    console.log('✅ [SCANNER] Scanning started');
+    const video = document.getElementById('qr-video');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    let lastScanTime = 0;
+    const scanInterval = 200; // Scan every 200ms to avoid too frequent scans
+    let scanCount = 0;
+
+    function scanQR() {
+        if (!scanning || !video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            if (scanning) {
+                requestAnimationFrame(scanQR);
+            }
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastScanTime < scanInterval) {
+            requestAnimationFrame(scanQR);
+            return;
+        }
+        lastScanTime = now;
+        scanCount++;
+        
+        // Log every 50 scans (every 10 seconds)
+        if (scanCount % 50 === 0) {
+            console.log('🔵 [SCANNER] Scanning... (scan #' + scanCount + ')');
+        }
+
+        try {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code && code.data) {
+                console.log('✅ [SCANNER] QR Code detected:', code.data);
+                scanning = false; // Stop scanning temporarily
+                handleQRCode(code.data);
+                // Resume scanning after 2 seconds
+                setTimeout(() => {
+                    if (videoStream && videoStream.active) {
+                        console.log('🔵 [SCANNER] Resuming scanning...');
+                        scanning = true;
+                        scanQR();
+                    }
+                }, 2000);
+                return;
+            }
+        } catch (err) {
+            console.error('❌ [SCANNER] Scan error:', err);
+        }
+        
+        requestAnimationFrame(scanQR);
+    }
+
+    scanQR();
+}
+
+// Stop scanning
+function stopScanning() {
+    scanning = false;
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    const video = document.getElementById('qr-video');
+    if (video) {
+        video.srcObject = null;
+    }
 }
 
 // Enhanced QR code handling
 function handleQRCode(qrData) {
+    console.log('🔵 [QR] handleQRCode() called with data:', qrData);
     showOverlay();
     
     // Enhanced QR code parsing
     let jobId = null;
     try {
         // Try to parse as JSON first (for complex QR codes)
+        console.log('🔵 [QR] Attempting to parse as JSON...');
         const qrDataObj = JSON.parse(qrData);
         jobId = qrDataObj.job_id;
+        console.log('✅ [QR] Parsed as JSON, job ID:', jobId);
     } catch (e) {
+        console.log('🔵 [QR] Not JSON, trying other formats...');
         // Handle different QR code formats
         if (qrData.startsWith('QR_')) {
             // Check for format: QR_EVLrykvkjc_PRINT (QR_randomstring_phase)
             // We need to find the job by QR code since the QR doesn't contain the job ID directly
             jobId = qrData; // Pass the full QR code to backend
+            console.log('🔵 [QR] Detected QR_ format, using full QR code:', jobId);
         } else if (qrData.startsWith('JOB_')) {
             // Format: JOB_123
             jobId = qrData.split('_')[1];
+            console.log('🔵 [QR] Detected JOB_ format, extracted ID:', jobId);
         } else if (/^\d+$/.test(qrData)) {
             // Direct job ID number
             jobId = qrData;
+            console.log('🔵 [QR] Detected direct numeric ID:', jobId);
         } else {
             // Try to extract job ID from any format
             const match = qrData.match(/(\d+)/);
             if (match) {
                 jobId = match[1];
+                console.log('🔵 [QR] Extracted job ID from mixed format:', jobId);
+            } else {
+                console.warn('⚠️ [QR] Could not extract job ID from:', qrData);
             }
         }
     }
     
     if (!jobId) {
+        console.error('❌ [QR] No job ID found in QR data');
         hideOverlay();
         showError('Invalid QR code format. Please check the code and try again.');
         return;
     }
     
+    console.log('🔵 [QR] Processing job ID/QR:', jobId);
+    
     // If it's a QR code (starts with QR_), we need to find the job by QR code
     if (jobId.startsWith('QR_')) {
-        fetch(`/jobs/qr/${encodeURIComponent(jobId)}/details`)
+        const qrUrl = `/jobs/qr/${encodeURIComponent(jobId)}/details`;
+        console.log('🔵 [QR] Fetching job by QR code from:', qrUrl);
+        
+        fetch(qrUrl)
             .then(response => {
+                console.log('🔵 [QR] QR response status:', response.status);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-        hideOverlay();
+                console.log('✅ [QR] QR job details received:', data);
+                hideOverlay();
                 if (data.success) {
+                    console.log('✅ [QR] Job found by QR code:', data.job);
                     showJobModal(data.job);
                     addRecentScan(data.job.job_id, 'Scanned');
                 } else {
-                    console.error('Job details error:', data.message);
+                    console.error('❌ [QR] Job details error:', data.message);
                     showError(data.message || 'Job not found or access denied');
                 }
             })
             .catch(error => {
-                console.error('QR scan error:', error);
-                console.error('Error details:', error.message);
+                console.error('❌ [QR] QR scan error:', error);
+                console.error('❌ [QR] Error details:', error.message);
+                hideOverlay();
                 if (error.message.includes('404')) {
                     showError('Job not found. Please check the QR code.');
                 } else if (error.message.includes('403')) {
@@ -365,29 +740,36 @@ function handleQRCode(qrData) {
             });
     } else {
         // Direct job ID - use existing endpoint
-    fetch(`/jobs/${jobId}/details`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            hideOverlay();
-            if (data.success) {
-                showJobModal(data.job);
-                addRecentScan(jobId, 'Scanned');
-            } else {
-                    console.error('Job details error:', data.message);
-                showError(data.message || 'Job not found or access denied');
-            }
-        })
-        .catch(error => {
-            console.error('QR scan error:', error);
-                console.error('Error details:', error.message);
-            if (error.message.includes('404')) {
-                showError('Job not found. Please check the job ID.');
-            } else if (error.message.includes('403')) {
+        const jobUrl = `/jobs/${jobId}/details`;
+        console.log('🔵 [QR] Fetching job by ID from:', jobUrl);
+        
+        fetch(jobUrl)
+            .then(response => {
+                console.log('🔵 [QR] Job response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ [QR] Job details received:', data);
+                hideOverlay();
+                if (data.success) {
+                    console.log('✅ [QR] Job found:', data.job);
+                    showJobModal(data.job);
+                    addRecentScan(jobId, 'Scanned');
+                } else {
+                    console.error('❌ [QR] Job details error:', data.message);
+                    showError(data.message || 'Job not found or access denied');
+                }
+            })
+            .catch(error => {
+                console.error('❌ [QR] QR scan error:', error);
+                console.error('❌ [QR] Error details:', error.message);
+                hideOverlay();
+                if (error.message.includes('404')) {
+                    showError('Job not found. Please check the job ID.');
+                } else if (error.message.includes('403')) {
                     showError('Access denied. This job is not assigned to you or does not match your phase.');
                 } else {
                     showError('Error fetching job details. Please try again. Error: ' + error.message);
@@ -743,64 +1125,62 @@ function updateButtonStates(job) {
     }
 }
 
-// Enhanced start job
-document.getElementById('start-job').addEventListener('click', function() {
-    if (currentJob) {
-        // Check if this is CUT or QC phase - show form for these phases
-        const phasesWithStartQuantity = ['CUT', 'QC'];
-        if (phasesWithStartQuantity.includes(currentJob.phase)) {
-            // Show start job form
-            const startBtn = document.getElementById('start-job');
-            const startJobForm = document.getElementById('start-job-form');
-            const confirmStartJobBtn = document.getElementById('confirm-start-job');
-            const cancelStartJobBtn = document.getElementById('cancel-start-job');
-            
-            startBtn.classList.add('hidden');
-            startJobForm.classList.remove('hidden');
-            confirmStartJobBtn.classList.remove('hidden');
-            cancelStartJobBtn.classList.remove('hidden');
-            
-            // Focus on the start quantity input
-            document.getElementById('start-quantity').focus();
-            
-            // Add visual feedback
-            showSuccess('Please enter the start quantity for this phase');
-        } else {
-            // For other phases, start immediately without form
-            startJobImmediately(null);
-        }
-    }
-});
-
 // Function to start job immediately (for phases that don't need start quantity)
 function startJobImmediately(startQuantity) {
-    if (currentJob) {
-        const button = document.getElementById('start-job');
-        const originalText = button.innerHTML;
-        
-        // Show loading state
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
-        
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        fetch(`/jobs/${currentJob.job_id}/start`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-                start_quantity: startQuantity || null
-            })
+    console.log('🔵 [JOB] startJobImmediately() called with startQuantity:', startQuantity);
+    if (!currentJob) {
+        console.error('❌ [JOB] No current job available');
+        showError('No job selected');
+        return;
+    }
+    
+    console.log('🔵 [JOB] Starting job:', currentJob.job_id);
+    const button = document.getElementById('start-job');
+    if (!button) {
+        console.error('❌ [JOB] Start job button not found');
+        return;
+    }
+    
+    const originalText = button.innerHTML;
+    
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+    
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!csrfToken) {
+        console.error('❌ [JOB] CSRF token not found');
+        showError('Security token not found. Please refresh the page.');
+        button.disabled = false;
+        button.innerHTML = originalText;
+        return;
+    }
+    
+    const startUrl = `/jobs/${currentJob.job_id}/start`;
+    console.log('🔵 [JOB] Sending start job request to:', startUrl);
+    console.log('🔵 [JOB] Request body:', { start_quantity: startQuantity || null });
+    
+    fetch(startUrl, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            start_quantity: startQuantity || null
         })
+    })
         .then(response => {
+            console.log('🔵 [JOB] Start job response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
-            console.log('Start job response data:', data);
+            console.log('✅ [JOB] Start job response data:', data);
             if (data.message) {
                 let message = 'Job started successfully';
                 if (data.order_status) {
@@ -886,160 +1266,13 @@ function startJobImmediately(startQuantity) {
         });
 }
 
-// Confirm start job (for CUT and QC phases)
-document.getElementById('confirm-start-job').addEventListener('click', function() {
-    if (currentJob) {
-        const button = this;
-        const startQuantity = document.getElementById('start-quantity').value;
-        
-        // Validate start quantity
-        if (!startQuantity || startQuantity <= 0) {
-            showError('Please enter a valid start quantity (must be greater than 0)');
-            document.getElementById('start-quantity').focus();
-            return;
-        }
-        
-        // Show loading state
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
-        
-        // Start the job with the entered quantity
-        startJobImmediately(parseInt(startQuantity));
-    }
-});
+// Event listeners for job modal buttons are set up in DOMContentLoaded
 
-// Cancel start job
-document.getElementById('cancel-start-job').addEventListener('click', function() {
-    // Hide the form and buttons
-    const startJobForm = document.getElementById('start-job-form');
-    const startBtn = document.getElementById('start-job');
-    const confirmStartJobBtn = document.getElementById('confirm-start-job');
-    const cancelStartJobBtn = document.getElementById('cancel-start-job');
-    
-    startJobForm.classList.add('hidden');
-    confirmStartJobBtn.classList.add('hidden');
-    cancelStartJobBtn.classList.add('hidden');
-    
-    // Only show the start button if the job is still pending
-    if (currentJob && currentJob.status === 'Pending') {
-        startBtn.classList.remove('hidden');
-    }
-    
-    // Clear form field
-    document.getElementById('start-quantity').value = '';
-    
-    // Show feedback
-    showSuccess('Start job cancelled. You can try again.');
-});
+// Enhanced manual QR input - will be set up in DOMContentLoaded
 
-// Enhanced end job
-document.getElementById('end-job').addEventListener('click', function() {
-    if (currentJob) {
-        const endBtn = document.getElementById('end-job');
-        const endJobForm = document.getElementById('end-job-form');
-        const confirmEndJobBtn = document.getElementById('confirm-end-job');
-        const cancelEndJobBtn = document.getElementById('cancel-end-job');
-        
-        // Update reject status options based on current phase
-        updateRejectStatusOptions(currentJob.phase);
-        
-        // Hide the end button and show the form
-        endBtn.classList.add('hidden');
-        endJobForm.classList.remove('hidden');
-        confirmEndJobBtn.classList.remove('hidden');
-        cancelEndJobBtn.classList.remove('hidden');
-        
-        // Focus on the first input field
-        document.getElementById('end-quantity').focus();
-        
-        // Add visual feedback
-        showSuccess('Please fill in the job completion details below');
-    }
-});
+// Start scanner button - will be set up in DOMContentLoaded
 
-// Enhanced manual QR input
-document.getElementById('manual-scan').addEventListener('click', function() {
-    const manualInput = document.getElementById('manual-qr');
-    const qrCode = manualInput.value.trim();
-    const scanButton = this;
-    
-    if (!qrCode) {
-        showError('Please enter a QR code or job ID');
-        manualInput.focus();
-        return;
-    }
-    
-    // Disable button during processing
-    scanButton.disabled = true;
-    scanButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-    
-    // Try direct job ID first (most common case)
-    if (/^\d+$/.test(qrCode)) {
-        fetch(`/jobs/${qrCode}/details`)
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    showJobModal(data.job);
-                    addRecentScan(qrCode, 'Manual Scan Success');
-                } else {
-                    showError(data.message || 'Job not found or access denied');
-                }
-            })
-            .catch(error => {
-                console.error('Manual scan error:', error);
-                showError('Error fetching job details. Please try again.');
-            })
-            .finally(() => {
-                // Re-enable button
-                scanButton.disabled = false;
-                scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
-            });
-    } else {
-        // Process as QR code
-    handleQRCode(qrCode);
-    
-    // Clear input and re-enable button
-    manualInput.value = '';
-    setTimeout(() => {
-        scanButton.disabled = false;
-            scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
-    }, 2000);
-    }
-});
-
-// Allow Enter key to trigger manual scan
-document.getElementById('manual-qr').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        document.getElementById('manual-scan').click();
-    }
-});
-
-// Real-time validation for manual input
-document.getElementById('manual-qr').addEventListener('input', function() {
-    const value = this.value.trim();
-    const scanButton = document.getElementById('manual-scan');
-    
-    if (value.length > 0) {
-        scanButton.disabled = false;
-        scanButton.classList.remove('opacity-50', 'cursor-not-allowed');
-    } else {
-        scanButton.disabled = true;
-        scanButton.classList.add('opacity-50', 'cursor-not-allowed');
-    }
-});
-
-// Start scanner button
-document.getElementById('start-scanner').addEventListener('click', function() {
-    initScanner();
-});
-
-// Close modal
-document.getElementById('close-modal').addEventListener('click', function() {
-    document.getElementById('job-modal').classList.add('hidden');
-});
+// Close modal - will be set up in DOMContentLoaded
 
 // Enhanced recent scan
 function addRecentScan(jobId, action) {
@@ -1194,198 +1427,632 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 
-// Initialize scanner on page load
+// Initialize scanner on page load (but don't auto-start camera)
 document.addEventListener('DOMContentLoaded', function() {
-        initScanner();
+    console.log('🔵 [INIT] ========================================');
+    console.log('🔵 [INIT] DOM Content Loaded - Initializing scanner page');
+    console.log('🔵 [INIT] ========================================');
     
-    // Add close modal functionality
-    document.getElementById('close-modal').addEventListener('click', function() {
-        document.getElementById('job-modal').classList.add('hidden');
-        // Clear current job when modal is closed
-        currentJob = null;
-    });
+    // Don't auto-start camera - let user click button
+    // initScanner();
     
-    // Also close modal when clicking outside
-    document.getElementById('job-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.add('hidden');
-            currentJob = null;
-        }
-    });
+    // Check if required elements exist
+    const startScannerBtn = document.getElementById('start-scanner');
+    const manualScanBtn = document.getElementById('manual-scan');
+    const manualInput = document.getElementById('manual-qr');
+    const closeModalBtn = document.getElementById('close-modal');
+    const jobModal = document.getElementById('job-modal');
     
-    // Focus on manual input
-    document.getElementById('manual-qr').focus();
-});
-
-// Confirm end job
-document.getElementById('confirm-end-job').addEventListener('click', function() {
-    if (currentJob) {
-        const button = this;
-        const originalText = button.innerHTML;
-        
-        // Get form data
-        const endQuantity = document.getElementById('end-quantity').value;
-        const rejectQuantity = document.getElementById('reject-quantity').value;
-        const rejectStatus = document.getElementById('reject-status').value;
-        const remarks = document.getElementById('remarks').value;
-        
-        // Validate form data
-        if (!endQuantity && !rejectQuantity) {
-            showError('Please enter either end quantity or reject quantity');
-            return;
-        }
-        
-        if (rejectQuantity > 0 && !rejectStatus) {
-            showError('Please select a reject status when there are rejected items');
-            return;
-        }
-        
-        // Show loading state
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
-        
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        fetch(`/jobs/${currentJob.job_id}/end`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-                end_quantity: endQuantity || null,
-                reject_quantity: rejectQuantity || null,
-                reject_status: rejectStatus || null,
-                remarks: remarks || null
-            })
-        })
-        .then(response => {
-            return response.json();
-        })
-        .then(data => {
-            console.log('End job response data:', data);
-            if (data.message) {
-                // Show completion message with time tracking
-                let message = 'Job completed successfully';
-                if (data.duration_formatted) {
-                    message += ` (Time taken: ${data.duration_formatted})`;
-                }
-                if (data.order_status) {
-                    message += ` (Order status: ${data.order_status})`;
-                }
-                showSuccess(message);
-                
-                // Immediately update the current job status
-                currentJob.status = 'Completed';
-                currentJob.end_time = data.end_time;
-                currentJob.duration = data.duration;
-                
-                // Update button states immediately
-                updateButtonStates(currentJob);
-                
-                // Update time tracking
-                const timeTracking = document.getElementById('time-tracking');
-                const timeInfo = document.getElementById('time-info');
-                timeTracking.classList.remove('hidden');
-                
-                const startTime = new Date(currentJob.start_time);
-                const endTime = new Date(data.end_time);
-                const duration = Math.floor((endTime - startTime) / (1000 * 60)); // minutes
-                
-                timeInfo.innerHTML = `
-                    <div class="space-y-1">
-                        <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
-                        <div>Completed: <strong>${endTime.toLocaleString()}</strong></div>
-                        <div>Total Time: <strong>${duration} minutes</strong></div>
-                    </div>
-                `;
-                
-                // Update status badge in modal
-                const statusBadge = document.querySelector('#job-details .inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
-                if (statusBadge) {
-                    statusBadge.textContent = 'Completed';
-                    statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
-                }
-                
-                addRecentScan(currentJob.job_id, 'Completed');
-                
-                // Refresh the job data to show updated status (but keep modal open)
-                setTimeout(() => {
-                    fetch(`/jobs/${currentJob.job_id}/details`)
-                        .then(response => response.json())
-                        .then(jobData => {
-                            if (jobData.success) {
-                                currentJob = jobData.job;
-                                updateButtonStates(currentJob);
-                            }
-                        });
-                }, 1000);
-            } else {
-                // Show detailed error message
-                if (data.error && data.job_phase) {
-                    showError(`${data.error} Job phase: ${data.job_phase}, Your phase: ${data.user_phase}`);
-                } else if (data.error && data.assigned_user_id) {
-                    showError(`${data.error} This job is assigned to user ID: ${data.assigned_user_id}`);
-                } else {
-                    showError(data.error || data.message || 'Error ending job');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('End job error:', error);
-            showError('Error ending job: ' + error.message);
-        })
-        .finally(() => {
-            // Only restore button state if job wasn't successfully completed
-            if (!currentJob || currentJob.status !== 'Completed') {
+    console.log('🔵 [INIT] Start scanner button:', startScannerBtn ? 'Found' : 'Not found');
+    console.log('🔵 [INIT] Manual scan button:', manualScanBtn ? 'Found' : 'Not found');
+    console.log('🔵 [INIT] Manual input:', manualInput ? 'Found' : 'Not found');
+    console.log('🔵 [INIT] Close modal button:', closeModalBtn ? 'Found' : 'Not found');
+    console.log('🔵 [INIT] Job modal:', jobModal ? 'Found' : 'Not found');
+    
+    // Set up start scanner button
+    if (startScannerBtn) {
+        startScannerBtn.addEventListener('click', function() {
+            console.log('🔵 [SCANNER] Start Scanner button clicked');
+            const button = this;
+            const originalText = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+            
+            console.log('🔵 [SCANNER] Calling initScanner()...');
+            try {
+                initScanner();
+            } catch (error) {
+                console.error('❌ [SCANNER] Error in initScanner:', error);
                 button.disabled = false;
                 button.innerHTML = originalText;
+                showError('Error starting scanner: ' + error.message);
+            }
+            
+            // Re-enable button after a moment
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }, 1000);
+        });
+        console.log('✅ [INIT] Start scanner button event listener attached');
+    } else {
+        console.error('❌ [INIT] Start scanner button not found!');
+    }
+    
+    // Set up manual scan button
+    if (manualScanBtn) {
+        manualScanBtn.addEventListener('click', function() {
+            console.log('🔵 [MANUAL] Manual scan button clicked');
+            const manualInput = document.getElementById('manual-qr');
+            const qrCode = manualInput ? manualInput.value.trim() : '';
+            const scanButton = this;
+            
+            console.log('🔵 [MANUAL] Input value:', qrCode);
+            console.log('🔵 [MANUAL] Input length:', qrCode.length);
+            
+            if (!qrCode) {
+                console.warn('⚠️ [MANUAL] Empty input, showing error');
+                showError('Please enter a QR code or job ID');
+                if (manualInput) {
+                    manualInput.focus();
+                }
+                return;
+            }
+            
+            // Disable button during processing
+            scanButton.disabled = true;
+            scanButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+            
+            // Show overlay while processing
+            showOverlay();
+            
+            // Try direct job ID first (most common case - numeric)
+            if (/^\d+$/.test(qrCode)) {
+                console.log('🔵 [MANUAL] Detected numeric job ID:', qrCode);
+                // Direct job ID - use job details endpoint
+                const jobIdUrl = `/jobs/${qrCode}/details`;
+                console.log('🔵 [MANUAL] Fetching job details from:', jobIdUrl);
+                
+                fetch(jobIdUrl)
+                    .then(response => {
+                        console.log('🔵 [MANUAL] Response status:', response.status);
+                        console.log('🔵 [MANUAL] Response ok:', response.ok);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('✅ [MANUAL] Job details received:', data);
+                        hideOverlay();
+                        if (data.success) {
+                            console.log('✅ [MANUAL] Job found:', data.job);
+                            showJobModal(data.job);
+                            addRecentScan(qrCode, 'Manual Scan Success');
+                            if (manualInput) {
+                                manualInput.value = ''; // Clear input on success
+                            }
+                        } else {
+                            console.error('❌ [MANUAL] Job not found or access denied:', data.message);
+                            showError(data.message || 'Job not found or access denied');
+                        }
+                    })
+                    .catch(error => {
+                        hideOverlay();
+                        console.error('❌ [MANUAL] Error fetching job details:', error);
+                        console.error('❌ [MANUAL] Error message:', error.message);
+                        if (error.message.includes('404')) {
+                            console.error('❌ [MANUAL] Job not found (404)');
+                            showError('Job not found. Please check the job ID.');
+                        } else if (error.message.includes('403')) {
+                            console.error('❌ [MANUAL] Access denied (403)');
+                            showError('Access denied. This job is not assigned to you or does not match your phase.');
+                        } else {
+                            console.error('❌ [MANUAL] Unknown error');
+                            showError('Error fetching job details. Please try again.');
+                        }
+                    })
+                    .finally(() => {
+                        console.log('🔵 [MANUAL] Re-enabling scan button');
+                        // Re-enable button
+                        scanButton.disabled = false;
+                        scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
+                    });
+            } else if (qrCode.startsWith('QR_')) {
+                console.log('🔵 [MANUAL] Detected QR code format:', qrCode);
+                // QR code format - use QR code endpoint
+                const qrUrl = `/jobs/qr/${encodeURIComponent(qrCode)}/details`;
+                console.log('🔵 [MANUAL] Fetching job by QR code from:', qrUrl);
+                
+                fetch(qrUrl)
+                    .then(response => {
+                        console.log('🔵 [MANUAL] QR response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('✅ [MANUAL] QR job details received:', data);
+                        hideOverlay();
+                        if (data.success) {
+                            console.log('✅ [MANUAL] Job found by QR code:', data.job);
+                            showJobModal(data.job);
+                            addRecentScan(data.job.job_id, 'QR Scan Success');
+                            if (manualInput) {
+                                manualInput.value = ''; // Clear input on success
+                            }
+                        } else {
+                            console.error('❌ [MANUAL] QR job not found:', data.message);
+                            showError(data.message || 'Job not found or access denied');
+                        }
+                    })
+                    .catch(error => {
+                        hideOverlay();
+                        console.error('❌ [MANUAL] QR scan error:', error);
+                        if (error.message.includes('404')) {
+                            showError('Job not found. Please check the QR code.');
+                        } else if (error.message.includes('403')) {
+                            showError('Access denied. This job is not assigned to you or does not match your phase.');
+                        } else {
+                            showError('Error fetching job details. Please try again.');
+                        }
+                    })
+                    .finally(() => {
+                        console.log('🔵 [MANUAL] Re-enabling scan button');
+                        // Re-enable button
+                        scanButton.disabled = false;
+                        scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
+                    });
+            } else {
+                console.log('🔵 [MANUAL] Trying to extract job ID from input:', qrCode);
+                // Try to extract job ID from the input
+                const jobIdMatch = qrCode.match(/(\d+)/);
+                if (jobIdMatch) {
+                    const jobId = jobIdMatch[1];
+                    console.log('🔵 [MANUAL] Extracted job ID:', jobId);
+                    const extractedUrl = `/jobs/${jobId}/details`;
+                    console.log('🔵 [MANUAL] Fetching job details from:', extractedUrl);
+                    
+                    fetch(extractedUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('✅ [MANUAL] Extracted job details received:', data);
+                            hideOverlay();
+                            if (data.success) {
+                                console.log('✅ [MANUAL] Job found by extracted ID:', data.job);
+                                showJobModal(data.job);
+                                addRecentScan(jobId, 'Manual Scan Success');
+                                if (manualInput) {
+                                    manualInput.value = ''; // Clear input on success
+                                }
+                            } else {
+                                console.error('❌ [MANUAL] Job not found:', data.message);
+                                showError(data.message || 'Job not found or access denied');
+                            }
+                        })
+                        .catch(error => {
+                            hideOverlay();
+                            console.error('❌ [MANUAL] Error fetching extracted job:', error);
+                            showError('Error fetching job details. Please try again.');
+                        })
+                        .finally(() => {
+                            console.log('🔵 [MANUAL] Re-enabling scan button');
+                            // Re-enable button
+                            scanButton.disabled = false;
+                            scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
+                        });
+                } else {
+                    console.error('❌ [MANUAL] Invalid format, no job ID found');
+                    hideOverlay();
+                    showError('Invalid format. Please enter a job ID (number) or QR code (QR_...)');
+                    scanButton.disabled = false;
+                    scanButton.innerHTML = '<i class="fas fa-search mr-2"></i><span class="hidden sm:inline">Scan</span><span class="sm:hidden">Go</span>';
+                }
+            }
+        });
+        console.log('✅ [INIT] Manual scan button event listener attached');
+    } else {
+        console.error('❌ [INIT] Manual scan button not found!');
+    }
+    
+    // Set up Enter key for manual input
+    if (manualInput) {
+        manualInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                console.log('🔵 [MANUAL] Enter key pressed');
+                e.preventDefault();
+                if (manualScanBtn) {
+                    manualScanBtn.click();
+                }
+            }
+        });
+        console.log('✅ [INIT] Enter key listener attached to manual input');
+        
+        // Real-time validation for manual input
+        manualInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            const scanButton = document.getElementById('manual-scan');
+            
+            console.log('🔵 [MANUAL] Input changed, value:', value);
+            if (value.length > 0) {
+                if (scanButton) {
+                    scanButton.disabled = false;
+                    scanButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                if (scanButton) {
+                    scanButton.disabled = true;
+                    scanButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        });
+        console.log('✅ [INIT] Real-time validation listener attached to manual input');
+    }
+    
+    // Add close modal functionality
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            console.log('🔵 [MODAL] Close button clicked');
+            if (jobModal) {
+                jobModal.classList.add('hidden');
+            }
+            // Clear current job when modal is closed
+            currentJob = null;
+        });
+    }
+    
+    // Also close modal when clicking outside
+    if (jobModal) {
+        jobModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                console.log('🔵 [MODAL] Clicked outside modal, closing');
+                this.classList.add('hidden');
+                currentJob = null;
             }
         });
     }
-});
-
-// Cancel end job
-document.getElementById('cancel-end-job').addEventListener('click', function() {
-    // Hide the form and buttons
-    const endJobForm = document.getElementById('end-job-form');
-    const endBtn = document.getElementById('end-job');
-    const confirmEndJobBtn = document.getElementById('confirm-end-job');
-    const cancelEndJobBtn = document.getElementById('cancel-end-job');
     
-    endJobForm.classList.add('hidden');
-    confirmEndJobBtn.classList.add('hidden');
-    cancelEndJobBtn.classList.add('hidden');
-    
-    // Only show the end button if the job is still in progress
-    if (currentJob && currentJob.status === 'In Progress') {
-        endBtn.classList.remove('hidden');
+    // Focus on manual input
+    if (manualInput) {
+        manualInput.focus();
+        console.log('🔵 [INIT] Focused on manual input');
     }
     
-    // Clear form fields
-    document.getElementById('end-quantity').value = '';
-    document.getElementById('reject-quantity').value = '';
-    document.getElementById('reject-status').value = '';
-    document.getElementById('remarks').value = '';
+    // Clean up camera on page unload
+    window.addEventListener('beforeunload', function() {
+        console.log('🔵 [INIT] Page unloading, stopping scanner');
+        stopScanning();
+    });
     
-    // Show feedback
-    showSuccess('End job cancelled. You can try again.');
+    // Set up job modal event listeners (these elements exist in the modal)
+    const startJobBtn = document.getElementById('start-job');
+    const endJobBtn = document.getElementById('end-job');
+    const confirmStartJobBtn = document.getElementById('confirm-start-job');
+    const cancelStartJobBtn = document.getElementById('cancel-start-job');
+    const confirmEndJobBtn = document.getElementById('confirm-end-job');
+    const cancelEndJobBtn = document.getElementById('cancel-end-job');
+    const endQuantityInput = document.getElementById('end-quantity');
+    const rejectQuantityInput = document.getElementById('reject-quantity');
+    const rejectStatusSelect = document.getElementById('reject-status');
+    
+    console.log('🔵 [INIT] Setting up job modal event listeners...');
+    
+    if (startJobBtn) {
+        startJobBtn.addEventListener('click', function() {
+            console.log('🔵 [JOB] Start job button clicked');
+            if (currentJob) {
+                // Check if this is CUT or QC phase - show form for these phases
+                const phasesWithStartQuantity = ['CUT', 'QC'];
+                if (phasesWithStartQuantity.includes(currentJob.phase)) {
+                    // Show start job form
+                    const startBtn = document.getElementById('start-job');
+                    const startJobForm = document.getElementById('start-job-form');
+                    const confirmStartJobBtn = document.getElementById('confirm-start-job');
+                    const cancelStartJobBtn = document.getElementById('cancel-start-job');
+                    
+                    startBtn.classList.add('hidden');
+                    startJobForm.classList.remove('hidden');
+                    confirmStartJobBtn.classList.remove('hidden');
+                    cancelStartJobBtn.classList.remove('hidden');
+                    
+                    // Focus on the start quantity input
+                    document.getElementById('start-quantity').focus();
+                    
+                    // Add visual feedback
+                    showSuccess('Please enter the start quantity for this phase');
+                } else {
+                    // For other phases, start immediately without form
+                    startJobImmediately(null);
+                }
+            }
+        });
+        console.log('✅ [INIT] Start job button listener attached');
+    }
+    
+    if (confirmStartJobBtn) {
+        confirmStartJobBtn.addEventListener('click', function() {
+            console.log('🔵 [JOB] Confirm start job button clicked');
+            if (currentJob) {
+                const button = this;
+                const startQuantity = document.getElementById('start-quantity').value;
+                
+                // Validate start quantity
+                if (!startQuantity || startQuantity <= 0) {
+                    showError('Please enter a valid start quantity (must be greater than 0)');
+                    document.getElementById('start-quantity').focus();
+                    return;
+                }
+                
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+                
+                // Start the job with the entered quantity
+                startJobImmediately(parseInt(startQuantity));
+            }
+        });
+        console.log('✅ [INIT] Confirm start job button listener attached');
+    }
+    
+    if (cancelStartJobBtn) {
+        cancelStartJobBtn.addEventListener('click', function() {
+            console.log('🔵 [JOB] Cancel start job button clicked');
+            // Hide the form and buttons
+            const startJobForm = document.getElementById('start-job-form');
+            const startBtn = document.getElementById('start-job');
+            const confirmStartJobBtn = document.getElementById('confirm-start-job');
+            const cancelStartJobBtn = document.getElementById('cancel-start-job');
+            
+            startJobForm.classList.add('hidden');
+            confirmStartJobBtn.classList.add('hidden');
+            cancelStartJobBtn.classList.add('hidden');
+            
+            // Only show the start button if the job is still pending
+            if (currentJob && currentJob.status === 'Pending') {
+                startBtn.classList.remove('hidden');
+            }
+            
+            // Clear form field
+            document.getElementById('start-quantity').value = '';
+            
+            // Show feedback
+            showSuccess('Start job cancelled. You can try again.');
+        });
+        console.log('✅ [INIT] Cancel start job button listener attached');
+    }
+    
+    if (endJobBtn) {
+        endJobBtn.addEventListener('click', function() {
+            console.log('🔵 [JOB] End job button clicked');
+            if (currentJob) {
+                const endBtn = document.getElementById('end-job');
+                const endJobForm = document.getElementById('end-job-form');
+                const confirmEndJobBtn = document.getElementById('confirm-end-job');
+                const cancelEndJobBtn = document.getElementById('cancel-end-job');
+                
+                // Update reject status options based on current phase
+                updateRejectStatusOptions(currentJob.phase);
+                
+                // Hide the end button and show the form
+                endBtn.classList.add('hidden');
+                endJobForm.classList.remove('hidden');
+                confirmEndJobBtn.classList.remove('hidden');
+                cancelEndJobBtn.classList.remove('hidden');
+                
+                // Focus on the first input field
+                document.getElementById('end-quantity').focus();
+                
+                // Add visual feedback
+                showSuccess('Please fill in the job completion details below');
+            }
+        });
+        console.log('✅ [INIT] End job button listener attached');
+    }
+    
+    if (confirmEndJobBtn) {
+        confirmEndJobBtn.addEventListener('click', function() {
+            console.log('🔵 [JOB] Confirm end job button clicked');
+            if (currentJob) {
+                const button = this;
+                const originalText = button.innerHTML;
+                
+                // Get form data
+                const endQuantity = document.getElementById('end-quantity').value;
+                const rejectQuantity = document.getElementById('reject-quantity').value;
+                const rejectStatus = document.getElementById('reject-status').value;
+                const remarks = document.getElementById('remarks').value;
+                
+                console.log('🔵 [JOB] End job form data:', { endQuantity, rejectQuantity, rejectStatus, remarks });
+                
+                // Validate form data
+                if (!endQuantity && !rejectQuantity) {
+                    showError('Please enter either end quantity or reject quantity');
+                    return;
+                }
+                
+                if (rejectQuantity > 0 && !rejectStatus) {
+                    showError('Please select a reject status when there are rejected items');
+                    return;
+                }
+                
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
+                
+                // Get CSRF token from meta tag
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                console.log('🔵 [JOB] Sending end job request...');
+                fetch(`/jobs/${currentJob.job_id}/end`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        end_quantity: endQuantity || null,
+                        reject_quantity: rejectQuantity || null,
+                        reject_status: rejectStatus || null,
+                        remarks: remarks || null
+                    })
+                })
+                .then(response => {
+                    console.log('🔵 [JOB] End job response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ [JOB] End job response data:', data);
+                    if (data.message) {
+                        // Show completion message with time tracking
+                        let message = 'Job completed successfully';
+                        if (data.duration_formatted) {
+                            message += ` (Time taken: ${data.duration_formatted})`;
+                        }
+                        if (data.order_status) {
+                            message += ` (Order status: ${data.order_status})`;
+                        }
+                        showSuccess(message);
+                        
+                        // Immediately update the current job status
+                        currentJob.status = 'Completed';
+                        currentJob.end_time = data.end_time;
+                        currentJob.duration = data.duration;
+                        
+                        // Update button states immediately
+                        updateButtonStates(currentJob);
+                        
+                        // Update time tracking
+                        const timeTracking = document.getElementById('time-tracking');
+                        const timeInfo = document.getElementById('time-info');
+                        timeTracking.classList.remove('hidden');
+                        
+                        const startTime = new Date(currentJob.start_time);
+                        const endTime = new Date(data.end_time);
+                        const duration = Math.floor((endTime - startTime) / (1000 * 60)); // minutes
+                        
+                        timeInfo.innerHTML = `
+                            <div class="space-y-1">
+                                <div>Started: <strong>${startTime.toLocaleString()}</strong></div>
+                                <div>Completed: <strong>${endTime.toLocaleString()}</strong></div>
+                                <div>Total Time: <strong>${duration} minutes</strong></div>
+                            </div>
+                        `;
+                        
+                        // Update status badge in modal
+                        const statusBadge = document.querySelector('#job-details .inline-flex.items-center.px-2\\.5.py-0\\.5.rounded-full');
+                        if (statusBadge) {
+                            statusBadge.textContent = 'Completed';
+                            statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                        }
+                        
+                        addRecentScan(currentJob.job_id, 'Completed');
+                        
+                        // Refresh the job data to show updated status (but keep modal open)
+                        setTimeout(() => {
+                            fetch(`/jobs/${currentJob.job_id}/details`)
+                                .then(response => response.json())
+                                .then(jobData => {
+                                    if (jobData.success) {
+                                        currentJob = jobData.job;
+                                        updateButtonStates(currentJob);
+                                    }
+                                });
+                        }, 1000);
+                    } else {
+                        // Show detailed error message
+                        if (data.error && data.job_phase) {
+                            showError(`${data.error} Job phase: ${data.job_phase}, Your phase: ${data.user_phase}`);
+                        } else if (data.error && data.assigned_user_id) {
+                            showError(`${data.error} This job is assigned to user ID: ${data.assigned_user_id}`);
+                        } else {
+                            showError(data.error || data.message || 'Error ending job');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ [JOB] End job error:', error);
+                    showError('Error ending job: ' + error.message);
+                })
+                .finally(() => {
+                    // Only restore button state if job wasn't successfully completed
+                    if (!currentJob || currentJob.status !== 'Completed') {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                    }
+                });
+            }
+        });
+        console.log('✅ [INIT] Confirm end job button listener attached');
+    }
+    
+    if (cancelEndJobBtn) {
+        cancelEndJobBtn.addEventListener('click', function() {
+            console.log('🔵 [JOB] Cancel end job button clicked');
+            // Hide the form and buttons
+            const endJobForm = document.getElementById('end-job-form');
+            const endBtn = document.getElementById('end-job');
+            const confirmEndJobBtn = document.getElementById('confirm-end-job');
+            const cancelEndJobBtn = document.getElementById('cancel-end-job');
+            
+            endJobForm.classList.add('hidden');
+            confirmEndJobBtn.classList.add('hidden');
+            cancelEndJobBtn.classList.add('hidden');
+            
+            // Only show the end button if the job is still in progress
+            if (currentJob && currentJob.status === 'In Progress') {
+                endBtn.classList.remove('hidden');
+            }
+            
+            // Clear form fields
+            document.getElementById('end-quantity').value = '';
+            document.getElementById('reject-quantity').value = '';
+            document.getElementById('reject-status').value = '';
+            document.getElementById('remarks').value = '';
+            
+            // Show feedback
+            showSuccess('End job cancelled. You can try again.');
+        });
+        console.log('✅ [INIT] Cancel end job button listener attached');
+    }
+    
+    // Set up form validation listeners
+    if (endQuantityInput) {
+        endQuantityInput.addEventListener('input', function() {
+            validateEndJobForm();
+        });
+        console.log('✅ [INIT] End quantity input listener attached');
+    }
+    
+    if (rejectQuantityInput) {
+        rejectQuantityInput.addEventListener('input', function() {
+            validateEndJobForm();
+        });
+        console.log('✅ [INIT] Reject quantity input listener attached');
+    }
+    
+    if (rejectStatusSelect) {
+        rejectStatusSelect.addEventListener('change', function() {
+            validateEndJobForm();
+        });
+        console.log('✅ [INIT] Reject status select listener attached');
+    }
+    
+    console.log('✅ [INIT] ========================================');
+    console.log('✅ [INIT] Scanner page initialization complete');
+    console.log('✅ [INIT] All event listeners attached');
+    console.log('✅ [INIT] Ready to use!');
+    console.log('✅ [INIT] ========================================');
 });
 
-// Real-time validation for end job form
-document.getElementById('end-quantity').addEventListener('input', function() {
-    validateEndJobForm();
-});
-
-document.getElementById('reject-quantity').addEventListener('input', function() {
-    validateEndJobForm();
-});
-
-document.getElementById('reject-status').addEventListener('change', function() {
-    validateEndJobForm();
-});
+// Event listeners for end job form are set up in DOMContentLoaded
 
 function validateEndJobForm() {
     const endQuantity = document.getElementById('end-quantity').value;

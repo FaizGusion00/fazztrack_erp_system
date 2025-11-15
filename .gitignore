@@ -4,9 +4,6 @@
 /public/storage
 /storage/*.key
 /vendor
-.env
-.env.backup
-.env.production
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -17,14 +14,25 @@ yarn-error.log
 /.idea
 /.vscode
 
-# Laravel specific
+# Laravel specific - Cache directories (should be ignored in production)
 /bootstrap/cache/*
+!/bootstrap/cache/.gitignore
 /storage/framework/cache/*
+!/storage/framework/cache/.gitignore
 /storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
 /storage/framework/views/*
+!/storage/framework/views/.gitignore
 /storage/logs/*
+!/storage/logs/.gitignore
 /storage/app/public/*
-/public/storage
+!/storage/app/public/.gitignore
+!/storage/app/public/uploads/
+!/storage/app/public/qr-codes/
+!/storage/app/public/templates/
+!/storage/app/public/designs/
+!/storage/app/public/receipts/
+!/storage/app/public/job-sheets/
 
 # Composer
 composer.phar
@@ -36,14 +44,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment files
+# Environment files - MUST BE IGNORED IN PRODUCTION
 .env
+.env.backup
+.env.production
 .env.local
 .env.development
 .env.development.local
 .env.test.local
-.env.production
 .env.production.local
+.env.*
+!.env.example
 
 # IDE and Editor files
 .vscode/
@@ -84,15 +95,14 @@ cache/
 *.bak
 *.backup
 
-# Security
-.env
-.env.*
+# Security - Keys and certificates
 *.key
 *.pem
 *.crt
 *.p12
+*.pfx
 
-# Uploads and generated files
+# Uploads and generated files in public directory
 /public/uploads/
 /public/qr-codes/
 /public/templates/
@@ -109,44 +119,26 @@ backups/
 /coverage/
 .phpunit.cache/
 
-# Application specific
-/storage/app/public/uploads/
-/storage/app/public/qr-codes/
-/storage/app/public/templates/
-/storage/app/public/designs/
-/storage/app/public/receipts/
-/storage/app/public/job-sheets/
-
-# SSL certificates
-*.crt
-*.key
-*.pem
-*.p12
-*.pfx
+# Application specific - Storage uploads (keep structure, ignore files)
+/storage/app/public/uploads/*
+!/storage/app/public/uploads/.gitignore
+/storage/app/public/qr-codes/*
+!/storage/app/public/qr-codes/.gitignore
+/storage/app/public/templates/*
+!/storage/app/public/templates/.gitignore
+/storage/app/public/designs/*
+!/storage/app/public/designs/.gitignore
+/storage/app/public/receipts/*
+!/storage/app/public/receipts/.gitignore
+/storage/app/public/job-sheets/*
+!/storage/app/public/job-sheets/.gitignore
 
 # Local development
-docker-compose.override.yml
 docker-compose.local.yml
 
 # IDE specific
-.vscode/
-.idea/
 *.sublime-project
 *.sublime-workspace
 
 # OS specific
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 desktop.ini
-
-# Backup and temporary files
-*.bak
-*.backup
-*.tmp
-*.temp
-*~

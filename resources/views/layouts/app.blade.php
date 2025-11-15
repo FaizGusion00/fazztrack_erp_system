@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self)">
     <title>@yield('title', 'Fazztrack - T-Shirt Printing App')</title>
     
     <!-- Favicon -->
@@ -115,12 +116,16 @@
                                 <i class="fas fa-palette mr-1"></i>Designs
                             </a>
                             @elseif(auth()->user()->isProductionStaff())
+                                <a href="{{ route('production.dashboard') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-tachometer-alt mr-1"></i>Dashboard
+                                </a>
                                 <a href="{{ route('jobs.scanner') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-qrcode mr-1"></i>QR Scanner
                                 </a>
-                                <a href="{{ route('production.offline') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                {{-- Commented out offline mode --}}
+                                {{-- <a href="{{ route('production.offline') }}" class="text-gray-700 hover:text-primary-500 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     <i class="fas fa-wifi-slash mr-1"></i>Offline Mode
-                                </a>
+                                </a> --}}
                             @endif
                         </div>
                         
@@ -340,12 +345,13 @@
                                     </div>
                                     <span class="font-medium">QR Scanner</span>
                                 </a>
-                                <a href="{{ route('production.offline') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
+                                {{-- Commented out offline mode --}}
+                                {{-- <a href="{{ route('production.offline') }}" class="group flex items-center px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-all duration-200">
                                     <div class="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-lg flex items-center justify-center mr-3 transition-colors">
                                         <i class="fas fa-wifi-slash text-gray-600 group-hover:text-primary-600"></i>
                                     </div>
                                     <span class="font-medium">Offline Mode</span>
-                                </a>
+                                </a> --}}
                             @endif
                         </div>
                     </div>
