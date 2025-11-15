@@ -276,6 +276,23 @@ class AuthController extends Controller
      */
     public function productionDashboard()
     {
-        return view('production.dashboard');
+        // Get all current jobs (not completed) from all phases for progress viewing
+        $currentJobs = \App\Models\Job::where('status', '!=', 'Completed')
+            ->with(['order.client', 'assignedUser'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Group jobs by phase for better organization
+        $jobsByPhase = $currentJobs->groupBy('phase');
+
+        // Get recent completed jobs (last 7 days) for activity tracking
+        $recentCompletedJobs = \App\Models\Job::where('status', 'Completed')
+            ->where('end_time', '>=', now()->subDays(7))
+            ->with(['order.client', 'assignedUser'])
+            ->orderBy('end_time', 'desc')
+            ->take(20)
+            ->get();
+
+        return view('production.dashboard', compact('currentJobs', 'jobsByPhase', 'recentCompletedJobs'));
     }
 } 

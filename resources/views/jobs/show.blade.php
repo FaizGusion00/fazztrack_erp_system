@@ -278,8 +278,14 @@
                             @endif
                             @if($job->reject_quantity)
                             <div class="flex justify-between">
-                                <span class="text-sm font-medium text-gray-500">Reject Quantity:</span>
-                                <span class="text-sm text-gray-900">{{ $job->reject_quantity }}</span>
+                                <span class="text-sm font-medium text-gray-500">{{ $job->phase }} Reject Quantity:</span>
+                                <span class="text-sm text-gray-900 font-semibold text-red-600">{{ $job->reject_quantity }}</span>
+                            </div>
+                            @endif
+                            @if($job->reject_status)
+                            <div class="flex justify-between">
+                                <span class="text-sm font-medium text-gray-500">{{ $job->phase }} Reject Status:</span>
+                                <span class="text-sm text-gray-900">{{ $job->reject_status }}</span>
                             </div>
                             @endif
                             @if($job->remarks)

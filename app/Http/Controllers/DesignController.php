@@ -302,7 +302,7 @@ class DesignController extends Controller
     }
 
     /**
-     * Approve design (Admin/Sales Manager/SuperAdmin)
+     * Approve design (Sales Manager/SuperAdmin only)
      */
     public function approve(Design $design)
     {
@@ -327,7 +327,7 @@ class DesignController extends Controller
     }
 
     /**
-     * Reject design with feedback (Admin/Sales Manager/SuperAdmin)
+     * Reject design with feedback (Sales Manager/SuperAdmin only)
      */
     public function reject(Request $request, Design $design)
     {

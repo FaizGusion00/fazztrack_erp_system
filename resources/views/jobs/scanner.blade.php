@@ -168,6 +168,26 @@
                         </button>
                     </div>
                     
+                    <!-- Start Job Form (hidden by default) - For CUT and QC phases -->
+                    <div id="start-job-form" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+                        <h4 class="text-sm font-semibold text-gray-800 mb-3">Job Start Details</h4>
+                        
+                        <div class="mb-3">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Start Quantity <span class="text-red-500">*</span></label>
+                            <input type="number" id="start-quantity" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter start quantity" required>
+                            <p class="text-xs text-gray-500 mt-1">Enter the quantity you are starting with for this phase</p>
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <button id="confirm-start-job" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm font-medium">
+                                <i class="fas fa-check mr-2"></i>Confirm Start Job
+                            </button>
+                            <button id="cancel-start-job" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-300 text-sm font-medium">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
                     <!-- End Job Form (hidden by default) -->
                     <div id="end-job-form" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
                         <h4 class="text-sm font-semibold text-gray-800 mb-3">Job Completion Details</h4>
@@ -187,13 +207,9 @@
                             <label class="block text-xs font-medium text-gray-700 mb-1">Reject Status</label>
                             <select id="reject-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select reject status</option>
-                                <option value="Quality Issue">Quality Issue</option>
-                                <option value="Material Defect">Material Defect</option>
-                                <option value="Print Error">Print Error</option>
-                                <option value="Size Mismatch">Size Mismatch</option>
-                                <option value="Color Issue">Color Issue</option>
-                                <option value="Other">Other</option>
+                                <!-- Options will be populated dynamically based on phase -->
                             </select>
+                            <p class="text-xs text-gray-500 mt-1">Required when reject quantity is entered</p>
                         </div>
                         
                         <div class="mb-3">
@@ -554,8 +570,81 @@ function showJobModal(job) {
 
     // Update button states based on job status
     updateButtonStates(job);
+    
+    // Update reject status options based on phase
+    updateRejectStatusOptions(job.phase);
 
     modal.classList.remove('hidden');
+}
+
+// Function to update reject status options based on phase
+function updateRejectStatusOptions(phase) {
+    const rejectStatusSelect = document.getElementById('reject-status');
+    if (!rejectStatusSelect) return;
+    
+    // Clear existing options except the first one
+    rejectStatusSelect.innerHTML = '<option value="">Select reject status</option>';
+    
+    // Define reject status options for different phases
+    const rejectOptions = {
+        'CUT': [
+            'Cutting Error',
+            'Measurement Issue',
+            'Size Mismatch',
+            'Material Defect',
+            'Pattern Error',
+            'Other'
+        ],
+        'QC': [
+            'Quality Issue',
+            'Print Error',
+            'Color Issue',
+            'Size Mismatch',
+            'Stitching Issue',
+            'Finishing Defect',
+            'Other'
+        ],
+        'PRINT': [
+            'Print Error',
+            'Color Issue',
+            'Alignment Issue',
+            'Material Defect',
+            'Other'
+        ],
+        'PRESS': [
+            'Pressing Error',
+            'Temperature Issue',
+            'Material Defect',
+            'Other'
+        ],
+        'SEW': [
+            'Stitching Error',
+            'Thread Issue',
+            'Measurement Issue',
+            'Other'
+        ],
+        'IRON/PACKING': [
+            'Packing Error',
+            'Label Issue',
+            'Quality Issue',
+            'Other'
+        ]
+    };
+    
+    // Get options for current phase or default options
+    const options = rejectOptions[phase] || [
+        'Quality Issue',
+        'Material Defect',
+        'Other'
+    ];
+    
+    // Add options to select
+    options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option;
+        rejectStatusSelect.appendChild(optionElement);
+    });
 }
 
 // Function to update button states
@@ -569,6 +658,15 @@ function updateButtonStates(job) {
     // Reset button states
     startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 text-sm font-medium shadow-lg';
     endBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all duration-300 text-sm font-medium shadow-lg';
+    
+    // Hide all forms by default
+    const startJobForm = document.getElementById('start-job-form');
+    const confirmStartJobBtn = document.getElementById('confirm-start-job');
+    const cancelStartJobBtn = document.getElementById('cancel-start-job');
+    if (startJobForm) startJobForm.classList.add('hidden');
+    if (confirmStartJobBtn) confirmStartJobBtn.classList.add('hidden');
+    if (cancelStartJobBtn) cancelStartJobBtn.classList.add('hidden');
+    
     endJobForm.classList.add('hidden'); // Hide end job form by default
     confirmEndJobBtn.classList.add('hidden'); // Hide confirm end job button by default
     cancelEndJobBtn.classList.add('hidden'); // Hide cancel end job button by default
@@ -648,7 +746,36 @@ function updateButtonStates(job) {
 // Enhanced start job
 document.getElementById('start-job').addEventListener('click', function() {
     if (currentJob) {
-        const button = this;
+        // Check if this is CUT or QC phase - show form for these phases
+        const phasesWithStartQuantity = ['CUT', 'QC'];
+        if (phasesWithStartQuantity.includes(currentJob.phase)) {
+            // Show start job form
+            const startBtn = document.getElementById('start-job');
+            const startJobForm = document.getElementById('start-job-form');
+            const confirmStartJobBtn = document.getElementById('confirm-start-job');
+            const cancelStartJobBtn = document.getElementById('cancel-start-job');
+            
+            startBtn.classList.add('hidden');
+            startJobForm.classList.remove('hidden');
+            confirmStartJobBtn.classList.remove('hidden');
+            cancelStartJobBtn.classList.remove('hidden');
+            
+            // Focus on the start quantity input
+            document.getElementById('start-quantity').focus();
+            
+            // Add visual feedback
+            showSuccess('Please enter the start quantity for this phase');
+        } else {
+            // For other phases, start immediately without form
+            startJobImmediately(null);
+        }
+    }
+});
+
+// Function to start job immediately (for phases that don't need start quantity)
+function startJobImmediately(startQuantity) {
+    if (currentJob) {
+        const button = document.getElementById('start-job');
         const originalText = button.innerHTML;
         
         // Show loading state
@@ -666,7 +793,7 @@ document.getElementById('start-job').addEventListener('click', function() {
                 'Accept': 'application/json',
             },
             body: JSON.stringify({
-                start_quantity: null // Optional parameter
+                start_quantity: startQuantity || null
             })
         })
         .then(response => {
@@ -684,6 +811,14 @@ document.getElementById('start-job').addEventListener('click', function() {
                 // Immediately update the current job status
                 currentJob.status = 'In Progress';
                 currentJob.start_time = data.start_time;
+                
+                // Hide start job form if it was shown
+                const startJobForm = document.getElementById('start-job-form');
+                const confirmStartJobBtn = document.getElementById('confirm-start-job');
+                const cancelStartJobBtn = document.getElementById('cancel-start-job');
+                startJobForm.classList.add('hidden');
+                confirmStartJobBtn.classList.add('hidden');
+                cancelStartJobBtn.classList.add('hidden');
                 
                 // Update button states immediately
                 updateButtonStates(currentJob);
@@ -744,11 +879,57 @@ document.getElementById('start-job').addEventListener('click', function() {
         .finally(() => {
             // Only restore button state if job wasn't successfully started
             if (!currentJob || currentJob.status !== 'In Progress') {
+                const button = document.getElementById('start-job');
                 button.disabled = false;
-                button.innerHTML = originalText;
+                button.innerHTML = '<i class="fas fa-play mr-2"></i>Start Job';
             }
         });
+}
+
+// Confirm start job (for CUT and QC phases)
+document.getElementById('confirm-start-job').addEventListener('click', function() {
+    if (currentJob) {
+        const button = this;
+        const startQuantity = document.getElementById('start-quantity').value;
+        
+        // Validate start quantity
+        if (!startQuantity || startQuantity <= 0) {
+            showError('Please enter a valid start quantity (must be greater than 0)');
+            document.getElementById('start-quantity').focus();
+            return;
+        }
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Starting...';
+        
+        // Start the job with the entered quantity
+        startJobImmediately(parseInt(startQuantity));
     }
+});
+
+// Cancel start job
+document.getElementById('cancel-start-job').addEventListener('click', function() {
+    // Hide the form and buttons
+    const startJobForm = document.getElementById('start-job-form');
+    const startBtn = document.getElementById('start-job');
+    const confirmStartJobBtn = document.getElementById('confirm-start-job');
+    const cancelStartJobBtn = document.getElementById('cancel-start-job');
+    
+    startJobForm.classList.add('hidden');
+    confirmStartJobBtn.classList.add('hidden');
+    cancelStartJobBtn.classList.add('hidden');
+    
+    // Only show the start button if the job is still pending
+    if (currentJob && currentJob.status === 'Pending') {
+        startBtn.classList.remove('hidden');
+    }
+    
+    // Clear form field
+    document.getElementById('start-quantity').value = '';
+    
+    // Show feedback
+    showSuccess('Start job cancelled. You can try again.');
 });
 
 // Enhanced end job
@@ -758,6 +939,9 @@ document.getElementById('end-job').addEventListener('click', function() {
         const endJobForm = document.getElementById('end-job-form');
         const confirmEndJobBtn = document.getElementById('confirm-end-job');
         const cancelEndJobBtn = document.getElementById('cancel-end-job');
+        
+        // Update reject status options based on current phase
+        updateRejectStatusOptions(currentJob.phase);
         
         // Hide the end button and show the form
         endBtn.classList.add('hidden');

@@ -164,6 +164,15 @@
                                                 <div class="flex items-center text-gray-600">
                                                     <i class="fas fa-boxes w-4 mr-2 text-purple-500"></i>
                                                     <span>{{ $job->start_quantity }} → {{ $job->end_quantity }}</span>
+                                                    @if($job->reject_quantity)
+                                                        <span class="ml-2 text-red-600 font-semibold">(Reject: {{ $job->reject_quantity }})</span>
+                                                    @endif
+                                                </div>
+                                                @endif
+                                                @if($job->reject_quantity && $job->reject_status)
+                                                <div class="flex items-center text-gray-600">
+                                                    <i class="fas fa-exclamation-triangle w-4 mr-2 text-red-500"></i>
+                                                    <span class="text-red-600">{{ $job->phase }}: {{ $job->reject_status }}</span>
                                                 </div>
                                                 @endif
                                                 @if($job->start_time)
