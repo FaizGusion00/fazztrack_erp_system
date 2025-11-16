@@ -245,13 +245,42 @@ let scanner = null;
 let currentJob = null;
 let videoStream = null;
 
-// Initialize scanner with proper permission handling
+// Platform detection
+function detectPlatform() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    const isAndroid = /android/i.test(userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+    const isChrome = /chrome/i.test(userAgent) && !/edge/i.test(userAgent);
+    const isFirefox = /firefox/i.test(userAgent);
+    const isEdge = /edge/i.test(userAgent);
+    const isMobile = isIOS || isAndroid;
+    const isDesktop = !isMobile;
+    
+    return {
+        isIOS,
+        isAndroid,
+        isSafari,
+        isChrome,
+        isFirefox,
+        isEdge,
+        isMobile,
+        isDesktop,
+        userAgent
+    };
+}
+
+// Initialize scanner with proper permission handling for all platforms
 function initScanner() {
     console.log('🔵 [SCANNER] initScanner() called');
     const video = document.getElementById('qr-video');
     const statusIndicator = document.getElementById('scanner-status');
     const statusText = document.getElementById('status-text');
     const cameraContainer = document.getElementById('camera-container');
+    
+    // Detect platform
+    const platform = detectPlatform();
+    console.log('🔵 [SCANNER] Platform detected:', platform);
     
     console.log('🔵 [SCANNER] Video element:', video ? 'Found' : 'Not found');
     console.log('🔵 [SCANNER] Status indicator:', statusIndicator ? 'Found' : 'Not found');
@@ -319,42 +348,94 @@ function initScanner() {
         return;
     }
 
-    // Check camera permission status first (if supported)
+    // For iOS Safari, we need to request permission directly (permissions.query is not supported)
+    if (platform.isIOS && platform.isSafari) {
+        console.log('🔵 [SCANNER] iOS Safari detected - requesting camera directly');
+        // iOS Safari doesn't support permissions.query, so we request directly
+        // The permission prompt will appear when getUserMedia is called
+        requestCameraAccess(platform);
+        return;
+    }
+
+    // For other browsers, try to check permission status first (if supported)
     if (navigator.permissions && navigator.permissions.query) {
         console.log('🔵 [SCANNER] Checking camera permission status...');
+        // Try to query camera permission (may not work on all browsers)
         navigator.permissions.query({ name: 'camera' })
             .then(function(result) {
                 console.log('🔵 [SCANNER] Camera permission status:', result.state);
                 if (result.state === 'denied') {
                     console.error('❌ [SCANNER] Camera permission is denied');
-                    showPermissionDeniedError();
+                    showPermissionDeniedError(platform);
                     return;
                 }
                 // If permission is 'prompt' or 'granted', proceed with request
-                requestCameraAccess();
+                requestCameraAccess(platform);
             })
             .catch(function(err) {
                 console.warn('⚠️ [SCANNER] Permission query not supported, proceeding with request:', err);
-                // If permission query is not supported, proceed with request
-                requestCameraAccess();
+                // If permission query is not supported (e.g., Safari, some mobile browsers), proceed with request
+                requestCameraAccess(platform);
             });
     } else {
         console.log('🔵 [SCANNER] Permission query API not available, proceeding with request');
-        requestCameraAccess();
+        // Permission query not available (Safari, older browsers) - proceed with request
+        requestCameraAccess(platform);
     }
     
-    // Function to request camera access
-    function requestCameraAccess() {
-        // Request camera access with better error handling
-        const constraints = {
+    // Function to request camera access with platform-specific handling
+    function requestCameraAccess(platform) {
+        // Update status to show we're requesting permission
+        if (statusIndicator) {
+            statusIndicator.className = 'w-3 h-3 bg-yellow-500 rounded-full animate-pulse';
+        }
+        if (statusText) {
+            statusText.textContent = 'Requesting Camera Permission...';
+        }
+        
+        // Show permission request message in placeholder (especially for iOS)
+        const placeholder = document.getElementById('camera-placeholder');
+        if (placeholder && platform.isIOS) {
+            placeholder.classList.remove('hidden');
+            placeholder.innerHTML = `
+                <div class="text-center p-6">
+                    <i class="fas fa-camera text-4xl text-blue-500 mb-4 animate-pulse"></i>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Camera Permission Request</h3>
+                    <p class="text-sm text-gray-600 mb-4">Please allow camera access when prompted.</p>
+                    <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-left">
+                        <p class="text-xs text-blue-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>iOS:</strong> A popup will appear asking for camera permission. Tap <strong>"Allow"</strong> to continue.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Platform-specific constraints
+        let constraints = {
             video: {
-                facingMode: 'environment', // Use back camera on mobile
                 width: { ideal: 1280 },
                 height: { ideal: 720 }
             }
         };
+        
+        // For mobile devices, prefer back camera
+        if (platform.isMobile) {
+            constraints.video.facingMode = 'environment'; // Back camera
+        }
+        
+        // For iOS, use simpler constraints
+        if (platform.isIOS) {
+            constraints = {
+                video: {
+                    facingMode: 'environment'
+                }
+            };
+        }
 
         console.log('🔵 [SCANNER] Requesting camera access with constraints:', constraints);
+        console.log('🔵 [SCANNER] Platform:', platform);
         navigator.mediaDevices.getUserMedia(constraints)
         .then(function(stream) {
             console.log('✅ [SCANNER] Camera access granted, stream received');
@@ -421,17 +502,97 @@ function initScanner() {
             
             if (err.name === 'NotAllowedError') {
                 errorMessage = 'Camera permission denied.';
-                instructions = `
-                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
-                        <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
-                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
-                            <li>Look for the camera icon in your browser's address bar</li>
-                            <li>Click it and select "Allow" for camera access</li>
-                            <li>Or go to your browser settings → Privacy → Site Settings → Camera</li>
-                            <li>Make sure this site is allowed to use the camera</li>
-                        </ol>
-                    </div>
-                `;
+                
+                // Platform-specific instructions
+                let platformInstructions = '';
+                if (platform.isIOS) {
+                    platformInstructions = `
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">📱 iOS Safari - How to enable camera:</p>
+                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                                <li>Go to <strong>Settings</strong> app on your iPhone/iPad</li>
+                                <li>Scroll down and tap <strong>Safari</strong></li>
+                                <li>Tap <strong>Camera</strong> under "Website Settings"</li>
+                                <li>Select <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
+                                <li>Or tap <strong>"Website Data"</strong> → Find this site → Set Camera to <strong>"Allow"</strong></li>
+                                <li>Return to Safari and try again</li>
+                            </ol>
+                            <p class="text-xs text-yellow-600 mt-2 italic">Note: You may need to refresh the page after changing settings.</p>
+                        </div>
+                    `;
+                } else if (platform.isAndroid) {
+                    platformInstructions = `
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">📱 Android - How to enable camera:</p>
+                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                                <li>When prompted, tap <strong>"Allow"</strong> for camera access</li>
+                                <li>If you denied it, go to <strong>Chrome Settings</strong> → <strong>Site Settings</strong></li>
+                                <li>Find this website and tap it</li>
+                                <li>Set <strong>Camera</strong> to <strong>"Allow"</strong></li>
+                                <li>Or go to Android <strong>Settings</strong> → <strong>Apps</strong> → <strong>Chrome</strong> → <strong>Permissions</strong> → <strong>Camera</strong> → <strong>Allow</strong></li>
+                                <li>Refresh the page and try again</li>
+                            </ol>
+                        </div>
+                    `;
+                } else if (platform.isChrome) {
+                    platformInstructions = `
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">💻 Chrome (Windows/Mac) - How to enable camera:</p>
+                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                                <li>Look for the <strong>camera icon</strong> (📷) in the address bar</li>
+                                <li>Click it and select <strong>"Allow"</strong> for camera access</li>
+                                <li>Or click the <strong>lock icon</strong> (🔒) → <strong>Camera</strong> → <strong>"Allow"</strong></li>
+                                <li>Or go to <strong>Chrome Settings</strong> → <strong>Privacy and security</strong> → <strong>Site Settings</strong> → <strong>Camera</strong></li>
+                                <li>Find this site and set to <strong>"Allow"</strong></li>
+                                <li>Refresh the page and try again</li>
+                            </ol>
+                        </div>
+                    `;
+                } else if (platform.isFirefox) {
+                    platformInstructions = `
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">🦊 Firefox - How to enable camera:</p>
+                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                                <li>Click the <strong>lock icon</strong> (🔒) in the address bar</li>
+                                <li>Click <strong>"More Information"</strong></li>
+                                <li>Go to <strong>Permissions</strong> tab</li>
+                                <li>Find <strong>Camera</strong> and set to <strong>"Allow"</strong></li>
+                                <li>Or go to <strong>Firefox Settings</strong> → <strong>Privacy & Security</strong> → <strong>Permissions</strong> → <strong>Camera</strong></li>
+                                <li>Refresh the page and try again</li>
+                            </ol>
+                        </div>
+                    `;
+                } else if (platform.isSafari) {
+                    platformInstructions = `
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">🍎 Safari (Mac) - How to enable camera:</p>
+                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                                <li>Go to <strong>Safari</strong> → <strong>Settings</strong> (or <strong>Preferences</strong>)</li>
+                                <li>Click <strong>Websites</strong> tab</li>
+                                <li>Select <strong>Camera</strong> from the left sidebar</li>
+                                <li>Find this website and set to <strong>"Allow"</strong></li>
+                                <li>Or when prompted, click <strong>"Allow"</strong> in the popup</li>
+                                <li>Refresh the page and try again</li>
+                            </ol>
+                        </div>
+                    `;
+                } else {
+                    // Generic instructions
+                    platformInstructions = `
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
+                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                                <li>Look for the camera icon in your browser's address bar</li>
+                                <li>Click it and select "Allow" for camera access</li>
+                                <li>Or go to your browser settings → Privacy → Site Settings → Camera</li>
+                                <li>Make sure this site is allowed to use the camera</li>
+                                <li>Refresh the page and try again</li>
+                            </ol>
+                        </div>
+                    `;
+                }
+                
+                instructions = platformInstructions;
                 console.error('❌ [SCANNER] Permission denied by user');
             } else if (err.name === 'NotFoundError') {
                 errorMessage = 'No camera found.';
@@ -501,8 +662,8 @@ function initScanner() {
         });
     }
     
-    // Function to show permission denied error with detailed instructions
-    function showPermissionDeniedError() {
+    // Function to show permission denied error with platform-specific instructions
+    function showPermissionDeniedError(platform) {
         if (statusIndicator) {
             statusIndicator.className = 'w-3 h-3 bg-red-500 rounded-full';
         }
@@ -516,41 +677,95 @@ function initScanner() {
         const placeholder = document.getElementById('camera-placeholder');
         if (placeholder) {
             placeholder.classList.remove('hidden');
+            
+            // Platform-specific instructions
+            let platformInstructions = '';
+            if (platform.isIOS) {
+                platformInstructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">📱 iOS Safari - Enable Camera:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Open <strong>Settings</strong> app on your iPhone/iPad</li>
+                            <li>Scroll down and tap <strong>Safari</strong></li>
+                            <li>Tap <strong>Camera</strong> under "Website Settings"</li>
+                            <li>Select <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
+                            <li>Or go to <strong>Website Data</strong> → Find this site → Set Camera to <strong>"Allow"</strong></li>
+                            <li>Return to Safari, refresh page, and try again</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (platform.isAndroid) {
+                platformInstructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">📱 Android - Enable Camera:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Go to <strong>Chrome Settings</strong> → <strong>Site Settings</strong></li>
+                            <li>Find this website and tap it</li>
+                            <li>Set <strong>Camera</strong> to <strong>"Allow"</strong></li>
+                            <li>Or go to Android <strong>Settings</strong> → <strong>Apps</strong> → <strong>Chrome</strong> → <strong>Permissions</strong> → <strong>Camera</strong> → <strong>Allow</strong></li>
+                            <li>Refresh the page and try again</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (platform.isChrome) {
+                platformInstructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">💻 Chrome - Enable Camera:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Click the <strong>camera icon</strong> (📷) or <strong>lock icon</strong> (🔒) in address bar</li>
+                            <li>Select <strong>"Allow"</strong> for Camera</li>
+                            <li>Or go to <strong>Chrome Settings</strong> → <strong>Privacy and security</strong> → <strong>Site Settings</strong> → <strong>Camera</strong></li>
+                            <li>Find this site and set to <strong>"Allow"</strong></li>
+                            <li>Refresh the page and try again</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (platform.isFirefox) {
+                platformInstructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">🦊 Firefox - Enable Camera:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Click the <strong>lock icon</strong> (🔒) in address bar</li>
+                            <li>Click <strong>"More Information"</strong></li>
+                            <li>Go to <strong>Permissions</strong> tab → Set <strong>Camera</strong> to <strong>"Allow"</strong></li>
+                            <li>Or go to <strong>Firefox Settings</strong> → <strong>Privacy & Security</strong> → <strong>Permissions</strong> → <strong>Camera</strong></li>
+                            <li>Refresh the page and try again</li>
+                        </ol>
+                    </div>
+                `;
+            } else if (platform.isSafari) {
+                platformInstructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">🍎 Safari (Mac) - Enable Camera:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Go to <strong>Safari</strong> → <strong>Settings</strong> (or <strong>Preferences</strong>)</li>
+                            <li>Click <strong>Websites</strong> tab → <strong>Camera</strong></li>
+                            <li>Find this website and set to <strong>"Allow"</strong></li>
+                            <li>Refresh the page and try again</li>
+                        </ol>
+                    </div>
+                `;
+            } else {
+                platformInstructions = `
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">Enable Camera Access:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Look for camera icon in browser address bar</li>
+                            <li>Click and select "Allow" for camera</li>
+                            <li>Or go to browser settings → Privacy → Site Settings → Camera</li>
+                            <li>Allow this site to use camera</li>
+                            <li>Refresh page and try again</li>
+                        </ol>
+                    </div>
+                `;
+            }
+            
             placeholder.innerHTML = `
                 <div class="text-center p-6">
                     <i class="fas fa-camera-slash text-4xl text-red-500 mb-4"></i>
                     <h3 class="text-lg font-semibold text-gray-800 mb-2">Camera Permission Denied</h3>
                     <p class="text-sm text-gray-600 mb-4">Please enable camera access in your browser settings.</p>
-                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
-                        <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
-                        <div class="text-xs text-yellow-700 space-y-2">
-                            <div>
-                                <strong>Chrome/Edge:</strong>
-                                <ol class="list-decimal list-inside ml-2 mt-1 space-y-1">
-                                    <li>Click the lock/camera icon in the address bar</li>
-                                    <li>Select "Allow" for Camera</li>
-                                    <li>Or go to Settings → Privacy → Site Settings → Camera</li>
-                                    <li>Find this site and set to "Allow"</li>
-                                </ol>
-                            </div>
-                            <div class="mt-2">
-                                <strong>Firefox:</strong>
-                                <ol class="list-decimal list-inside ml-2 mt-1 space-y-1">
-                                    <li>Click the lock icon in the address bar</li>
-                                    <li>Click "More Information"</li>
-                                    <li>Go to Permissions tab</li>
-                                    <li>Set Camera to "Allow"</li>
-                                </ol>
-                            </div>
-                            <div class="mt-2">
-                                <strong>Safari:</strong>
-                                <ol class="list-decimal list-inside ml-2 mt-1 space-y-1">
-                                    <li>Safari → Settings → Websites → Camera</li>
-                                    <li>Find this site and set to "Allow"</li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
+                    ${platformInstructions}
                     <div class="mt-4 flex flex-col sm:flex-row gap-2 justify-center">
                         <button onclick="initScanner()" 
                                 class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">

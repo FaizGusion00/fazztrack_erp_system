@@ -344,7 +344,7 @@
                             <span class="text-sm font-medium text-gray-900">{{ $completedJobs }}/{{ $totalJobs }} completed</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-primary-600 h-2 rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
+                            <div class="bg-primary-600 h-2 rounded-full transition-all duration-300" data-progress="{{ $progress ?? 0 }}" style="width: 0%;"></div>
                         </div>
                     </div>
 
@@ -395,7 +395,7 @@
                                         @php
                                             $jobProgress = ($job->end_quantity / $job->start_quantity) * 100;
                                         @endphp
-                                        <div class="bg-green-600 h-1 rounded-full" style="width: {{ $jobProgress }}%"></div>
+                                        <div class="bg-green-600 h-1 rounded-full job-progress-bar" data-progress="{{ $jobProgress ?? 0 }}" style="width: 0%;"></div>
                                     </div>
                                 </div>
                                 @endif
@@ -461,8 +461,12 @@
                                         $receiptIsImage = in_array($receiptFileExt, ['jpg', 'jpeg', 'png', 'gif']);
                                         $receiptFileType = $receiptIsImage ? 'image' : 'pdf';
                                     @endphp
+                                    @php
+                                        $receiptUrl = asset('storage/' . $receipt->file_path);
+                                        $receiptNameEscaped = htmlspecialchars($receipt->file_name, ENT_QUOTES, 'UTF-8');
+                                    @endphp
                                     <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                                         onclick="openFilePreviewModal('{{ asset('storage/' . $receipt->file_path) }}', '{{ $receipt->file_name }}', '{{ $receiptFileType }}')">
+                                         onclick="openFilePreviewModal('{{ $receiptUrl }}', '{{ $receiptNameEscaped }}', '{{ $receiptFileType }}')">
                                         <div class="flex-1">
                                             <div class="text-sm text-primary-600 hover:text-primary-700 font-medium">
                                                 <i class="fas {{ in_array(strtolower(pathinfo($receipt->file_name, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif']) ? 'fa-image' : 'fa-file-pdf' }} mr-1"></i>
@@ -570,21 +574,37 @@
                 </h3>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="space-y-2">
                     @foreach($designImages as $index => $imagePath)
-                    <div class="space-y-3">
-                        <h4 class="text-sm font-medium text-gray-700">Design Image {{ $index + 1 }}</h4>
-                        <div class="relative group">
-                            <img src="@fileUrl($imagePath)" 
-                                 alt="Design Image {{ $index + 1 }}" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
-                                 data-title="Design Image {{ $index + 1 }}">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
-                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                    @php
+                        // Ensure we have a valid path
+                        if (empty($imagePath)) {
+                            continue;
+                        }
+                        // Generate URL using StorageService
+                        $imageUrl = \App\Services\StorageService::url($imagePath);
+                        // Fallback to asset if StorageService returns null
+                        if (!$imageUrl && $imagePath) {
+                            $imageUrl = asset('storage/' . ltrim($imagePath, '/'));
+                        }
+                    @endphp
+                    @if($imageUrl)
+                    <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                         onclick="openImageModal('{{ $imageUrl }}', 'Design Image {{ $index + 1 }}')">
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <i class="fas fa-image text-primary-500 text-lg"></i>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-primary-600 hover:text-primary-700 truncate">
+                                    Design Image {{ $index + 1 }}
+                                </p>
+                                <p class="text-xs text-gray-500 truncate mt-0.5" title="{{ basename($imagePath) }}">
+                                    {{ basename($imagePath) }}
+                                </p>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500 truncate" title="{{ basename($imagePath) }}">{{ basename($imagePath) }}</p>
+                        <i class="fas fa-external-link-alt text-gray-400 text-xs ml-3"></i>
                     </div>
+                    @endif
                     @endforeach
                 </div>
             </div>
@@ -912,66 +932,23 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Add click event listeners to all design images
+// Initialize progress bars
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Setting up image modal functionality...');
-    
-    // Function to setup image click events
-    function setupImageEvents() {
-        const designImages = document.querySelectorAll('.design-image');
-        console.log('Found design images:', designImages.length);
-        
-        designImages.forEach(function(img, index) {
-            console.log(`Setting up image ${index + 1}:`, img.src, img.getAttribute('data-title'));
-            
-            // Remove any existing click events to prevent duplicates
-            img.removeEventListener('click', handleImageClick);
-            
-            // Add click event
-            img.addEventListener('click', handleImageClick);
-            
-            // Ensure cursor shows pointer and add hover effect
-            img.style.cursor = 'pointer';
-            img.classList.add('hover:opacity-90', 'transition-opacity', 'duration-200');
-            
-            console.log(`Image ${index + 1} setup complete`);
-        });
-    }
-    
-    // Handle image clicks
-    function handleImageClick(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('Image clicked!', this.src, this.getAttribute('data-title'));
-        
-        const imageSrc = this.src;
-        const title = this.getAttribute('data-title') || 'Design Image';
-        
-        openImageModal(imageSrc, title);
-    }
-    
-    // Initial setup
-    setupImageEvents();
-    
-    // Fallback: If no images found initially, try again after a short delay
-    setTimeout(function() {
-        const designImages = document.querySelectorAll('.design-image');
-        if (designImages.length === 0) {
-            console.log('No images found initially, retrying...');
-            setupImageEvents();
+    // Set progress bar widths
+    document.querySelectorAll('[data-progress]').forEach(function(bar) {
+        const progress = bar.getAttribute('data-progress');
+        if (progress !== null && progress !== '') {
+            bar.style.width = progress + '%';
         }
-    }, 500);
+    });
     
-    // Also try to setup events when images load
-    document.addEventListener('load', function(e) {
-        if (e.target.tagName === 'IMG' && e.target.classList.contains('design-image')) {
-            console.log('Image loaded, setting up event:', e.target.src);
-            setupImageEvents();
+    // Set job progress bar widths
+    document.querySelectorAll('.job-progress-bar').forEach(function(bar) {
+        const progress = bar.getAttribute('data-progress');
+        if (progress !== null && progress !== '') {
+            bar.style.width = progress + '%';
         }
-    }, true);
-    
-    console.log('Image modal setup complete');
+    });
 });
 
 // File Preview Modal (for Receipts and Job Sheets)
@@ -1072,7 +1049,7 @@ document.addEventListener('keydown', function(e) {
                      alt="" 
                      class="max-w-full max-h-full object-contain rounded-lg shadow-lg hidden"
                      onload="document.getElementById('filePreviewLoading').classList.add('hidden')"
-                     onerror="this.parentElement.innerHTML='<div class=\\'text-white text-center\\'><i class=\\'fas fa-exclamation-triangle text-4xl mb-4\\'></i><p>Failed to load image</p></div>'">
+                     onerror="this.parentElement.innerHTML='<div class=&quot;text-white text-center&quot;><i class=&quot;fas fa-exclamation-triangle text-4xl mb-4&quot;></i><p>Failed to load image</p></div>'">
                 
                 <!-- PDF Preview -->
                 <iframe id="filePreviewPdf" 

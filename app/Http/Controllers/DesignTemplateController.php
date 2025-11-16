@@ -14,6 +14,7 @@ class DesignTemplateController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only designers can access templates
@@ -56,6 +57,7 @@ class DesignTemplateController extends Controller
      */
     public function create()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isDesigner()) {
@@ -70,6 +72,7 @@ class DesignTemplateController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isDesigner()) {
@@ -114,6 +117,7 @@ class DesignTemplateController extends Controller
      */
     public function show(DesignTemplate $template)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isDesigner()) {
@@ -133,6 +137,7 @@ class DesignTemplateController extends Controller
      */
     public function edit(DesignTemplate $template)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isDesigner()) {
@@ -151,6 +156,7 @@ class DesignTemplateController extends Controller
      */
     public function update(Request $request, DesignTemplate $template)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isDesigner()) {
@@ -193,6 +199,7 @@ class DesignTemplateController extends Controller
      */
     public function destroy(DesignTemplate $template)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isDesigner()) {

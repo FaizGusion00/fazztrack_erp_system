@@ -19,8 +19,10 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Only SuperAdmin can access reports
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can access reports.');
         }
 
@@ -177,7 +179,9 @@ class ReportController extends Controller
      */
     public function orderReport(Request $request)
     {
-        if (!Auth::user()->isSuperAdmin()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can access reports.');
         }
 
@@ -197,7 +201,9 @@ class ReportController extends Controller
      */
     public function productionReport(Request $request)
     {
-        if (!Auth::user()->isSuperAdmin()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can access reports.');
         }
 
@@ -224,7 +230,9 @@ class ReportController extends Controller
      */
     public function userReport(Request $request)
     {
-        if (!Auth::user()->isSuperAdmin()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can access reports.');
         }
 
@@ -248,7 +256,9 @@ class ReportController extends Controller
      */
     public function financialReport(Request $request)
     {
-        if (!Auth::user()->isSuperAdmin()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can access reports.');
         }
 
@@ -284,7 +294,9 @@ class ReportController extends Controller
      */
     public function export(Request $request)
     {
-        if (!Auth::user()->isSuperAdmin()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can export reports.');
         }
 
@@ -432,7 +444,7 @@ class ReportController extends Controller
     private function exportClients($file, $startDate, $endDate)
     {
         fputcsv($file, ['Client ID', 'Name', 'Email', 'Phone', 'Customer Type', 'Created Date']);
-        $clients = \App\Models\Client::whereBetween('created_at', [$startDate, $endDate])->get();
+        $clients = Client::whereBetween('created_at', [$startDate, $endDate])->get();
         foreach ($clients as $client) {
             fputcsv($file, [
                 $client->client_id,
@@ -448,7 +460,7 @@ class ReportController extends Controller
     private function exportJobs($file, $startDate, $endDate)
     {
         fputcsv($file, ['Job ID', 'Order ID', 'Phase', 'Status', 'Duration (min)', 'Assigned User', 'Created Date']);
-        $jobs = \App\Models\Job::with(['order', 'assignedUser'])
+        $jobs = Job::with(['order', 'assignedUser'])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
         foreach ($jobs as $job) {

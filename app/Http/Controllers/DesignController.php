@@ -8,6 +8,7 @@ use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class DesignController extends Controller
 {
@@ -16,6 +17,7 @@ class DesignController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Designer, Admin, Sales Manager, SuperAdmin can access
@@ -113,8 +115,9 @@ class DesignController extends Controller
     /**
      * Show the form for uploading design for an order
      */
-    public function create(Request $request, Order $order = null)
+    public function create(Request $request, ?Order $order = null)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Designer can upload designs
@@ -172,8 +175,9 @@ class DesignController extends Controller
     /**
      * Store a newly uploaded design
      */
-    public function store(Request $request, Order $order = null)
+    public function store(Request $request, ?Order $order = null)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Designer can upload designs
@@ -255,8 +259,8 @@ class DesignController extends Controller
         $order->update(['status' => 'Design Review']);
         
         // Clear dashboard cache when new design is created
-        \Cache::forget('dashboard_stats_admin');
-        \Cache::forget('dashboard_pending_designs');
+        Cache::forget('dashboard_stats_admin');
+        Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design uploaded successfully. Waiting for review.');
@@ -267,6 +271,7 @@ class DesignController extends Controller
      */
     public function show(Design $design)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Designer, Admin, Sales Manager, SuperAdmin can view designs
@@ -292,6 +297,7 @@ class DesignController extends Controller
      */
     public function edit(Design $design)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Designer can edit designs
@@ -311,6 +317,7 @@ class DesignController extends Controller
      */
     public function update(Request $request, Design $design)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Designer can update designs
@@ -345,7 +352,8 @@ class DesignController extends Controller
                     $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
                 } else {
                     // Copy from previous version if not uploaded
-                    $oldFiles = json_decode($design->design_files, true) ?: [];
+                    // design_files is already cast to array in model, so use directly
+                    $oldFiles = is_array($design->design_files) ? $design->design_files : [];
                     if (isset($oldFiles[$field])) {
                         $designFiles[$field] = $oldFiles[$field];
                     }
@@ -366,15 +374,16 @@ class DesignController extends Controller
             $design->order->update(['status' => 'Design Review']);
             
             // Clear dashboard cache when new design version is created
-            \Cache::forget('dashboard_stats_admin');
-            \Cache::forget('dashboard_pending_designs');
+            Cache::forget('dashboard_stats_admin');
+            Cache::forget('dashboard_pending_designs');
             
             return redirect()->route('designs.show', $newDesign)
                 ->with('success', 'New design version created successfully. Waiting for review.');
         }
         
         // For non-rejected designs, update existing design
-        $designFiles = json_decode($design->design_files, true) ?: [];
+        // design_files is already cast to array in model, so use directly
+        $designFiles = is_array($design->design_files) ? $design->design_files : [];
         
         // Handle design file uploads
         $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
@@ -396,8 +405,8 @@ class DesignController extends Controller
         ]);
         
         // Clear dashboard cache when design is updated
-        \Cache::forget('dashboard_stats_admin');
-        \Cache::forget('dashboard_pending_designs');
+        Cache::forget('dashboard_stats_admin');
+        Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design updated successfully. Waiting for review.');
@@ -408,6 +417,7 @@ class DesignController extends Controller
      */
     public function approve(Design $design)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Sales Manager and SuperAdmin can approve designs
@@ -425,10 +435,10 @@ class DesignController extends Controller
         $design->order->update(['status' => 'Design Approved']);
         
         // Clear dashboard cache when design is approved
-        \Cache::forget('dashboard_stats_superadmin');
-        \Cache::forget('dashboard_stats_admin');
-        \Cache::forget('dashboard_stats_sales');
-        \Cache::forget('dashboard_pending_designs');
+        Cache::forget('dashboard_stats_superadmin');
+        Cache::forget('dashboard_stats_admin');
+        Cache::forget('dashboard_stats_sales');
+        Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design approved successfully.');
@@ -439,6 +449,7 @@ class DesignController extends Controller
      */
     public function reject(Request $request, Design $design)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only Sales Manager and SuperAdmin can reject designs
@@ -458,8 +469,8 @@ class DesignController extends Controller
         ]);
         
         // Clear dashboard cache when design is rejected
-        \Cache::forget('dashboard_stats_admin');
-        \Cache::forget('dashboard_pending_designs');
+        Cache::forget('dashboard_stats_admin');
+        Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design rejected with feedback.');

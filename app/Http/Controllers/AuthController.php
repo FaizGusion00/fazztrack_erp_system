@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -148,7 +149,7 @@ class AuthController extends Controller
         
         // Cache statistics for 10 minutes to improve performance
         $cacheKey = 'dashboard_stats_superadmin';
-        $stats = \Cache::remember($cacheKey, 600, function () {
+        $stats = Cache::remember($cacheKey, 600, function () {
             return [
                 'total_orders' => \App\Models\Order::count(),
                 'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
@@ -164,7 +165,7 @@ class AuthController extends Controller
 
         // Cache revenue data for 15 minutes (less frequently changing)
         $revenueCacheKey = 'dashboard_revenue_data';
-        $revenueData = \Cache::remember($revenueCacheKey, 900, function () {
+        $revenueData = Cache::remember($revenueCacheKey, 900, function () {
             $data = [];
             for ($i = 11; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
@@ -181,7 +182,7 @@ class AuthController extends Controller
 
         // Recent orders - cache for 2 minutes (more dynamic)
         $recentOrdersCacheKey = 'dashboard_recent_orders';
-        $recent_orders = \Cache::remember($recentOrdersCacheKey, 120, function () {
+        $recent_orders = Cache::remember($recentOrdersCacheKey, 120, function () {
             return \App\Models\Order::with('client')
                 ->latest()
                 ->take(5)
@@ -190,7 +191,7 @@ class AuthController extends Controller
 
         // Top clients - cache for 10 minutes
         $topClientsCacheKey = 'dashboard_top_clients';
-        $top_clients = \Cache::remember($topClientsCacheKey, 600, function () {
+        $top_clients = Cache::remember($topClientsCacheKey, 600, function () {
             return \App\Models\Client::withSum('orders', 'total_amount')
                 ->orderBy('orders_sum_total_amount', 'desc')
                 ->take(5)
@@ -218,7 +219,7 @@ class AuthController extends Controller
 
         // Orders pending approval - cache for 1 minute (very dynamic)
         $pendingOrdersCacheKey = 'dashboard_pending_orders';
-        $pending_orders = \Cache::remember($pendingOrdersCacheKey, 60, function () {
+        $pending_orders = Cache::remember($pendingOrdersCacheKey, 60, function () {
             return \App\Models\Order::with('client')
                 ->where('status', 'Order Created')
                 ->latest()
@@ -228,7 +229,7 @@ class AuthController extends Controller
 
         // Designs pending review - cache for 1 minute (very dynamic)
         $pendingDesignsCacheKey = 'dashboard_pending_designs';
-        $pending_designs = \Cache::remember($pendingDesignsCacheKey, 60, function () {
+        $pending_designs = Cache::remember($pendingDesignsCacheKey, 60, function () {
             return \App\Models\Design::with(['order.client', 'designer'])
                 ->where('status', 'Pending Review')
                 ->latest()
@@ -262,7 +263,7 @@ class AuthController extends Controller
 
         // Cache revenue data for 15 minutes
         $revenueCacheKey = 'dashboard_revenue_data_sales';
-        $revenueData = \Cache::remember($revenueCacheKey, 900, function () {
+        $revenueData = Cache::remember($revenueCacheKey, 900, function () {
             $data = [];
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
@@ -279,7 +280,7 @@ class AuthController extends Controller
 
         // Recent orders - cache for 2 minutes
         $recentOrdersCacheKey = 'dashboard_recent_orders_sales';
-        $recent_orders = \Cache::remember($recentOrdersCacheKey, 120, function () {
+        $recent_orders = Cache::remember($recentOrdersCacheKey, 120, function () {
             return \App\Models\Order::with('client')
                 ->latest()
                 ->take(5)
@@ -288,7 +289,7 @@ class AuthController extends Controller
 
         // Top clients - cache for 10 minutes
         $topClientsCacheKey = 'dashboard_top_clients_sales';
-        $top_clients = \Cache::remember($topClientsCacheKey, 600, function () {
+        $top_clients = Cache::remember($topClientsCacheKey, 600, function () {
             return \App\Models\Client::withSum('orders', 'total_amount')
                 ->orderBy('orders_sum_total_amount', 'desc')
                 ->take(5)

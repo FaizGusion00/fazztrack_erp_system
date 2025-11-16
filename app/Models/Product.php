@@ -33,11 +33,13 @@ class Product extends Model
     ];
 
     /**
-     * Get the orders that use this product (legacy - for backward compatibility).
+     * Get all orders that use this product through the pivot table.
      */
     public function orders()
     {
-        return $this->hasMany(Order::class, 'product_id', 'product_id');
+        return $this->belongsToMany(Order::class, 'order_products', 'product_id', 'order_id')
+                    ->withPivot('quantity', 'comments')
+                    ->withTimestamps();
     }
 
     /**

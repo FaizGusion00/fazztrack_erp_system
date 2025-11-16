@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class JobController extends Controller
 {
@@ -15,6 +16,7 @@ class JobController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Only SuperAdmin and Sales Manager can view jobs
@@ -137,6 +139,7 @@ class JobController extends Controller
                 ->findOrFail($jobId);
 
             // Check if user can access this job
+            /** @var \App\Models\User $user */
             $user = Auth::user();
             if ($user->isProductionStaff() && $job->assigned_user_id !== $user->id) {
                 return response()->json(['error' => 'Access denied'], 403);
@@ -158,6 +161,7 @@ class JobController extends Controller
      */
     public function startJob(Request $request, Job $job)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
@@ -248,6 +252,7 @@ class JobController extends Controller
      */
     public function endJob(Request $request, Job $job)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
@@ -418,6 +423,7 @@ class JobController extends Controller
     public function edit(Job $job)
     {
         // Check if user has permission to edit this job
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         if (!$user->isAdmin() && !$user->isSuperAdmin()) {
             return redirect()->route('jobs.index')
@@ -436,6 +442,7 @@ class JobController extends Controller
     public function update(Request $request, Job $job)
     {
         // Check if user has permission to edit this job
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         if (!$user->isAdmin() && !$user->isSuperAdmin()) {
             return redirect()->route('jobs.index')
@@ -566,6 +573,7 @@ class JobController extends Controller
      */
     public function getJobDetails(Job $job)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // SuperAdmin and Sales Manager can access all jobs
@@ -618,6 +626,7 @@ class JobController extends Controller
      */
     public function getWorkflowInfo(Job $job)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         // SuperAdmin and Sales Manager can access all jobs
@@ -775,7 +784,8 @@ class JobController extends Controller
      */
     public function getJobDetailsByQr($qrCode)
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         
         // Find job by QR code
         $job = Job::where('qr_code', $qrCode)->with(['order.client', 'assignedUser'])->first();

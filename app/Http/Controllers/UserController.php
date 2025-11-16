@@ -15,8 +15,10 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Only SuperAdmin can access user management
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$user->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can manage users.');
         }
 
@@ -85,8 +87,10 @@ class UserController extends Controller
      */
     public function create()
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can create users
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can create users.');
         }
 
@@ -98,8 +102,10 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can create users
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can create users.');
         }
 
@@ -138,8 +144,10 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can view user details
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can view user details.');
         }
 
@@ -154,8 +162,10 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can edit users
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can edit users.');
         }
 
@@ -167,8 +177,10 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can update users
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can update users.');
         }
 
@@ -207,8 +219,10 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can delete users
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can delete users.');
         }
 
@@ -235,8 +249,10 @@ class UserController extends Controller
      */
     public function toggleStatus(User $user)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can toggle user status
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can toggle user status.');
         }
 
@@ -258,8 +274,10 @@ class UserController extends Controller
      */
     public function resetPassword(Request $request, User $user)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can reset passwords
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can reset passwords.');
         }
 
@@ -280,8 +298,10 @@ class UserController extends Controller
      */
     public function getStats()
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can view user statistics
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can view user statistics.');
         }
 
@@ -312,8 +332,10 @@ class UserController extends Controller
      */
     public function export(Request $request)
     {
+        /** @var \App\Models\User $authUser */
+        $authUser = Auth::user();
         // Only SuperAdmin can export user data
-        if (!Auth::user()->isSuperAdmin()) {
+        if (!$authUser->isSuperAdmin()) {
             abort(403, 'Access denied. Only SuperAdmin can export user data.');
         }
 

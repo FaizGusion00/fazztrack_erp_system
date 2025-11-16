@@ -389,16 +389,21 @@
                                     $receiptFileType = $receiptIsImage ? 'image' : 'pdf';
                                 @endphp
                                 <div class="flex items-center justify-between py-2 px-3 bg-white rounded-lg hover:bg-gray-100 transition-colors existing-receipt-item" data-receipt-id="{{ $receipt->id }}">
+                                    @php
+                                        $receiptUrl = asset('storage/' . $receipt->file_path);
+                                        $receiptNameEscaped = htmlspecialchars($receipt->file_name, ENT_QUOTES, 'UTF-8');
+                                    @endphp
                                     <div class="flex items-center flex-1 min-w-0">
                                         <span class="text-gray-600 truncate text-xs flex-1 mr-2 cursor-pointer"
-                                              onclick="openFilePreviewModal('{{ asset('storage/' . $receipt->file_path) }}', '{{ $receipt->file_name }}', '{{ $receiptFileType }}')">
+                                              onclick="openFilePreviewModal('{{ $receiptUrl }}', '{{ $receiptNameEscaped }}', '{{ $receiptFileType }}')">
                                             <i class="fas {{ $receiptIsImage ? 'fa-image' : 'fa-file-pdf' }} mr-1"></i>
                                             {{ $receipt->file_name }}
                                         </span>
                                         <span class="text-gray-400 text-xs mr-2">{{ number_format($receipt->file_size / 1024, 1) }} KB</span>
                                     </div>
                                     <button type="button" 
-                                            onclick="removeReceipt({{ $receipt->id }})"
+                                            data-receipt-id="{{ $receipt->id }}"
+                                            onclick="removeReceipt(parseInt(this.getAttribute('data-receipt-id')))"
                                             class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
                                             title="Delete receipt">
                                         <i class="fas fa-trash text-xs"></i>
@@ -444,14 +449,21 @@
                                     $isImage = in_array($fileExt, ['jpg', 'jpeg', 'png', 'gif']);
                                     $fileType = $isImage ? 'image' : 'pdf';
                                 @endphp
+                                @php
+                                    $jobSheetUrl = \App\Services\StorageService::url($jobSheet);
+                                    $jobSheetNameEscaped = htmlspecialchars(basename($jobSheet), ENT_QUOTES, 'UTF-8');
+                                    $jobSheetEscaped = htmlspecialchars($jobSheet, ENT_QUOTES, 'UTF-8');
+                                @endphp
                                 <div class="flex items-center justify-between text-xs py-2 px-3 bg-white rounded-lg hover:bg-gray-100 transition-colors existing-job-sheet-item" data-job-sheet-index="{{ $index }}" data-job-sheet-path="{{ $jobSheet }}">
                                     <span class="text-gray-600 truncate flex-1 mr-2 cursor-pointer"
-                                          onclick="openFilePreviewModal('@fileUrl($jobSheet)', '{{ basename($jobSheet) }}', '{{ $fileType }}')">
+                                          onclick="openFilePreviewModal('{{ $jobSheetUrl }}', '{{ $jobSheetNameEscaped }}', '{{ $fileType }}')">
                                         <i class="fas {{ $isImage ? 'fa-image' : 'fa-file-alt' }} mr-1"></i>
                                         {{ basename($jobSheet) }}
                                     </span>
                                     <button type="button" 
-                                            onclick="removeJobSheet('{{ $jobSheet }}', {{ $index }})"
+                                            data-job-sheet-path="{{ $jobSheetEscaped }}"
+                                            data-job-sheet-index="{{ $index }}"
+                                            onclick="removeJobSheet(this.getAttribute('data-job-sheet-path'), parseInt(this.getAttribute('data-job-sheet-index')))"
                                             class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors ml-2"
                                             title="Delete job sheet">
                                         <i class="fas fa-trash text-xs"></i>
@@ -523,14 +535,20 @@
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="existing-design-images">
                                 @foreach($existingDesignImages as $index => $imagePath)
                                 <div class="relative group existing-image-item" data-image-path="{{ $imagePath }}" data-image-index="{{ $index }}">
+                                    @php
+                                        $imageUrl = \App\Services\StorageService::url($imagePath);
+                                        $imagePathEscaped = htmlspecialchars($imagePath, ENT_QUOTES, 'UTF-8');
+                                    @endphp
                                     <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                                        <img src="@fileUrl($imagePath)" 
+                                        <img src="{{ $imageUrl }}" 
                                              alt="Design Image {{ $index + 1 }}" 
                                              class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
                                              data-title="Design Image {{ $index + 1 }}">
                                         <!-- Delete Button -->
                                         <button type="button" 
-                                                onclick="removeDesignImage('{{ $imagePath }}', {{ $index }})"
+                                                data-image-path="{{ $imagePathEscaped }}"
+                                                data-image-index="{{ $index }}"
+                                                onclick="removeDesignImage(this.getAttribute('data-image-path'), parseInt(this.getAttribute('data-image-index')))"
                                                 class="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 z-10"
                                                 title="Delete image">
                                             <i class="fas fa-trash text-xs"></i>
@@ -1051,9 +1069,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Image modal setup complete (Edit Page)');
 });
 
-// Product management functions
-let productRowCounter = {{ $order->orderProducts ? $order->orderProducts->count() : 1 }};
-
 function setupProductManagement() {
     // Add event listeners to existing product rows
     document.querySelectorAll('.product-row').forEach(row => {
@@ -1331,7 +1346,7 @@ function checkForDuplicateProducts() {
                      alt="" 
                      class="max-w-full max-h-full object-contain rounded-lg shadow-lg hidden"
                      onload="document.getElementById('filePreviewLoading').classList.add('hidden')"
-                     onerror="this.parentElement.innerHTML='<div class=\\'text-white text-center\\'><i class=\\'fas fa-exclamation-triangle text-4xl mb-4\\'></i><p>Failed to load image</p></div>'">
+                     onerror="this.parentElement.innerHTML='<div class=&quot;text-white text-center&quot;><i class=&quot;fas fa-exclamation-triangle text-4xl mb-4&quot;></i><p>Failed to load image</p></div>'">
                 
                 <!-- PDF Preview -->
                 <iframe id="filePreviewPdf" 

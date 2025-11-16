@@ -7,6 +7,7 @@ use App\Models\Contact;
 use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class ClientController extends Controller
 {
@@ -15,7 +16,8 @@ class ClientController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         
         // Check role-based access
         if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
@@ -64,7 +66,8 @@ class ClientController extends Controller
      */
     public function create()
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         
         // Check role-based access
         if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
@@ -79,7 +82,8 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         
         // Check role-based access
         if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
@@ -190,7 +194,8 @@ class ClientController extends Controller
      */
     public function destroy(Client $client)
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         
         // Only SuperAdmin can delete clients
         if (!$user->isSuperAdmin()) {

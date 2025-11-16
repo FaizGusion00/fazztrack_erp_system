@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class TrackingController extends Controller
 {
@@ -27,7 +28,7 @@ class TrackingController extends Controller
         // If it's an AJAX request, return JSON for live updates
         if (request()->ajax()) {
             // Get cached tracking data for faster response
-            $cachedTracking = \Cache::get("tracking_order_{$order->order_id}");
+            $cachedTracking = Cache::get("tracking_order_{$order->order_id}");
             
             return response()->json([
                 'order' => $order,

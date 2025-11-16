@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class DeliveryController extends Controller
 {
@@ -228,7 +229,7 @@ class DeliveryController extends Controller
             'last_updated' => now()->toISOString()
         ];
 
-        \Cache::put($cacheKey, $trackingData, now()->addDays(30));
+        Cache::put($cacheKey, $trackingData, now()->addDays(30));
         \Log::info("Client tracking cache updated for order {$order->order_id}");
     }
 
@@ -249,7 +250,7 @@ class DeliveryController extends Controller
     {
         // Update proof in client tracking cache
         $cacheKey = "tracking_order_{$order->order_id}";
-        $cachedData = \Cache::get($cacheKey, []);
+        $cachedData = Cache::get($cacheKey, []);
         $cachedData['proof_of_delivery_path'] = $proofPath;
         $cachedData['last_updated'] = now()->toISOString();
         \Cache::put($cacheKey, $cachedData, now()->addDays(30));

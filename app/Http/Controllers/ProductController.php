@@ -15,8 +15,10 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can access products.');
         }
 
@@ -48,8 +50,10 @@ class ProductController extends Controller
      */
     public function create()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can create products.');
         }
 
@@ -61,8 +65,10 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can create products.');
         }
 
@@ -100,10 +106,15 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can view products.');
         }
+
+        // Eager load orders with their clients to avoid N+1 queries
+        $product->load(['orders.client']);
 
         return view('products.show', compact('product'));
     }
@@ -113,8 +124,10 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can edit products.');
         }
 
@@ -126,8 +139,10 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can update products.');
         }
 
@@ -168,8 +183,10 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can delete products.');
         }
 
@@ -189,8 +206,10 @@ class ProductController extends Controller
      */
     public function updateStock(Request $request, Product $product)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can update stock.');
         }
 
@@ -209,8 +228,10 @@ class ProductController extends Controller
      */
     public function getProductsForOrder()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied.');
         }
 
@@ -227,8 +248,10 @@ class ProductController extends Controller
      */
     public function getProductDetails(Product $product)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         // Check if user has access to products
-        if (!Auth::user()->isSuperAdmin() && !Auth::user()->isAdmin() && !Auth::user()->isSalesManager()) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied.');
         }
 

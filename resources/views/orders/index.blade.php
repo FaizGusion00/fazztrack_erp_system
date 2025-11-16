@@ -292,7 +292,7 @@
                                 <span class="progress-text">{{ $completedJobs }}/{{ $totalPhases }}</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="progress-bar bg-primary-500 h-2 rounded-full transition-all duration-300" style="width: {{ $progress }}%"></div>
+                                <div class="progress-bar bg-primary-500 h-2 rounded-full transition-all duration-300" data-progress="{{ $progress ?? 0 }}"></div>
                             </div>
                         @endif
                     </div>
@@ -478,6 +478,14 @@ document.addEventListener('visibilitychange', function() {
                 card.style.display = 'none';
             }
         });
+    });
+    
+    // Initialize progress bars
+    document.querySelectorAll('[data-progress]').forEach(function(bar) {
+        const progress = bar.getAttribute('data-progress');
+        if (progress !== null && progress !== '') {
+            bar.style.width = progress + '%';
+        }
     });
 </script>
 @endpush
