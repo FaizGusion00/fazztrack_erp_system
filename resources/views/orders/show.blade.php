@@ -520,7 +520,7 @@
 
                     @if($order->download_link)
                         <div class="border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-medium text-gray-900 mb-2">Design Files</h4>
+                            <h4 class="font-medium text-gray-900 mb-2">Raw Files</h4>
                             @php
                                 $designFiles = json_decode($order->download_link, true) ?: [];
                             @endphp
@@ -541,7 +541,7 @@
     </div>
     @endif
 
-    <!-- Design Files -->
+    <!-- Raw Files -->
     @php
         $designFiles = $order->getDesignFilesArray();
         $designImages = [];

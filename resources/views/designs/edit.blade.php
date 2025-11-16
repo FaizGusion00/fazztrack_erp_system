@@ -12,7 +12,7 @@
                     <i class="fas fa-edit mr-3 text-primary-500"></i>
                     Revise Design
                 </h1>
-                <p class="mt-2 text-gray-600">Update design files for Order #{{ $design->order->order_id }}</p>
+                <p class="mt-2 text-gray-600">Update raw files for Order #{{ $design->order->order_id }}</p>
             </div>
             <a href="{{ route('designs.show', $design) }}" 
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
@@ -73,13 +73,13 @@
     <!-- Design Upload Form -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Update Design Files</h3>
+            <h3 class="text-lg font-medium text-gray-900">Update Raw Files</h3>
         </div>
         <form method="POST" action="{{ route('designs.update', $design) }}" enctype="multipart/form-data" class="p-6">
             @csrf
             @method('PUT')
             
-            <!-- Design Files -->
+            <!-- Raw Files -->
             <div class="mb-6">
                 <h4 class="text-md font-medium text-gray-900 mb-4">Design Views</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

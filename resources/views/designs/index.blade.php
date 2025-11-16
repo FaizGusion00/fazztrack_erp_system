@@ -253,7 +253,7 @@
                         @endif
                     </div>
 
-                    <!-- Design Files Preview -->
+                    <!-- Raw Files Preview -->
                     @php
                         $designFiles = $design->getDesignFilesArray();
                         $fileCount = count(array_filter($designFiles));

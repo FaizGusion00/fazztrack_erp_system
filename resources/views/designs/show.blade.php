@@ -182,10 +182,10 @@
         @endif
     @endif
 
-    <!-- Design Files -->
+    <!-- Raw Files -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-medium text-gray-900">Design Files (Version {{ $design->version }})</h3>
+            <h3 class="text-lg font-medium text-gray-900">Raw Files (Version {{ $design->version }})</h3>
             @if((auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager()) && count($design->getDesignFilesArray()) > 0)
             <button onclick="downloadAllDesigns()" 
                     class="inline-flex items-center px-3 py-1.5 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors">
@@ -655,7 +655,7 @@ function downloadAllDesigns() {
     const files = @json($fileUrls);
     
     if (files.length === 0) {
-        alert('No design files to download');
+        alert('No raw files to download');
         return;
     }
     
