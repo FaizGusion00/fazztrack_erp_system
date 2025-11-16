@@ -253,6 +253,10 @@ class DesignController extends Controller
 
         // Update order status to Design Review
         $order->update(['status' => 'Design Review']);
+        
+        // Clear dashboard cache when new design is created
+        \Cache::forget('dashboard_stats_admin');
+        \Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design uploaded successfully. Waiting for review.');
@@ -361,6 +365,10 @@ class DesignController extends Controller
             // Update order status to Design Review
             $design->order->update(['status' => 'Design Review']);
             
+            // Clear dashboard cache when new design version is created
+            \Cache::forget('dashboard_stats_admin');
+            \Cache::forget('dashboard_pending_designs');
+            
             return redirect()->route('designs.show', $newDesign)
                 ->with('success', 'New design version created successfully. Waiting for review.');
         }
@@ -386,6 +394,10 @@ class DesignController extends Controller
             'design_notes' => $request->design_notes,
             'status' => 'Pending Review',
         ]);
+        
+        // Clear dashboard cache when design is updated
+        \Cache::forget('dashboard_stats_admin');
+        \Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design updated successfully. Waiting for review.');
@@ -411,6 +423,12 @@ class DesignController extends Controller
 
         // Update order status to Design Approved for finalization by Sales Manager
         $design->order->update(['status' => 'Design Approved']);
+        
+        // Clear dashboard cache when design is approved
+        \Cache::forget('dashboard_stats_superadmin');
+        \Cache::forget('dashboard_stats_admin');
+        \Cache::forget('dashboard_stats_sales');
+        \Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design approved successfully.');
@@ -438,6 +456,10 @@ class DesignController extends Controller
             'rejected_by' => $user->id,
             'rejected_at' => now(),
         ]);
+        
+        // Clear dashboard cache when design is rejected
+        \Cache::forget('dashboard_stats_admin');
+        \Cache::forget('dashboard_pending_designs');
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design rejected with feedback.');

@@ -22,6 +22,9 @@ class StorageService
      */
     public static function store(UploadedFile $file, string $directory, ?string $filename = null): string
     {
+        // Security: Validate file content (MIME type) not just extension
+        self::validateFileContent($file);
+        
         // Generate filename if not provided
         if (!$filename) {
             $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
@@ -36,6 +39,70 @@ class StorageService
         $path = $file->storeAs($directory, $filename, $disk);
         
         return $path;
+    }
+    
+    /**
+     * Validate file content by checking actual MIME type
+     * This prevents file extension spoofing attacks
+     */
+    private static function validateFileContent(UploadedFile $file): void
+    {
+        $allowedMimes = [
+            // Images
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            // Documents
+            'application/pdf',
+            // Design files
+            'image/vnd.adobe.photoshop', // PSD
+            'application/postscript', // AI/EPS
+            // Archives
+            'application/zip',
+            'application/x-zip-compressed',
+            // Additional common MIME types that might be detected
+            'image/x-png', // Alternative PNG MIME
+            'application/octet-stream', // Some systems report this for valid files
+        ];
+        
+        // Get actual MIME type from file content (not from extension)
+        $actualMimeType = $file->getMimeType();
+        
+        // Also check using finfo for additional security (if available)
+        $detectedMimeType = null;
+        if (function_exists('finfo_open') && $file->getRealPath()) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $detectedMimeType = finfo_file($finfo, $file->getRealPath());
+            finfo_close($finfo);
+        }
+        
+        // Get file extension for additional validation
+        $extension = strtolower($file->getClientOriginalExtension());
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'psd', 'ai', 'eps', 'zip'];
+        
+        // Validate: file must match at least one allowed MIME type
+        $isValid = in_array($actualMimeType, $allowedMimes);
+        
+        // If finfo detected different type, check it too
+        if ($detectedMimeType && $detectedMimeType !== $actualMimeType) {
+            $isValid = $isValid || in_array($detectedMimeType, $allowedMimes);
+        }
+        
+        // Additional security: if MIME type is suspicious (like application/octet-stream),
+        // require valid extension as well
+        $suspiciousMimes = ['application/octet-stream', 'application/x-download'];
+        if (in_array($actualMimeType, $suspiciousMimes)) {
+            $isValid = $isValid && in_array($extension, $allowedExtensions);
+        }
+        
+        if (!$isValid) {
+            throw new \InvalidArgumentException(
+                "Invalid file type. Detected: {$actualMimeType}" .
+                ($detectedMimeType ? " / {$detectedMimeType}" : "") . ". " .
+                "Only images (JPEG, PNG, GIF), PDFs, and design files are allowed."
+            );
+        }
     }
 
     /**

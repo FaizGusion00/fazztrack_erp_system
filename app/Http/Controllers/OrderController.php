@@ -83,8 +83,9 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $clients = Client::all();
-        $products = Product::active()->inStock()->orderBy('name')->get();
+        // Optimize: Select only needed columns instead of all()
+        $clients = Client::select('client_id', 'name')->orderBy('name')->get();
+        $products = Product::active()->inStock()->select('product_id', 'name', 'stock')->orderBy('name')->get();
         return view('orders.create', compact('clients', 'products'));
     }
 
@@ -156,6 +157,13 @@ class OrderController extends Controller
         }
 
         $order = Order::create($orderData);
+        
+        // Clear dashboard cache when new order is created
+        \Cache::forget('dashboard_stats_superadmin');
+        \Cache::forget('dashboard_stats_admin');
+        \Cache::forget('dashboard_stats_sales');
+        \Cache::forget('dashboard_recent_orders');
+        \Cache::forget('dashboard_recent_orders_sales');
 
         // Handle multiple receipts upload - store each in separate table with dates
         if ($request->hasFile('receipts')) {
@@ -235,8 +243,9 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
-        $clients = Client::all();
-        $products = Product::active()->orderBy('name')->get();
+        // Optimize: Select only needed columns instead of all()
+        $clients = Client::select('client_id', 'name')->orderBy('name')->get();
+        $products = Product::active()->select('product_id', 'name', 'stock')->orderBy('name')->get();
         $order->load('orderProducts.product'); // Load existing order products
         return view('orders.edit', compact('order', 'clients', 'products'));
     }
@@ -374,6 +383,15 @@ class OrderController extends Controller
         $orderData['design_files'] = !empty($designImages) ? $designImages : [];
 
         $order->update($orderData);
+        
+        // Clear dashboard cache when order is updated
+        \Cache::forget('dashboard_stats_superadmin');
+        \Cache::forget('dashboard_stats_admin');
+        \Cache::forget('dashboard_stats_sales');
+        \Cache::forget('dashboard_recent_orders');
+        \Cache::forget('dashboard_recent_orders_sales');
+        \Cache::forget('dashboard_revenue_data');
+        \Cache::forget('dashboard_revenue_data_sales');
 
         // Update products - first detach all existing, then attach new ones
         $order->products()->detach();

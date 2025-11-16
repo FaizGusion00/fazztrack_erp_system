@@ -146,43 +146,56 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         
-        // Real-time statistics for SuperAdmin
-        $stats = [
-            'total_orders' => \App\Models\Order::count(),
-            'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
-            'in_progress_orders' => \App\Models\Order::whereIn('status', ['Job Start', 'Job Complete', 'Order Packaging'])->count(),
-            'completed_orders' => \App\Models\Order::where('status', 'Order Finished')->count(),
-            'total_clients' => \App\Models\Client::count(),
-            'total_jobs' => \App\Models\Job::count(),
-            'total_revenue' => \App\Models\Order::sum('total_amount'),
-            'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
-            'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
-        ];
-
-        // Revenue data for charts (last 12 months)
-        $revenueData = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $revenue = \App\Models\Order::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->sum('total_amount');
-            $revenueData[] = [
-                'month' => $month->format('M Y'),
-                'revenue' => $revenue
+        // Cache statistics for 10 minutes to improve performance
+        $cacheKey = 'dashboard_stats_superadmin';
+        $stats = \Cache::remember($cacheKey, 600, function () {
+            return [
+                'total_orders' => \App\Models\Order::count(),
+                'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
+                'in_progress_orders' => \App\Models\Order::whereIn('status', ['Job Start', 'Job Complete', 'Order Packaging'])->count(),
+                'completed_orders' => \App\Models\Order::where('status', 'Order Finished')->count(),
+                'total_clients' => \App\Models\Client::count(),
+                'total_jobs' => \App\Models\Job::count(),
+                'total_revenue' => \App\Models\Order::sum('total_amount'),
+                'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
+                'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
             ];
-        }
+        });
 
-        // Recent orders with client info
-        $recent_orders = \App\Models\Order::with('client')
-            ->latest()
-            ->take(5)
-            ->get();
+        // Cache revenue data for 15 minutes (less frequently changing)
+        $revenueCacheKey = 'dashboard_revenue_data';
+        $revenueData = \Cache::remember($revenueCacheKey, 900, function () {
+            $data = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $revenue = \App\Models\Order::whereYear('created_at', $month->year)
+                    ->whereMonth('created_at', $month->month)
+                    ->sum('total_amount');
+                $data[] = [
+                    'month' => $month->format('M Y'),
+                    'revenue' => $revenue
+                ];
+            }
+            return $data;
+        });
 
-        // Top clients by revenue
-        $top_clients = \App\Models\Client::withSum('orders', 'total_amount')
-            ->orderBy('orders_sum_total_amount', 'desc')
-            ->take(5)
-            ->get();
+        // Recent orders - cache for 2 minutes (more dynamic)
+        $recentOrdersCacheKey = 'dashboard_recent_orders';
+        $recent_orders = \Cache::remember($recentOrdersCacheKey, 120, function () {
+            return \App\Models\Order::with('client')
+                ->latest()
+                ->take(5)
+                ->get();
+        });
+
+        // Top clients - cache for 10 minutes
+        $topClientsCacheKey = 'dashboard_top_clients';
+        $top_clients = \Cache::remember($topClientsCacheKey, 600, function () {
+            return \App\Models\Client::withSum('orders', 'total_amount')
+                ->orderBy('orders_sum_total_amount', 'desc')
+                ->take(5)
+                ->get();
+        });
 
         return view('admin.dashboard', compact('stats', 'recent_orders', 'revenueData', 'top_clients'));
     }
@@ -191,28 +204,37 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         
-        // Real-time statistics for Admin
-        $stats = [
-            'pending_approvals' => \App\Models\Order::where('status', 'Order Created')->count(),
-            'design_reviews' => \App\Models\Order::where('status', 'Design Review')->count(),
-            'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
-            'total_revenue' => \App\Models\Order::sum('total_amount'),
-            'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
-        ];
+        // Cache statistics for 5 minutes (Admin dashboard needs more real-time data)
+        $cacheKey = 'dashboard_stats_admin';
+        $stats = \Cache::remember($cacheKey, 300, function () {
+            return [
+                'pending_approvals' => \App\Models\Order::where('status', 'Order Created')->count(),
+                'design_reviews' => \App\Models\Order::where('status', 'Design Review')->count(),
+                'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
+                'total_revenue' => \App\Models\Order::sum('total_amount'),
+                'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
+            ];
+        });
 
-        // Orders pending approval
-        $pending_orders = \App\Models\Order::with('client')
-            ->where('status', 'Order Created')
-            ->latest()
-            ->take(10)
-            ->get();
+        // Orders pending approval - cache for 1 minute (very dynamic)
+        $pendingOrdersCacheKey = 'dashboard_pending_orders';
+        $pending_orders = \Cache::remember($pendingOrdersCacheKey, 60, function () {
+            return \App\Models\Order::with('client')
+                ->where('status', 'Order Created')
+                ->latest()
+                ->take(10)
+                ->get();
+        });
 
-        // Designs pending review
-        $pending_designs = \App\Models\Design::with(['order.client', 'designer'])
-            ->where('status', 'Pending Review')
-            ->latest()
-            ->take(10)
-            ->get();
+        // Designs pending review - cache for 1 minute (very dynamic)
+        $pendingDesignsCacheKey = 'dashboard_pending_designs';
+        $pending_designs = \Cache::remember($pendingDesignsCacheKey, 60, function () {
+            return \App\Models\Design::with(['order.client', 'designer'])
+                ->where('status', 'Pending Review')
+                ->latest()
+                ->take(10)
+                ->get();
+        });
 
         return view('admin.admin-dashboard', compact('stats', 'pending_orders', 'pending_designs'));
     }
@@ -224,41 +246,54 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         
-        // Real-time statistics for Sales Manager
-        $stats = [
-            'total_orders' => \App\Models\Order::count(),
-            'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
-            'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
-            'design_approved_orders' => \App\Models\Order::where('status', 'Design Approved')->count(),
-            'total_revenue' => \App\Models\Order::sum('total_amount'),
-            'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
-            'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
-        ];
-
-        // Revenue data for charts (last 6 months)
-        $revenueData = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $revenue = \App\Models\Order::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->sum('total_amount');
-            $revenueData[] = [
-                'month' => $month->format('M Y'),
-                'revenue' => $revenue
+        // Cache statistics for 5 minutes
+        $cacheKey = 'dashboard_stats_sales';
+        $stats = \Cache::remember($cacheKey, 300, function () {
+            return [
+                'total_orders' => \App\Models\Order::count(),
+                'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
+                'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
+                'design_approved_orders' => \App\Models\Order::where('status', 'Design Approved')->count(),
+                'total_revenue' => \App\Models\Order::sum('total_amount'),
+                'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
+                'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
             ];
-        }
+        });
 
-        // Recent orders
-        $recent_orders = \App\Models\Order::with('client')
-            ->latest()
-            ->take(5)
-            ->get();
+        // Cache revenue data for 15 minutes
+        $revenueCacheKey = 'dashboard_revenue_data_sales';
+        $revenueData = \Cache::remember($revenueCacheKey, 900, function () {
+            $data = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $revenue = \App\Models\Order::whereYear('created_at', $month->year)
+                    ->whereMonth('created_at', $month->month)
+                    ->sum('total_amount');
+                $data[] = [
+                    'month' => $month->format('M Y'),
+                    'revenue' => $revenue
+                ];
+            }
+            return $data;
+        });
 
-        // Top performing clients
-        $top_clients = \App\Models\Client::withSum('orders', 'total_amount')
-            ->orderBy('orders_sum_total_amount', 'desc')
-            ->take(5)
-            ->get();
+        // Recent orders - cache for 2 minutes
+        $recentOrdersCacheKey = 'dashboard_recent_orders_sales';
+        $recent_orders = \Cache::remember($recentOrdersCacheKey, 120, function () {
+            return \App\Models\Order::with('client')
+                ->latest()
+                ->take(5)
+                ->get();
+        });
+
+        // Top clients - cache for 10 minutes
+        $topClientsCacheKey = 'dashboard_top_clients_sales';
+        $top_clients = \Cache::remember($topClientsCacheKey, 600, function () {
+            return \App\Models\Client::withSum('orders', 'total_amount')
+                ->orderBy('orders_sum_total_amount', 'desc')
+                ->take(5)
+                ->get();
+        });
 
         return view('sales.dashboard', compact('stats', 'recent_orders', 'revenueData', 'top_clients'));
     }
