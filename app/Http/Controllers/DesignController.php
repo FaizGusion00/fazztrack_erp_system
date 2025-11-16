@@ -23,32 +23,50 @@ class DesignController extends Controller
             abort(403, 'Access denied. Only designers, admins, and sales managers can access this page.');
         }
         
-        $query = Order::with(['client', 'designs.designer']);
+        $query = Design::with(['order.client', 'designer', 'approvedBy', 'rejectedBy']);
         
         // Filter based on user role
         if ($user->isDesigner()) {
-            // Designer sees orders with approved payment or orders in design review
-            $query->where(function($q) {
-                $q->where('status', 'Order Approved')
-                  ->orWhere('status', 'Design Review');
-            });
-        } else {
-            // Admin/Sales Manager/SuperAdmin can see all orders that need design work
-            $query->where(function($q) {
-                $q->where('status', 'Order Approved')
-                  ->orWhere('status', 'Design Review')
-                  ->orWhere('status', 'Design Approved');
-            });
+            // Designer sees only their own designs
+            $query->where('designer_id', $user->id);
+        }
+        // Sales Manager and SuperAdmin can see all designs
+        
+        // Filter by tab
+        $tab = $request->get('tab', 'all');
+        if ($tab === 'pending') {
+            $query->where('status', 'Pending Review');
+        } elseif ($tab === 'approved') {
+            $query->where('status', 'Approved');
+        } elseif ($tab === 'rejected') {
+            $query->where('status', 'Rejected');
+        }
+        
+        // Filter by status (additional filter)
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Filter by order
+        if ($request->filled('order_id')) {
+            $query->where('order_id', $request->order_id);
         }
         
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('job_name', 'like', "%{$search}%")
-                  ->orWhere('order_id', 'like', "%{$search}%")
-                  ->orWhereHas('client', function($clientQuery) use ($search) {
-                      $clientQuery->where('name', 'like', "%{$search}%");
+                $q->where('design_id', 'like', "%{$search}%")
+                  ->orWhere('version', 'like', "%{$search}%")
+                  ->orWhereHas('order', function($orderQuery) use ($search) {
+                      $orderQuery->where('job_name', 'like', "%{$search}%")
+                                ->orWhere('order_id', 'like', "%{$search}%")
+                                ->orWhereHas('client', function($clientQuery) use ($search) {
+                                    $clientQuery->where('name', 'like', "%{$search}%");
+                                });
+                  })
+                  ->orWhereHas('designer', function($designerQuery) use ($search) {
+                      $designerQuery->where('name', 'like', "%{$search}%");
                   });
             });
         }
@@ -62,15 +80,34 @@ class DesignController extends Controller
             case 'latest_updated':
                 $query->orderBy('updated_at', 'desc');
                 break;
-            case 'alphabetical':
-                $query->orderBy('job_name', 'asc');
+            case 'version':
+                $query->orderBy('version', 'desc');
+                break;
+            case 'status':
+                $query->orderBy('status', 'asc');
                 break;
             default:
                 $query->orderBy('created_at', 'desc');
         }
         
-        $orders = $query->paginate(15)->withQueryString();
-        return view('designs.index', compact('orders'));
+        $designs = $query->paginate(15)->withQueryString();
+        
+        // Get counts for tabs
+        $pendingCount = Design::when($user->isDesigner(), function($q) use ($user) {
+            $q->where('designer_id', $user->id);
+        })->where('status', 'Pending Review')->count();
+        
+        $approvedCount = Design::when($user->isDesigner(), function($q) use ($user) {
+            $q->where('designer_id', $user->id);
+        })->where('status', 'Approved')->count();
+        
+        $rejectedCount = Design::when($user->isDesigner(), function($q) use ($user) {
+            $q->where('designer_id', $user->id);
+        })->where('status', 'Rejected')->count();
+        
+        $view = $request->get('view', 'table');
+        
+        return view('designs.index', compact('designs', 'pendingCount', 'approvedCount', 'rejectedCount', 'view'));
     }
 
     /**
@@ -200,13 +237,18 @@ class DesignController extends Controller
             }
         }
 
+        // Calculate next version number
+        $maxVersion = $order->designs()->max('version') ?? 0;
+        $nextVersion = $maxVersion + 1;
+        
         // Create design record
+        // Note: design_files is cast to 'array' in model, so Laravel will auto-encode
         $design = $order->designs()->create([
             'designer_id' => $user->id,
-            'design_files' => json_encode($designFiles),
+            'design_files' => $designFiles, // Array - Laravel will auto JSON encode
             'design_notes' => $request->design_notes,
             'status' => 'Pending Review',
-            'version' => $order->designs()->count() + 1,
+            'version' => $nextVersion,
         ]);
 
         // Update order status to Design Review
@@ -229,9 +271,16 @@ class DesignController extends Controller
         }
         
         // Load relationships
-        $design->load(['order.client', 'designer', 'approvedBy', 'rejectedBy']);
+        $design->load(['order.client', 'order.products', 'designer', 'approvedBy', 'rejectedBy']);
         
-        return view('designs.show', compact('design'));
+        // Get all versions of designs for this order
+        $versionHistory = Design::where('order_id', $design->order_id)
+            ->orderBy('version', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->with(['designer', 'approvedBy', 'rejectedBy'])
+            ->get();
+        
+        return view('designs.show', compact('design', 'versionHistory'));
     }
 
     /**
@@ -277,6 +326,46 @@ class DesignController extends Controller
             'design_notes' => 'nullable|string|max:1000',
         ]);
 
+        // If design is rejected, create a new version instead of updating
+        if ($design->status === 'Rejected') {
+            // Create new design with incremented version
+            $maxVersion = $design->order->designs()->max('version') ?? 0;
+            $nextVersion = $maxVersion + 1;
+            
+            $designFiles = [];
+            
+            // Handle design file uploads
+            $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
+            foreach ($designFields as $field) {
+                if ($request->hasFile($field)) {
+                    $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
+                } else {
+                    // Copy from previous version if not uploaded
+                    $oldFiles = json_decode($design->design_files, true) ?: [];
+                    if (isset($oldFiles[$field])) {
+                        $designFiles[$field] = $oldFiles[$field];
+                    }
+                }
+            }
+            
+            // Create new design record
+            // Note: design_files is cast to 'array' in model, so Laravel will auto-encode
+            $newDesign = $design->order->designs()->create([
+                'designer_id' => $user->id,
+                'design_files' => $designFiles, // Array - Laravel will auto JSON encode
+                'design_notes' => $request->design_notes,
+                'status' => 'Pending Review',
+                'version' => $nextVersion,
+            ]);
+            
+            // Update order status to Design Review
+            $design->order->update(['status' => 'Design Review']);
+            
+            return redirect()->route('designs.show', $newDesign)
+                ->with('success', 'New design version created successfully. Waiting for review.');
+        }
+        
+        // For non-rejected designs, update existing design
         $designFiles = json_decode($design->design_files, true) ?: [];
         
         // Handle design file uploads
@@ -291,8 +380,9 @@ class DesignController extends Controller
             }
         }
 
+        // Note: design_files is cast to 'array' in model, so Laravel will auto-encode
         $design->update([
-            'design_files' => json_encode($designFiles),
+            'design_files' => $designFiles, // Array - Laravel will auto JSON encode
             'design_notes' => $request->design_notes,
             'status' => 'Pending Review',
         ]);

@@ -266,6 +266,12 @@ class OrderController extends Controller
             'design_images' => 'nullable|array',
             'design_images.*' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
+            'delete_receipts' => 'nullable|array',
+            'delete_receipts.*' => 'nullable|integer|exists:order_receipts,id',
+            'delete_job_sheets' => 'nullable|array',
+            'delete_job_sheets.*' => 'nullable|string',
+            'delete_design_images' => 'nullable|array',
+            'delete_design_images.*' => 'nullable|string',
         ]);
 
         // For backward compatibility, use the first product as the main product_id
@@ -280,7 +286,7 @@ class OrderController extends Controller
         // Set the first product as the main product_id for backward compatibility
         $orderData['product_id'] = $firstProduct['product_id'];
 
-        // Handle multiple job sheets upload (add to existing)
+        // Handle job sheets - delete and add
         $existingJobSheets = [];
         if ($order->job_sheet) {
             // Check if it's JSON (new format) or string (old format)
@@ -294,6 +300,20 @@ class OrderController extends Controller
             }
         }
         
+        // Remove deleted job sheets
+        if ($request->has('delete_job_sheets') && is_array($request->delete_job_sheets)) {
+            foreach ($request->delete_job_sheets as $deletedPath) {
+                if (!empty($deletedPath)) {
+                    // Remove from array
+                    $existingJobSheets = array_values(array_filter($existingJobSheets, function($path) use ($deletedPath) {
+                        return $path !== $deletedPath;
+                    }));
+                    // Delete file from storage
+                    StorageService::delete($deletedPath);
+                }
+            }
+        }
+        
         // Add new job sheets to existing ones
         if ($request->hasFile('job_sheets')) {
             foreach ($request->file('job_sheets') as $jobSheetFile) {
@@ -303,12 +323,10 @@ class OrderController extends Controller
             }
         }
         
-        // Update job_sheet if we have files (either existing or new)
-        if (!empty($existingJobSheets)) {
-            $orderData['job_sheet'] = json_encode($existingJobSheets);
-        }
+        // Update job_sheet (can be empty array if all deleted)
+        $orderData['job_sheet'] = !empty($existingJobSheets) ? json_encode($existingJobSheets) : null;
 
-        // Handle design images upload (multiple images - add to existing)
+        // Handle design images - delete and add
         $existingDesignFiles = $order->getDesignFilesArray();
         $designImages = [];
         
@@ -328,6 +346,20 @@ class OrderController extends Controller
             }
         }
         
+        // Remove deleted design images
+        if ($request->has('delete_design_images') && is_array($request->delete_design_images)) {
+            foreach ($request->delete_design_images as $deletedPath) {
+                if (!empty($deletedPath)) {
+                    // Remove from array
+                    $designImages = array_values(array_filter($designImages, function($path) use ($deletedPath) {
+                        return $path !== $deletedPath;
+                    }));
+                    // Delete file from storage
+                    StorageService::delete($deletedPath);
+                }
+            }
+        }
+        
         // Add new images to existing ones
         if ($request->hasFile('design_images')) {
             foreach ($request->file('design_images') as $imageFile) {
@@ -337,12 +369,9 @@ class OrderController extends Controller
             }
         }
         
-        // Update design_files if we have images (either existing or new)
-        // This preserves existing images even if no new ones are uploaded
+        // Update design_files (can be empty array if all deleted)
         // Store as array - Laravel will automatically JSON encode due to 'array' cast in model
-        if (!empty($designImages)) {
-            $orderData['design_files'] = $designImages;
-        }
+        $orderData['design_files'] = !empty($designImages) ? $designImages : [];
 
         $order->update($orderData);
 
@@ -375,7 +404,22 @@ class OrderController extends Controller
             ]);
         }
 
-        // Handle multiple receipts upload - add new receipts without deleting old ones
+        // Handle receipts - delete and add
+        if ($request->has('delete_receipts') && is_array($request->delete_receipts)) {
+            foreach ($request->delete_receipts as $receiptId) {
+                if (!empty($receiptId)) {
+                    $receipt = \App\Models\OrderReceipt::find($receiptId);
+                    if ($receipt && $receipt->order_id === $order->order_id) {
+                        // Delete file from storage
+                        StorageService::delete($receipt->file_path);
+                        // Delete record from database
+                        $receipt->delete();
+                    }
+                }
+            }
+        }
+        
+        // Add new receipts
         if ($request->hasFile('receipts')) {
             foreach ($request->file('receipts') as $receiptFile) {
                 $filePath = StorageService::store($receiptFile, 'receipts');

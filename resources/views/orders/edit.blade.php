@@ -381,11 +381,29 @@
                         @if($order->receipts()->count() > 0)
                         <div class="mt-3 p-3 bg-gray-50 rounded-lg">
                             <h5 class="text-sm font-medium text-gray-700 mb-2">Existing Receipts ({{ $order->receipts()->count() }}):</h5>
-                            <div class="space-y-2">
+                            <div class="space-y-2" id="existing-receipts-list">
                                 @foreach($order->receipts()->orderBy('uploaded_at', 'desc')->get() as $receipt)
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-gray-600 truncate">{{ $receipt->file_name }}</span>
-                                    <span class="text-gray-400">{{ number_format($receipt->file_size / 1024, 1) }} KB</span>
+                                @php
+                                    $receiptFileExt = strtolower(pathinfo($receipt->file_name, PATHINFO_EXTENSION));
+                                    $receiptIsImage = in_array($receiptFileExt, ['jpg', 'jpeg', 'png', 'gif']);
+                                    $receiptFileType = $receiptIsImage ? 'image' : 'pdf';
+                                @endphp
+                                <div class="flex items-center justify-between py-2 px-3 bg-white rounded-lg hover:bg-gray-100 transition-colors existing-receipt-item" data-receipt-id="{{ $receipt->id }}">
+                                    <div class="flex items-center flex-1 min-w-0">
+                                        <span class="text-gray-600 truncate text-xs flex-1 mr-2 cursor-pointer"
+                                              onclick="openFilePreviewModal('{{ asset('storage/' . $receipt->file_path) }}', '{{ $receipt->file_name }}', '{{ $receiptFileType }}')">
+                                            <i class="fas {{ $receiptIsImage ? 'fa-image' : 'fa-file-pdf' }} mr-1"></i>
+                                            {{ $receipt->file_name }}
+                                        </span>
+                                        <span class="text-gray-400 text-xs mr-2">{{ number_format($receipt->file_size / 1024, 1) }} KB</span>
+                                    </div>
+                                    <button type="button" 
+                                            onclick="removeReceipt({{ $receipt->id }})"
+                                            class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                                            title="Delete receipt">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                    <input type="hidden" name="delete_receipts[]" id="delete_receipt_{{ $receipt->id }}" value="">
                                 </div>
                                 @endforeach
                             </div>
@@ -419,13 +437,26 @@
                         @if(count($jobSheets) > 0)
                         <div class="mt-3 p-3 bg-gray-50 rounded-lg">
                             <h5 class="text-sm font-medium text-gray-700 mb-2">Existing Job Sheets ({{ count($jobSheets) }}):</h5>
-                            <div class="space-y-2">
-                                @foreach($jobSheets as $jobSheet)
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-gray-600 truncate">{{ basename($jobSheet) }}</span>
-                                    <a href="@fileUrl($jobSheet)" target="_blank" class="text-blue-600 hover:text-blue-800">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
+                            <div class="space-y-2" id="existing-job-sheets-list">
+                                @foreach($jobSheets as $index => $jobSheet)
+                                @php
+                                    $fileExt = strtolower(pathinfo($jobSheet, PATHINFO_EXTENSION));
+                                    $isImage = in_array($fileExt, ['jpg', 'jpeg', 'png', 'gif']);
+                                    $fileType = $isImage ? 'image' : 'pdf';
+                                @endphp
+                                <div class="flex items-center justify-between text-xs py-2 px-3 bg-white rounded-lg hover:bg-gray-100 transition-colors existing-job-sheet-item" data-job-sheet-index="{{ $index }}" data-job-sheet-path="{{ $jobSheet }}">
+                                    <span class="text-gray-600 truncate flex-1 mr-2 cursor-pointer"
+                                          onclick="openFilePreviewModal('@fileUrl($jobSheet)', '{{ basename($jobSheet) }}', '{{ $fileType }}')">
+                                        <i class="fas {{ $isImage ? 'fa-image' : 'fa-file-alt' }} mr-1"></i>
+                                        {{ basename($jobSheet) }}
+                                    </span>
+                                    <button type="button" 
+                                            onclick="removeJobSheet('{{ $jobSheet }}', {{ $index }})"
+                                            class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors ml-2"
+                                            title="Delete job sheet">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                    <input type="hidden" name="delete_job_sheets[]" id="delete_job_sheet_{{ $index }}" value="">
                                 </div>
                                 @endforeach
                             </div>
@@ -491,12 +522,19 @@
                             <h5 class="text-sm font-medium text-gray-700 mb-3">Existing Design Images:</h5>
                             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="existing-design-images">
                                 @foreach($existingDesignImages as $index => $imagePath)
-                                <div class="relative group existing-image-item" data-image-path="{{ $imagePath }}">
+                                <div class="relative group existing-image-item" data-image-path="{{ $imagePath }}" data-image-index="{{ $index }}">
                                     <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
                                         <img src="@fileUrl($imagePath)" 
                                              alt="Design Image {{ $index + 1 }}" 
                                              class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
                                              data-title="Design Image {{ $index + 1 }}">
+                                        <!-- Delete Button -->
+                                        <button type="button" 
+                                                onclick="removeDesignImage('{{ $imagePath }}', {{ $index }})"
+                                                class="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 z-10"
+                                                title="Delete image">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                                             <div class="absolute bottom-2 left-2 right-2 pointer-events-auto">
                                                 <div class="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center">
@@ -510,6 +548,7 @@
                                     <p class="text-xs text-gray-500 mt-2 text-center truncate" title="{{ basename($imagePath) }}">
                                         <i class="fas fa-file-image mr-1"></i>{{ basename($imagePath) }}
                                     </p>
+                                    <input type="hidden" name="delete_design_images[]" id="delete_design_image_{{ $index }}" value="">
                                 </div>
                                 @endforeach
                             </div>
@@ -1162,6 +1201,58 @@ function updateStockInfo(productSelect, stockInfoElement) {
     }
 }
 
+// File deletion functions
+function removeReceipt(receiptId) {
+    if (confirm('Are you sure you want to delete this receipt?')) {
+        const receiptItem = document.querySelector(`[data-receipt-id="${receiptId}"]`);
+        const deleteInput = document.getElementById(`delete_receipt_${receiptId}`);
+        
+        if (deleteInput) {
+            deleteInput.value = receiptId;
+        }
+        
+        if (receiptItem) {
+            receiptItem.style.opacity = '0.5';
+            receiptItem.style.pointerEvents = 'none';
+            receiptItem.querySelector('button').disabled = true;
+        }
+    }
+}
+
+function removeJobSheet(jobSheetPath, index) {
+    if (confirm('Are you sure you want to delete this job sheet?')) {
+        const jobSheetItem = document.querySelector(`[data-job-sheet-index="${index}"]`);
+        const deleteInput = document.getElementById(`delete_job_sheet_${index}`);
+        
+        if (deleteInput) {
+            deleteInput.value = jobSheetPath;
+        }
+        
+        if (jobSheetItem) {
+            jobSheetItem.style.opacity = '0.5';
+            jobSheetItem.style.pointerEvents = 'none';
+            jobSheetItem.querySelector('button').disabled = true;
+        }
+    }
+}
+
+function removeDesignImage(imagePath, index) {
+    if (confirm('Are you sure you want to delete this design image?')) {
+        const imageItem = document.querySelector(`[data-image-index="${index}"]`);
+        const deleteInput = document.getElementById(`delete_design_image_${index}`);
+        
+        if (deleteInput) {
+            deleteInput.value = imagePath;
+        }
+        
+        if (imageItem) {
+            imageItem.style.opacity = '0.5';
+            imageItem.style.pointerEvents = 'none';
+            imageItem.querySelector('button').disabled = true;
+        }
+    }
+}
+
 function checkForDuplicateProducts() {
     const selectedProducts = new Set();
     const duplicateWarnings = [];
@@ -1203,4 +1294,131 @@ function checkForDuplicateProducts() {
 }
 </script>
 
+<!-- File Preview Modal (Receipts & Job Sheets) - Same as show page -->
+<div id="filePreviewModal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-50 flex items-center justify-center p-4">
+    <div class="relative w-full h-full max-w-7xl max-h-full">
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full h-full flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+                <h3 id="filePreviewTitle" class="text-xl font-semibold text-gray-900 truncate flex-1 mr-4"></h3>
+                <div class="flex items-center space-x-2">
+                    <button onclick="downloadPreviewFile()" 
+                            class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" 
+                            title="Download File">
+                        <i class="fas fa-download text-lg"></i>
+                    </button>
+                    <button onclick="closeFilePreviewModal()" 
+                            class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" 
+                            title="Close">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="flex-1 p-4 flex items-center justify-center overflow-hidden bg-gray-900 relative">
+                <!-- Loading Indicator -->
+                <div id="filePreviewLoading" class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-10">
+                    <div class="text-white text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                        <p>Loading preview...</p>
+                    </div>
+                </div>
+                
+                <!-- Image Preview -->
+                <img id="filePreviewImage" 
+                     src="" 
+                     alt="" 
+                     class="max-w-full max-h-full object-contain rounded-lg shadow-lg hidden"
+                     onload="document.getElementById('filePreviewLoading').classList.add('hidden')"
+                     onerror="this.parentElement.innerHTML='<div class=\\'text-white text-center\\'><i class=\\'fas fa-exclamation-triangle text-4xl mb-4\\'></i><p>Failed to load image</p></div>'">
+                
+                <!-- PDF Preview -->
+                <iframe id="filePreviewPdf" 
+                        src="" 
+                        class="w-full h-full border-0 rounded-lg hidden"
+                        style="min-height: 600px;"
+                        onload="document.getElementById('filePreviewLoading').classList.add('hidden')">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// File Preview Modal Functions (for Receipts and Job Sheets)
+let currentPreviewUrl = '';
+let currentPreviewFileName = '';
+
+function openFilePreviewModal(fileUrl, fileName, fileType) {
+    currentPreviewUrl = fileUrl;
+    currentPreviewFileName = fileName;
+    
+    const modal = document.getElementById('filePreviewModal');
+    const modalTitle = document.getElementById('filePreviewTitle');
+    const modalImage = document.getElementById('filePreviewImage');
+    const modalPdf = document.getElementById('filePreviewPdf');
+    const loadingIndicator = document.getElementById('filePreviewLoading');
+    
+    modalTitle.textContent = fileName;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    loadingIndicator.classList.remove('hidden');
+    
+    // Show appropriate preview based on file type
+    if (fileType === 'image' || fileType.includes('image')) {
+        modalImage.src = fileUrl;
+        modalImage.classList.remove('hidden');
+        modalPdf.classList.add('hidden');
+    } else {
+        // PDF or other document
+        modalPdf.src = fileUrl + '#toolbar=0';
+        modalPdf.classList.remove('hidden');
+        modalImage.classList.add('hidden');
+    }
+}
+
+function closeFilePreviewModal() {
+    const modal = document.getElementById('filePreviewModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    
+    // Clear preview
+    document.getElementById('filePreviewImage').src = '';
+    document.getElementById('filePreviewPdf').src = '';
+}
+
+function downloadPreviewFile() {
+    if (currentPreviewUrl) {
+        const link = document.createElement('a');
+        link.href = currentPreviewUrl;
+        link.download = currentPreviewFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFilePreviewModal();
+    }
+});
+
+// Auto-hide loading after timeout
+setTimeout(() => {
+    const loadingIndicator = document.getElementById('filePreviewLoading');
+    if (loadingIndicator && !loadingIndicator.classList.contains('hidden')) {
+        loadingIndicator.classList.add('hidden');
+    }
+}, 3000);
+
+// Close modal when clicking outside
+document.getElementById('filePreviewModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFilePreviewModal();
+    }
+});
+</script>
 @endsection 

@@ -456,14 +456,18 @@
                             </h4>
                             <div class="space-y-2">
                                 @foreach($order->receipts()->orderBy('uploaded_at', 'desc')->get() as $receipt)
-                                    <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                    @php
+                                        $receiptFileExt = strtolower(pathinfo($receipt->file_name, PATHINFO_EXTENSION));
+                                        $receiptIsImage = in_array($receiptFileExt, ['jpg', 'jpeg', 'png', 'gif']);
+                                        $receiptFileType = $receiptIsImage ? 'image' : 'pdf';
+                                    @endphp
+                                    <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                         onclick="openFilePreviewModal('{{ asset('storage/' . $receipt->file_path) }}', '{{ $receipt->file_name }}', '{{ $receiptFileType }}')">
                                         <div class="flex-1">
-                                            <a href="{{ asset('storage/' . $receipt->file_path) }}" 
-                                               target="_blank"
-                                               class="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                                                <i class="fas fa-file-pdf mr-1"></i>
+                                            <div class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                                <i class="fas {{ in_array(strtolower(pathinfo($receipt->file_name, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif']) ? 'fa-image' : 'fa-file-pdf' }} mr-1"></i>
                                                 {{ $receipt->file_name }}
-                                            </a>
+                                            </div>
                                             <p class="text-xs text-gray-500 mt-1">
                                                 <i class="far fa-clock mr-1"></i>
                                                 Uploaded: {{ $receipt->uploaded_at->format('d M Y, h:i A') }}
@@ -480,13 +484,37 @@
 
                     @if($order->job_sheet)
                         <div class="border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-medium text-gray-900 mb-2">Job Sheet</h4>
-                            <a href="@fileUrl($order->job_sheet)" 
-                               target="_blank"
-                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
-                                <i class="fas fa-file-alt mr-1"></i>
-                                Download Job Sheet
-                            </a>
+                            <h4 class="font-medium text-gray-900 mb-3">Job Sheet</h4>
+                            @php
+                                // Handle both single string and JSON array formats
+                                $jobSheets = [];
+                                if ($order->job_sheet) {
+                                    $decoded = json_decode($order->job_sheet, true);
+                                    if (is_array($decoded)) {
+                                        $jobSheets = $decoded;
+                                    } else {
+                                        // Old format: single string
+                                        $jobSheets = [$order->job_sheet];
+                                    }
+                                }
+                            @endphp
+                            <div class="space-y-2">
+                                @foreach($jobSheets as $jobSheet)
+                                @php
+                                    $fileExt = strtolower(pathinfo($jobSheet, PATHINFO_EXTENSION));
+                                    $isImage = in_array($fileExt, ['jpg', 'jpeg', 'png', 'gif']);
+                                    $fileType = $isImage ? 'image' : 'pdf';
+                                @endphp
+                                <div class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                                     onclick="openFilePreviewModal('@fileUrl($jobSheet)', '{{ basename($jobSheet) }}', '{{ $fileType }}')">
+                                    <div class="flex items-center text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                        <i class="fas {{ in_array(strtolower(pathinfo($jobSheet, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif']) ? 'fa-image' : 'fa-file-alt' }} mr-2"></i>
+                                        {{ basename($jobSheet) }}
+                                    </div>
+                                    <i class="fas fa-external-link-alt text-xs text-gray-400"></i>
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                     @endif
 
@@ -944,6 +972,134 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
     
     console.log('Image modal setup complete');
+});
+
+// File Preview Modal (for Receipts and Job Sheets)
+let currentPreviewUrl = '';
+let currentPreviewFileName = '';
+
+function openFilePreviewModal(fileUrl, fileName, fileType) {
+    currentPreviewUrl = fileUrl;
+    currentPreviewFileName = fileName;
+    
+    const modal = document.getElementById('filePreviewModal');
+    const modalTitle = document.getElementById('filePreviewTitle');
+    const modalImage = document.getElementById('filePreviewImage');
+    const modalPdf = document.getElementById('filePreviewPdf');
+    const loadingIndicator = document.getElementById('filePreviewLoading');
+    
+    modalTitle.textContent = fileName;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    loadingIndicator.classList.remove('hidden');
+    
+    // Show appropriate preview based on file type
+    if (fileType === 'image' || fileType.includes('image')) {
+        modalImage.src = fileUrl;
+        modalImage.classList.remove('hidden');
+        modalPdf.classList.add('hidden');
+    } else {
+        // PDF or other document
+        modalPdf.src = fileUrl + '#toolbar=0';
+        modalPdf.classList.remove('hidden');
+        modalImage.classList.add('hidden');
+    }
+}
+
+function closeFilePreviewModal() {
+    const modal = document.getElementById('filePreviewModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    
+    // Clear preview
+    document.getElementById('filePreviewImage').src = '';
+    document.getElementById('filePreviewPdf').src = '';
+}
+
+function downloadPreviewFile() {
+    if (currentPreviewUrl) {
+        const link = document.createElement('a');
+        link.href = currentPreviewUrl;
+        link.download = currentPreviewFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeFilePreviewModal();
+    }
+});
+</script>
+
+<!-- File Preview Modal (Receipts & Job Sheets) -->
+<div id="filePreviewModal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-50 flex items-center justify-center p-4">
+    <div class="relative w-full h-full max-w-7xl max-h-full">
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden w-full h-full flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+                <h3 id="filePreviewTitle" class="text-xl font-semibold text-gray-900 truncate flex-1 mr-4"></h3>
+                <div class="flex items-center space-x-2">
+                    <button onclick="downloadPreviewFile()" 
+                            class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" 
+                            title="Download File">
+                        <i class="fas fa-download text-lg"></i>
+                    </button>
+                    <button onclick="closeFilePreviewModal()" 
+                            class="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg" 
+                            title="Close">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="flex-1 p-4 flex items-center justify-center overflow-hidden bg-gray-900 relative">
+                <!-- Loading Indicator -->
+                <div id="filePreviewLoading" class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-10">
+                    <div class="text-white text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                        <p>Loading preview...</p>
+                    </div>
+                </div>
+                
+                <!-- Image Preview -->
+                <img id="filePreviewImage" 
+                     src="" 
+                     alt="" 
+                     class="max-w-full max-h-full object-contain rounded-lg shadow-lg hidden"
+                     onload="document.getElementById('filePreviewLoading').classList.add('hidden')"
+                     onerror="this.parentElement.innerHTML='<div class=\\'text-white text-center\\'><i class=\\'fas fa-exclamation-triangle text-4xl mb-4\\'></i><p>Failed to load image</p></div>'">
+                
+                <!-- PDF Preview -->
+                <iframe id="filePreviewPdf" 
+                        src="" 
+                        class="w-full h-full border-0 rounded-lg hidden"
+                        style="min-height: 600px;"
+                        onload="document.getElementById('filePreviewLoading').classList.add('hidden')">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-hide loading after timeout
+setTimeout(() => {
+    const loadingIndicator = document.getElementById('filePreviewLoading');
+    if (loadingIndicator && !loadingIndicator.classList.contains('hidden')) {
+        loadingIndicator.classList.add('hidden');
+    }
+}, 3000);
+
+// Close modal when clicking outside
+document.getElementById('filePreviewModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeFilePreviewModal();
+    }
 });
 </script>
 @endsection 
