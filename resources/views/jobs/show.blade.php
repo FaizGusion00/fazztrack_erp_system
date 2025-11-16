@@ -73,51 +73,46 @@
                     </div>
 
                     <!-- Design Previews - Left Side -->
+                    @php
+                        $designFiles = $job->order->getDesignFilesArray();
+                        $designImages = [];
+                        // Support both old format (keyed) and new format (array)
+                        if (is_array($designFiles)) {
+                            foreach ($designFiles as $key => $value) {
+                                if (is_numeric($key)) {
+                                    // New format: array of paths
+                                    $designImages[] = $value;
+                                } else {
+                                    // Old format: keyed array (design_front, design_back, etc.)
+                                    if (!empty($value)) {
+                                        $designImages[] = $value;
+                                    }
+                                }
+                            }
+                        }
+                    @endphp
+                    @if(count($designImages) > 0)
                     <div class="space-y-4">
-                        @if($job->order->design_front)
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Design Images</h4>
+                        @foreach($designImages as $index => $imagePath)
                         <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design front</h4>
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design Image {{ $index + 1 }}</h4>
                             <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="@fileUrl($job->order->design_front)" 
-                                     alt="Front Design" 
+                                <img src="@fileUrl($imagePath)" 
+                                     alt="Design Image {{ $index + 1 }}" 
                                      class="w-full h-full object-cover">
                             </div>
                         </div>
-                        @endif
-
-                        @if($job->order->design_left)
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design left</h4>
-                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="@fileUrl($job->order->design_left)" 
-                                     alt="Left Design" 
-                                     class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($job->order->design_back)
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design back</h4>
-                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="@fileUrl($job->order->design_back)" 
-                                     alt="Back Design" 
-                                     class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                        @endif
-
-                        @if($job->order->design_right)
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design right</h4>
-                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="@fileUrl($job->order->design_right)" 
-                                     alt="Right Design" 
-                                     class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                        @endif
+                        @endforeach
                     </div>
+                    @else
+                    <div class="space-y-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Design Images</h4>
+                        <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                            <p class="text-sm text-gray-500">No design images available</p>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Right Column - Internal Use -->

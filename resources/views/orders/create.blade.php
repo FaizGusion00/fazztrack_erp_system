@@ -99,12 +99,21 @@
                                     <div class="text-sm text-gray-600">
                                         <span class="stock-info">Stock: <span class="font-medium">-</span></span>
                                     </div>
-                                    <button type="button" 
-                                            onclick="removeProductRow(this)"
-                                            class="text-red-600 hover:text-red-800 text-sm font-medium">
-                                        <i class="fas fa-trash mr-1"></i>
-                                        Remove
-                                    </button>
+                                    <div class="flex items-center space-x-3">
+                                        <button type="button" 
+                                                onclick="duplicateProductRow(this)"
+                                                class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                title="Duplicate this product">
+                                            <i class="fas fa-copy mr-1"></i>
+                                            Copy
+                                        </button>
+                                        <button type="button" 
+                                                onclick="removeProductRow(this)"
+                                                class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Remove
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -254,108 +263,83 @@
                             </div>
 
                             <div>
-                                <label for="job_sheet" class="block text-sm font-medium text-gray-700 mb-2">
+                                <label for="job_sheets" class="block text-sm font-medium text-gray-700 mb-2">
                                     Job Sheet
                                 </label>
                                 <div class="flex items-center justify-center w-full">
-                                    <label for="job_sheet" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <label for="job_sheets" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                         <div class="flex flex-col items-center justify-center pt-5 pb-6">
                                             <i class="fas fa-file-upload text-gray-400 text-2xl mb-2"></i>
                                             <p class="mb-2 text-sm text-gray-500">
                                                 <span class="font-semibold">Click to upload</span> or drag and drop
                                             </p>
                                             <p class="text-xs text-gray-500">PDF, JPG, PNG (MAX. 10MB)</p>
+                                            <p class="text-xs text-gray-400 mt-1">You can select multiple files at once</p>
                                         </div>
-                                        <input id="job_sheet" name="job_sheet" type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png">
+                                        <input id="job_sheets" name="job_sheets[]" type="file" class="hidden" multiple accept=".pdf,.jpg,.jpeg,.png">
                                     </label>
                                 </div>
-                                @error('job_sheet')
+                                @error('job_sheets')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                @error('job_sheets.*')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
 
-                        <!-- File Preview -->
-                        <div id="file-preview" class="hidden">
-                            <h5 class="text-sm font-medium text-gray-700 mb-2">Uploaded Files:</h5>
-                            <div id="file-list" class="space-y-2"></div>
+                        <!-- File Preview - Separated by Type -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <!-- Receipts Preview -->
+                            <div id="receipts-preview" class="hidden">
+                                <h5 class="text-sm font-medium text-gray-700 mb-2">Receipts:</h5>
+                                <div id="receipts-list" class="space-y-2"></div>
+                            </div>
+                            
+                            <!-- Job Sheets Preview -->
+                            <div id="job-sheets-preview" class="hidden">
+                                <h5 class="text-sm font-medium text-gray-700 mb-2">Job Sheets:</h5>
+                                <div id="job-sheets-list" class="space-y-2"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Design Views -->
+                    <!-- Design Views (Optional) -->
                     <div class="space-y-4">
-                        <h4 class="text-md font-medium text-gray-900">Design Views</h4>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="design_front" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Design Front
+                        <h4 class="text-md font-medium text-gray-900">Design Views <span class="text-gray-500 text-sm font-normal">(Optional)</span></h4>
+                        <div>
+                            <label for="design_images" class="block text-sm font-medium text-gray-700 mb-2">
+                                Design Images (Multiple) <span class="text-gray-500 font-normal text-xs">- Optional, for customer reference only</span>
+                            </label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="design_images" class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-images text-gray-400 text-2xl mb-2"></i>
+                                        <p class="mb-2 text-sm text-gray-500">
+                                            <span class="font-semibold">Click to upload</span> or drag and drop
+                                        </p>
+                                        <p class="text-xs text-gray-500">JPG, PNG (MAX. 20MB per image)</p>
+                                        <p class="text-xs text-gray-400 mt-1">You can select multiple images at once</p>
+                                    </div>
+                                    <input id="design_images" name="design_images[]" type="file" class="hidden" accept=".jpg,.jpeg,.png" multiple>
                                 </label>
-                                <div class="flex items-center justify-center w-full">
-                                    <label for="design_front" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <i class="fas fa-image text-gray-400 text-2xl mb-2"></i>
-                                            <p class="mb-2 text-sm text-gray-500">
-                                                <span class="font-semibold">Click to upload</span> front design
-                                            </p>
-                                            <p class="text-xs text-gray-500">JPG, PNG (MAX. 5MB)</p>
-                                        </div>
-                                        <input id="design_front" name="design_front" type="file" class="hidden" accept=".jpg,.jpeg,.png">
-                                    </label>
-                                </div>
                             </div>
-
-                            <div>
-                                <label for="design_back" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Design Back
-                                </label>
-                                <div class="flex items-center justify-center w-full">
-                                    <label for="design_back" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <i class="fas fa-image text-gray-400 text-2xl mb-2"></i>
-                                            <p class="mb-2 text-sm text-gray-500">
-                                                <span class="font-semibold">Click to upload</span> back design
-                                            </p>
-                                            <p class="text-xs text-gray-500">JPG, PNG (MAX. 5MB)</p>
-                                        </div>
-                                        <input id="design_back" name="design_back" type="file" class="hidden" accept=".jpg,.jpeg,.png">
-                                    </label>
-                                </div>
+                            <div class="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <p class="text-xs text-blue-800">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Note:</strong> Design images are optional during order creation. If customer provides reference images, you can upload them here. Sales manager can add or update design images later when finalizing the order.
+                                </p>
                             </div>
-
-                            <div>
-                                <label for="design_left" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Design Left
-                                </label>
-                                <div class="flex items-center justify-center w-full">
-                                    <label for="design_left" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <i class="fas fa-image text-gray-400 text-2xl mb-2"></i>
-                                            <p class="mb-2 text-sm text-gray-500">
-                                                <span class="font-semibold">Click to upload</span> left design
-                                            </p>
-                                            <p class="text-xs text-gray-500">JPG, PNG (MAX. 5MB)</p>
-                                        </div>
-                                        <input id="design_left" name="design_left" type="file" class="hidden" accept=".jpg,.jpeg,.png">
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="design_right" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Design Right
-                                </label>
-                                <div class="flex items-center justify-center w-full">
-                                    <label for="design_right" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                            <i class="fas fa-image text-gray-400 text-2xl mb-2"></i>
-                                            <p class="mb-2 text-sm text-gray-500">
-                                                <span class="font-semibold">Click to upload</span> right design
-                                            </p>
-                                            <p class="text-xs text-gray-500">JPG, PNG (MAX. 5MB)</p>
-                                        </div>
-                                        <input id="design_right" name="design_right" type="file" class="hidden" accept=".jpg,.jpeg,.png">
-                                    </label>
-                                </div>
+                            @error('design_images')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @error('design_images.*')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            
+                            <!-- Image Preview Container -->
+                            <div id="design-images-preview" class="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden">
+                                <h5 class="col-span-full text-sm font-medium text-gray-700 mb-2">Selected Images:</h5>
                             </div>
                         </div>
                     </div>
@@ -410,17 +394,19 @@ document.getElementById('balance_payment').addEventListener('input', calculateTo
 // Calculate initial total
 calculateTotal();
 
-// File upload preview functionality
+// File upload preview functionality - Separated by type
 document.addEventListener('DOMContentLoaded', function() {
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    const filePreview = document.getElementById('file-preview');
-    const fileList = document.getElementById('file-list');
-
-    fileInputs.forEach(input => {
-        input.addEventListener('change', function(e) {
+    // Receipts preview
+    const receiptsInput = document.getElementById('receipts');
+    const receiptsPreview = document.getElementById('receipts-preview');
+    const receiptsList = document.getElementById('receipts-list');
+    
+    if (receiptsInput && receiptsPreview && receiptsList) {
+        receiptsInput.addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
             if (files.length > 0) {
-                filePreview.classList.remove('hidden');
+                receiptsPreview.classList.remove('hidden');
+                receiptsList.innerHTML = ''; // Clear previous previews
                 
                 files.forEach(file => {
                     const fileItem = document.createElement('div');
@@ -432,11 +418,92 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <span class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
                     `;
-                    fileList.appendChild(fileItem);
+                    receiptsList.appendChild(fileItem);
                 });
+            } else {
+                receiptsPreview.classList.add('hidden');
             }
         });
-    });
+    }
+    
+    // Job sheets preview
+    const jobSheetsInput = document.getElementById('job_sheets');
+    const jobSheetsPreview = document.getElementById('job-sheets-preview');
+    const jobSheetsList = document.getElementById('job-sheets-list');
+    
+    if (jobSheetsInput && jobSheetsPreview && jobSheetsList) {
+        jobSheetsInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                jobSheetsPreview.classList.remove('hidden');
+                jobSheetsList.innerHTML = ''; // Clear previous previews
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-2 bg-gray-100 rounded';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-file text-gray-500 mr-2"></i>
+                            <span class="text-sm text-gray-700">${file.name}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    `;
+                    jobSheetsList.appendChild(fileItem);
+                });
+            } else {
+                jobSheetsPreview.classList.add('hidden');
+            }
+        });
+    }
+
+    // Design images preview functionality
+    const designImagesInput = document.getElementById('design_images');
+    const designImagesPreview = document.getElementById('design-images-preview');
+    
+    if (designImagesInput && designImagesPreview) {
+        designImagesInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                designImagesPreview.classList.remove('hidden');
+                
+                // Clear previous previews (except the heading)
+                const heading = designImagesPreview.querySelector('h5');
+                designImagesPreview.innerHTML = '';
+                if (heading) {
+                    designImagesPreview.appendChild(heading);
+                } else {
+                    const newHeading = document.createElement('h5');
+                    newHeading.className = 'col-span-full text-sm font-medium text-gray-700 mb-2';
+                    newHeading.textContent = 'Selected Images:';
+                    designImagesPreview.appendChild(newHeading);
+                }
+                
+                files.forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'relative group';
+                            previewItem.innerHTML = `
+                                <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+                                    <img src="${e.target.result}" alt="Preview ${index + 1}" class="w-full h-32 object-cover">
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                        <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1 truncate" title="${file.name}">${file.name}</p>
+                                <p class="text-xs text-gray-400">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            `;
+                            designImagesPreview.appendChild(previewItem);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else {
+                designImagesPreview.classList.add('hidden');
+            }
+        });
+    }
 });
 
 // Product row management functions
@@ -509,10 +576,72 @@ function checkForDuplicateProducts() {
     }
 }
 
+function duplicateProductRow(button) {
+    const productRow = button.closest('.product-row');
+    const productsContainer = document.getElementById('products-container');
+    
+    // Clone the product row
+    const duplicatedRow = productRow.cloneNode(true);
+    
+    // Update the index for the new row
+    const newIndex = productRowCounter++;
+    
+    // Update all the name attributes
+    duplicatedRow.querySelectorAll('[name]').forEach(element => {
+        const nameAttr = element.getAttribute('name');
+        if (nameAttr) {
+            // Extract current index from name (e.g., products[0][product_id] -> 0)
+            const match = nameAttr.match(/\[(\d+)\]/);
+            if (match) {
+                element.name = nameAttr.replace(`[${match[1]}]`, `[${newIndex}]`);
+            }
+        }
+    });
+    
+    // Copy all values from original row
+    const originalProductSelect = productRow.querySelector('.product-select');
+    const originalQuantityInput = productRow.querySelector('.quantity-input');
+    const originalCommentsInput = productRow.querySelector('input[name*="comments"]');
+    
+    const duplicatedProductSelect = duplicatedRow.querySelector('.product-select');
+    const duplicatedQuantityInput = duplicatedRow.querySelector('.quantity-input');
+    const duplicatedCommentsInput = duplicatedRow.querySelector('input[name*="comments"]');
+    const duplicatedStockInfo = duplicatedRow.querySelector('.stock-info .font-medium');
+    
+    // Copy values
+    if (originalProductSelect && duplicatedProductSelect) {
+        duplicatedProductSelect.value = originalProductSelect.value;
+    }
+    if (originalQuantityInput && duplicatedQuantityInput) {
+        duplicatedQuantityInput.value = originalQuantityInput.value;
+    }
+    if (originalCommentsInput && duplicatedCommentsInput) {
+        duplicatedCommentsInput.value = originalCommentsInput.value;
+    }
+    
+    // Update stock info if product is selected
+    if (duplicatedProductSelect && duplicatedProductSelect.value) {
+        updateStockInfo(duplicatedProductSelect, duplicatedStockInfo);
+    } else {
+        duplicatedStockInfo.textContent = '-';
+    }
+    
+    // Add event listeners to the duplicated row
+    addProductRowEventListeners(duplicatedRow);
+    
+    // Insert the duplicated row after the original row
+    productRow.parentNode.insertBefore(duplicatedRow, productRow.nextSibling);
+    
+    // Check for duplicate products
+    checkForDuplicateProducts();
+}
+
 function removeProductRow(button) {
     const productRow = button.closest('.product-row');
     if (document.querySelectorAll('.product-row').length > 1) {
         productRow.remove();
+        // Re-check for duplicates after removal
+        checkForDuplicateProducts();
     }
 }
 

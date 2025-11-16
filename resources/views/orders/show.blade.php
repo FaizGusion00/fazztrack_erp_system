@@ -514,80 +514,50 @@
     @endif
 
     <!-- Design Files -->
-    @if($order->design_front || $order->design_back || $order->design_left || $order->design_right)
+    @php
+        $designFiles = $order->getDesignFilesArray();
+        $designImages = [];
+        // Support both old format (keyed) and new format (array)
+        if (is_array($designFiles)) {
+            foreach ($designFiles as $key => $value) {
+                if (is_numeric($key)) {
+                    // New format: array of paths
+                    $designImages[] = $value;
+                } else {
+                    // Old format: keyed array (design_front, design_back, etc.)
+                    if (!empty($value)) {
+                        $designImages[] = $value;
+                    }
+                }
+            }
+        }
+    @endphp
+    @if(count($designImages) > 0)
     <div class="mt-8">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium text-gray-900 flex items-center">
                     <i class="fas fa-palette mr-2 text-primary-500"></i>
-                    Design Files
+                    Design Images ({{ count($designImages) }})
                 </h3>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    @if($order->design_front)
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    @foreach($designImages as $index => $imagePath)
                     <div class="space-y-3">
-                        <h4 class="text-sm font-medium text-gray-700">Front View</h4>
+                        <h4 class="text-sm font-medium text-gray-700">Design Image {{ $index + 1 }}</h4>
                         <div class="relative group">
-                            <img src="@fileUrl($order->design_front)" 
-                                 alt="Front Design" 
+                            <img src="@fileUrl($imagePath)" 
+                                 alt="Design Image {{ $index + 1 }}" 
                                  class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
-                                 data-title="Front Design">
+                                 data-title="Design Image {{ $index + 1 }}">
                             <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
                                 <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500">{{ basename($order->design_front) }}</p>
+                        <p class="text-xs text-gray-500 truncate" title="{{ basename($imagePath) }}">{{ basename($imagePath) }}</p>
                     </div>
-                    @endif
-
-                    @if($order->design_back)
-                    <div class="space-y-3">
-                        <h4 class="text-sm font-medium text-gray-700">Back View</h4>
-                        <div class="relative group">
-                            <img src="@fileUrl($order->design_back)" 
-                                 alt="Back Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
-                                 data-title="Back Design">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
-                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500">{{ basename($order->design_back) }}</p>
-                    </div>
-                    @endif
-
-                    @if($order->design_left)
-                    <div class="space-y-3">
-                        <h4 class="text-sm font-medium text-gray-700">Left View</h4>
-                        <div class="relative group">
-                            <img src="@fileUrl($order->design_left)" 
-                                 alt="Left Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
-                                 data-title="Left Design">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
-                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500">{{ basename($order->design_left) }}</p>
-                    </div>
-                    @endif
-
-                    @if($order->design_right)
-                    <div class="space-y-3">
-                        <h4 class="text-sm font-medium text-gray-700">Right View</h4>
-                        <div class="relative group">
-                            <img src="@fileUrl($order->design_right)" 
-                                 alt="Right Design" 
-                                 class="w-full h-48 object-cover rounded-lg border border-gray-200 hover:shadow-md transition-shadow cursor-pointer design-image"
-                                 data-title="Right Design">
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center pointer-events-none">
-                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500">{{ basename($order->design_right) }}</p>
-                    </div>
-                    @endif
+                    @endforeach
                 </div>
             </div>
         </div>

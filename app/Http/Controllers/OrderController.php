@@ -108,11 +108,10 @@ class OrderController extends Controller
             'due_date_production' => 'required|date|after:due_date_design',
             'remarks' => 'nullable|string',
             'receipts.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'job_sheet' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
-            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
-            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
-            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'job_sheets' => 'nullable|array',
+            'job_sheets.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'design_images' => 'nullable|array',
+            'design_images.*' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
         ]);
 
@@ -135,23 +134,25 @@ class OrderController extends Controller
             $orderData['receipts'] = json_encode($receiptPaths);
         }
 
-        // Handle job sheet upload
-        if ($request->hasFile('job_sheet')) {
-            $orderData['job_sheet'] = StorageService::store($request->file('job_sheet'), 'job_sheets');
+        // Handle multiple job sheets upload
+        if ($request->hasFile('job_sheets')) {
+            $jobSheetPaths = StorageService::storeMultiple($request->file('job_sheets'), 'job_sheets');
+            $orderData['job_sheet'] = json_encode($jobSheetPaths);
         }
 
-        // Handle design files upload
-        $designFiles = [];
-        $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
-        
-        foreach ($designFields as $field) {
-            if ($request->hasFile($field)) {
-                $designFiles[$field] = StorageService::store($request->file($field), 'designs/final');
+        // Handle design images upload (multiple images)
+        $designImages = [];
+        if ($request->hasFile('design_images')) {
+            foreach ($request->file('design_images') as $imageFile) {
+                if ($imageFile && $imageFile->isValid()) {
+                    $designImages[] = StorageService::store($imageFile, 'designs/final');
+                }
             }
         }
         
-        if (!empty($designFiles)) {
-            $orderData['design_files'] = json_encode($designFiles);
+        // Store as array - Laravel will automatically JSON encode due to 'array' cast in model
+        if (!empty($designImages)) {
+            $orderData['design_files'] = $designImages;
         }
 
         $order = Order::create($orderData);
@@ -260,11 +261,10 @@ class OrderController extends Controller
             'due_date_production' => 'required|date|after:due_date_design',
             'remarks' => 'nullable|string',
             'receipts.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'job_sheet' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'design_front' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
-            'design_back' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
-            'design_left' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
-            'design_right' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
+            'job_sheets' => 'nullable|array',
+            'job_sheets.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'design_images' => 'nullable|array',
+            'design_images.*' => 'nullable|file|mimes:jpg,jpeg,png|max:20480',
             'download_link' => 'nullable|url',
         ]);
 
@@ -280,49 +280,68 @@ class OrderController extends Controller
         // Set the first product as the main product_id for backward compatibility
         $orderData['product_id'] = $firstProduct['product_id'];
 
-        // Handle job sheet upload
-        if ($request->hasFile('job_sheet')) {
-            // Delete old file if exists
-            if ($order->job_sheet) {
-                StorageService::delete($order->job_sheet);
+        // Handle multiple job sheets upload (add to existing)
+        $existingJobSheets = [];
+        if ($order->job_sheet) {
+            // Check if it's JSON (new format) or string (old format)
+            $decoded = json_decode($order->job_sheet, true);
+            if (is_array($decoded)) {
+                // New format: array of paths
+                $existingJobSheets = $decoded;
+            } else {
+                // Old format: single path string
+                $existingJobSheets = [$order->job_sheet];
             }
-            $orderData['job_sheet'] = StorageService::store($request->file('job_sheet'), 'job_sheets');
+        }
+        
+        // Add new job sheets to existing ones
+        if ($request->hasFile('job_sheets')) {
+            foreach ($request->file('job_sheets') as $jobSheetFile) {
+                if ($jobSheetFile && $jobSheetFile->isValid()) {
+                    $existingJobSheets[] = StorageService::store($jobSheetFile, 'job_sheets');
+                }
+            }
+        }
+        
+        // Update job_sheet if we have files (either existing or new)
+        if (!empty($existingJobSheets)) {
+            $orderData['job_sheet'] = json_encode($existingJobSheets);
         }
 
-        // Handle design files upload (finalized design by Sales Manager)
-        $designFiles = $order->getDesignFilesArray();
+        // Handle design images upload (multiple images - add to existing)
+        $existingDesignFiles = $order->getDesignFilesArray();
+        $designImages = [];
         
-        if ($request->hasFile('design_front')) {
-            // Delete old file if exists
-            if (isset($designFiles['design_front'])) {
-                StorageService::delete($designFiles['design_front']);
+        // Convert old format (keyed array) to new format (numeric array) if needed
+        // Preserve existing images
+        if (is_array($existingDesignFiles) && !empty($existingDesignFiles)) {
+            foreach ($existingDesignFiles as $key => $value) {
+                if (is_numeric($key)) {
+                    // Already in new format
+                    $designImages[] = $value;
+                } else {
+                    // Old format: convert to new format
+                    if (!empty($value)) {
+                        $designImages[] = $value;
+                    }
+                }
             }
-            $designFiles['design_front'] = StorageService::store($request->file('design_front'), 'designs/final');
-        }
-        if ($request->hasFile('design_back')) {
-            // Delete old file if exists
-            if (isset($designFiles['design_back'])) {
-                StorageService::delete($designFiles['design_back']);
-            }
-            $designFiles['design_back'] = StorageService::store($request->file('design_back'), 'designs/final');
-        }
-        if ($request->hasFile('design_left')) {
-            // Delete old file if exists
-            if (isset($designFiles['design_left'])) {
-                StorageService::delete($designFiles['design_left']);
-            }
-            $designFiles['design_left'] = StorageService::store($request->file('design_left'), 'designs/final');
-        }
-        if ($request->hasFile('design_right')) {
-            // Delete old file if exists
-            if (isset($designFiles['design_right'])) {
-                StorageService::delete($designFiles['design_right']);
-            }
-            $designFiles['design_right'] = StorageService::store($request->file('design_right'), 'designs/final');
         }
         
-        if (!empty($designFiles)) {
-            $orderData['design_files'] = json_encode($designFiles);
+        // Add new images to existing ones
+        if ($request->hasFile('design_images')) {
+            foreach ($request->file('design_images') as $imageFile) {
+                if ($imageFile && $imageFile->isValid()) {
+                    $designImages[] = StorageService::store($imageFile, 'designs/final');
+                }
+            }
+        }
+        
+        // Update design_files if we have images (either existing or new)
+        // This preserves existing images even if no new ones are uploaded
+        // Store as array - Laravel will automatically JSON encode due to 'array' cast in model
+        if (!empty($designImages)) {
+            $orderData['design_files'] = $designImages;
         }
 
         $order->update($orderData);

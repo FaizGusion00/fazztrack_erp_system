@@ -115,12 +115,21 @@
                                         <!-- <div class="text-sm text-gray-600">
                                             <span class="stock-info">Stock: <span class="font-medium">-</span></span>
                                         </div> -->
-                                        <button type="button" 
-                                                onclick="removeProductRow(this)"
-                                                class="text-red-600 hover:text-red-800 text-sm font-medium">
-                                            <i class="fas fa-trash mr-1"></i>
-                                            Remove
-                                        </button>
+                                        <div class="flex items-center space-x-3">
+                                            <button type="button" 
+                                                    onclick="duplicateProductRow(this)"
+                                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                    title="Duplicate this product">
+                                                <i class="fas fa-copy mr-1"></i>
+                                                Copy
+                                            </button>
+                                            <button type="button" 
+                                                    onclick="removeProductRow(this)"
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                                <i class="fas fa-trash mr-1"></i>
+                                                Remove
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 @endforeach
@@ -165,12 +174,21 @@
                                         <div class="text-sm text-gray-600">
                                             <span class="stock-info">Stock: <span class="font-medium">-</span></span>
                                         </div>
-                                        <button type="button" 
-                                                onclick="removeProductRow(this)"
-                                                class="text-red-600 hover:text-red-800 text-sm font-medium">
-                                            <i class="fas fa-trash mr-1"></i>
-                                            Remove
-                                        </button>
+                                        <div class="flex items-center space-x-3">
+                                            <button type="button" 
+                                                    onclick="duplicateProductRow(this)"
+                                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                    title="Duplicate this product">
+                                                <i class="fas fa-copy mr-1"></i>
+                                                Copy
+                                            </button>
+                                            <button type="button" 
+                                                    onclick="removeProductRow(this)"
+                                                    class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                                <i class="fas fa-trash mr-1"></i>
+                                                Remove
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             @endif
@@ -357,17 +375,77 @@
                                multiple
                                accept=".pdf,.jpg,.jpeg,.png"
                                class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <p class="mt-1 text-sm text-gray-500">Leave empty to keep existing files</p>
+                        <p class="mt-1 text-sm text-gray-500">Leave empty to keep existing files. New files will be added to existing ones.</p>
+                        
+                        <!-- Existing Receipts Display -->
+                        @if($order->receipts()->count() > 0)
+                        <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Existing Receipts ({{ $order->receipts()->count() }}):</h5>
+                            <div class="space-y-2">
+                                @foreach($order->receipts()->orderBy('uploaded_at', 'desc')->get() as $receipt)
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-gray-600 truncate">{{ $receipt->file_name }}</span>
+                                    <span class="text-gray-400">{{ number_format($receipt->file_size / 1024, 1) }} KB</span>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                     </div>
 
                     <div>
-                        <label for="job_sheet" class="block text-sm font-medium text-gray-700 mb-2">Job Sheet</label>
+                        <label for="job_sheets" class="block text-sm font-medium text-gray-700 mb-2">Job Sheet (Multiple)</label>
                         <input type="file" 
-                               id="job_sheet" 
-                               name="job_sheet" 
+                               id="job_sheets" 
+                               name="job_sheets[]" 
+                               multiple
                                accept=".pdf,.jpg,.jpeg,.png"
                                class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                        <p class="mt-1 text-sm text-gray-500">Leave empty to keep existing file</p>
+                        <p class="mt-1 text-sm text-gray-500">Leave empty to keep existing files. New files will be added to existing ones.</p>
+                        
+                        <!-- Existing Job Sheets Display -->
+                        @php
+                            $jobSheets = [];
+                            if ($order->job_sheet) {
+                                $decoded = json_decode($order->job_sheet, true);
+                                if (is_array($decoded)) {
+                                    $jobSheets = $decoded;
+                                } else {
+                                    // Old format: single string
+                                    $jobSheets = [$order->job_sheet];
+                                }
+                            }
+                        @endphp
+                        @if(count($jobSheets) > 0)
+                        <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">Existing Job Sheets ({{ count($jobSheets) }}):</h5>
+                            <div class="space-y-2">
+                                @foreach($jobSheets as $jobSheet)
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-gray-600 truncate">{{ basename($jobSheet) }}</span>
+                                    <a href="@fileUrl($jobSheet)" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                
+                <!-- File Preview - Separated by Type -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <!-- Receipts Preview -->
+                    <div id="receipts-preview" class="hidden">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">New Receipts to Upload:</h5>
+                        <div id="receipts-list" class="space-y-2"></div>
+                    </div>
+                    
+                    <!-- Job Sheets Preview -->
+                    <div id="job-sheets-preview" class="hidden">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">New Job Sheets to Upload:</h5>
+                        <div id="job-sheets-list" class="space-y-2"></div>
                     </div>
                 </div>
 
@@ -379,281 +457,97 @@
                                 <i class="fas fa-palette text-white text-lg"></i>
                             </div>
                             Design Views
+                            @php
+                                $existingImages = $order->getDesignFilesArray();
+                                $imageCount = is_array($existingImages) ? count(array_filter($existingImages)) : 0;
+                            @endphp
                             <span class="ml-auto text-sm font-normal text-gray-600 bg-white px-3 py-1 rounded-full border border-white-200">
-                                {{ collect([$order->design_front, $order->design_back, $order->design_left, $order->design_right])->filter()->count() }}/4 uploaded
+                                {{ $imageCount }} image{{ $imageCount !== 1 ? 's' : '' }} uploaded
                             </span>
                         </h4>
                         
-                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
-                            <!-- Front View -->
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
-                                <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <label for="design_front" class="text-sm font-semibold text-gray-800 flex items-center">
-                                            <i class="fas fa-eye mr-2 text-blue-500"></i>
-                                            Front View
-                                        </label>
-                                        @if($order->design_front)
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                <i class="fas fa-check-circle mr-1.5"></i>Uploaded
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                                                <i class="fas fa-clock mr-1.5"></i>Pending
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                <div class="p-4">
-                                    @if($order->design_front)
-                                        <div class="mb-4 relative group">
-                                            <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                                                <img src="@fileUrl($order->design_front)" 
-                                                     alt="Front Design" 
-                                                     class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
-                                                     data-title="Front Design">
-                                                <!-- Hover overlay - positioned to not block clicks -->
-                                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                                    <div class="absolute bottom-2 left-2 right-2 pointer-events-auto">
-                                                        <div class="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center">
-                                                            <span class="text-xs font-medium text-gray-800">
-                                                                <i class="fas fa-expand-arrows-alt mr-1"></i>Click to enlarge
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                        <!-- Existing Images Gallery -->
+                        @php
+                            $designFiles = $order->getDesignFilesArray();
+                            $existingDesignImages = [];
+                            // Support both old format (keyed) and new format (array)
+                            if (is_array($designFiles)) {
+                                foreach ($designFiles as $key => $value) {
+                                    if (is_numeric($key)) {
+                                        // New format: array of paths
+                                        $existingDesignImages[] = $value;
+                                    } else {
+                                        // Old format: keyed array (design_front, design_back, etc.)
+                                        if (!empty($value)) {
+                                            $existingDesignImages[] = $value;
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+                        
+                        @if(count($existingDesignImages) > 0)
+                        <div class="mb-6">
+                            <h5 class="text-sm font-medium text-gray-700 mb-3">Existing Design Images:</h5>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="existing-design-images">
+                                @foreach($existingDesignImages as $index => $imagePath)
+                                <div class="relative group existing-image-item" data-image-path="{{ $imagePath }}">
+                                    <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+                                        <img src="@fileUrl($imagePath)" 
+                                             alt="Design Image {{ $index + 1 }}" 
+                                             class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
+                                             data-title="Design Image {{ $index + 1 }}">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                                            <div class="absolute bottom-2 left-2 right-2 pointer-events-auto">
+                                                <div class="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center">
+                                                    <span class="text-xs font-medium text-gray-800">
+                                                        <i class="fas fa-expand-arrows-alt mr-1"></i>Click to enlarge
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <p class="text-xs text-gray-500 mt-2 text-center font-medium">
-                                                <i class="fas fa-file-image mr-1"></i>{{ basename($order->design_front) }}
-                                            </p>
-                                        </div>
-                                    @endif
-                                    
-                                    <div class="relative">
-                                        <div class="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-300 @if($order->design_front) border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400 @else border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 @endif">
-                                            <div class="text-center px-3">
-                                                @if($order->design_front)
-                                                    <i class="fas fa-edit text-green-500 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-green-700">Replace Image</p>
-                                                    <p class="text-xs text-green-600">JPG, PNG up to 20MB</p>
-                                                @else
-                                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-gray-600">Upload Image</p>
-                                                    <p class="text-xs text-gray-500">Drag & drop or click to browse</p>
-                                                @endif
-                                            </div>
-                                            <input type="file" 
-                                                   id="design_front" 
-                                                   name="design_front" 
-                                                   accept=".jpg,.jpeg,.png"
-                                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                                         </div>
                                     </div>
+                                    <p class="text-xs text-gray-500 mt-2 text-center truncate" title="{{ basename($imagePath) }}">
+                                        <i class="fas fa-file-image mr-1"></i>{{ basename($imagePath) }}
+                                    </p>
                                 </div>
+                                @endforeach
                             </div>
-
-                            <!-- Back View -->
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
-                                <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <label for="design_back" class="text-sm font-semibold text-gray-800 flex items-center">
-                                            <i class="fas fa-eye mr-2 text-blue-500"></i>
-                                            Back View
-                                        </label>
-                                        @if($order->design_back)
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                <i class="fas fa-check-circle mr-1.5"></i>Uploaded
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                                                <i class="fas fa-clock mr-1.5"></i>Pending
-                                            </span>
-                                        @endif
+                        </div>
+                        @endif
+                        
+                        <!-- Upload New Images -->
+                        <div class="mt-6">
+                            <label for="design_images" class="block text-sm font-medium text-gray-700 mb-2">
+                                Add More Design Images (Multiple)
+                            </label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="design_images" class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-images text-gray-400 text-2xl mb-2"></i>
+                                        <p class="mb-2 text-sm text-gray-500">
+                                            <span class="font-semibold">Click to upload</span> or drag and drop
+                                        </p>
+                                        <p class="text-xs text-gray-500">JPG, PNG (MAX. 20MB per image)</p>
+                                        <p class="text-xs text-gray-400 mt-1">You can select multiple images at once</p>
                                     </div>
-                                </div>
-                                
-                                <div class="p-4">
-                                    @if($order->design_back)
-                                        <div class="mb-4 relative group">
-                                            <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                                                <img src="@fileUrl($order->design_back)" 
-                                                     alt="Back Design" 
-                                                     class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
-                                                     data-title="Back Design">
-                                                <!-- Hover overlay - positioned to not block clicks -->
-                                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                                    <div class="absolute bottom-2 left-2 right-2 pointer-events-auto">
-                                                        <div class="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center">
-                                                            <span class="text-xs font-medium text-gray-800">
-                                                                <i class="fas fa-expand-arrows-alt mr-1"></i>Click to enlarge
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-2 text-center font-medium">
-                                                <i class="fas fa-file-image mr-1"></i>{{ basename($order->design_back) }}
-                                            </p>
-                                        </div>
-                                    @endif
-                                    
-                                    <div class="relative">
-                                        <div class="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-300 @if($order->design_back) border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400 @else border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 @endif">
-                                            <div class="text-center px-3">
-                                                @if($order->design_back)
-                                                    <i class="fas fa-edit text-green-500 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-green-700">Replace Image</p>
-                                                    <p class="text-xs text-green-600">JPG, PNG up to 20MB</p>
-                                                @else
-                                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-gray-600">Upload Image</p>
-                                                    <p class="text-xs text-gray-500">Drag & drop or click to browse</p>
-                                                @endif
-                                            </div>
-                                            <input type="file" 
-                                                   id="design_back" 
-                                                   name="design_back" 
-                                                   accept=".jpg,.jpeg,.png"
-                                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                        </div>
-                                    </div>
-                                </div>
+                                    <input id="design_images" name="design_images[]" type="file" class="hidden" accept=".jpg,.jpeg,.png" multiple>
+                                </label>
                             </div>
-
-                            <!-- Left View -->
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
-                                <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <label for="design_left" class="text-sm font-semibold text-gray-800 flex items-center">
-                                            <i class="fas fa-eye mr-2 text-blue-500"></i>
-                                            Left View
-                                        </label>
-                                        @if($order->design_left)
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                <i class="fas fa-check-circle mr-1.5"></i>Uploaded
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                                                <i class="fas fa-clock mr-1.5"></i>Pending
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                <div class="p-4">
-                                    @if($order->design_left)
-                                        <div class="mb-4 relative group">
-                                            <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                                                <img src="@fileUrl($order->design_left)" 
-                                                     alt="Left Design" 
-                                                     class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
-                                                     data-title="Left Design">
-                                                <!-- Hover overlay - positioned to not block clicks -->
-                                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                                    <div class="absolute bottom-2 left-2 right-2 pointer-events-auto">
-                                                        <div class="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center">
-                                                            <span class="text-xs font-medium text-gray-800">
-                                                                <i class="fas fa-expand-arrows-alt mr-1"></i>Click to enlarge
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-2 text-center font-medium">
-                                                <i class="fas fa-file-image mr-1"></i>{{ basename($order->design_left) }}
-                                            </p>
-                                        </div>
-                                    @endif
-                                    
-                                    <div class="relative">
-                                        <div class="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-300 @if($order->design_left) border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400 @else border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 @endif">
-                                            <div class="text-center px-3">
-                                                @if($order->design_left)
-                                                    <i class="fas fa-edit text-green-500 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-green-700">Replace Image</p>
-                                                    <p class="text-xs text-green-600">JPG, PNG up to 20MB</p>
-                                                @else
-                                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-gray-600">Upload Image</p>
-                                                    <p class="text-xs text-gray-500">Drag & drop or click to browse</p>
-                                                @endif
-                                            </div>
-                                            <input type="file" 
-                                                   id="design_left" 
-                                                   name="design_left" 
-                                                   accept=".jpg,.jpeg,.png"
-                                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Right View -->
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300">
-                                <div class="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <label for="design_right" class="text-sm font-semibold text-gray-800 flex items-center">
-                                            <i class="fas fa-eye mr-2 text-blue-500"></i>
-                                            Right View
-                                        </label>
-                                        @if($order->design_right)
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                <i class="fas fa-check-circle mr-1.5"></i>Uploaded
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                                                <i class="fas fa-clock mr-1.5"></i>Pending
-                                            </span>
-                                        @endif
-                                    </div>
-                                
-                                <div class="p-4">
-                                    @if($order->design_right)
-                                        <div class="mb-4 relative group">
-                                            <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                                                <img src="@fileUrl($order->design_right)" 
-                                                     alt="Right Design" 
-                                                     class="w-full h-36 object-cover cursor-pointer hover:scale-105 transition-transform duration-300 design-image"
-                                                     data-title="Right Design">
-                                                <!-- Hover overlay - positioned to not block clicks -->
-                                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                                                    <div class="absolute bottom-2 left-2 right-2 pointer-events-auto">
-                                                        <div class="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-center">
-                                                            <span class="text-xs font-medium text-gray-800">
-                                                                <i class="fas fa-expand-arrows-alt mr-1"></i>Click to enlarge
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-2 text-center font-medium">
-                                                <i class="fas fa-file-image mr-1"></i>{{ basename($order->design_right) }}
-                                            </p>
-                                        </div>
-                                    @endif
-                                    
-                                    <div class="relative">
-                                        <div class="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-300 @if($order->design_right) border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400 @else border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 @endif">
-                                            <div class="text-center px-3">
-                                                @if($order->design_right)
-                                                    <i class="fas fa-edit text-green-500 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-green-700">Replace Image</p>
-                                                    <p class="text-xs text-green-600">JPG, PNG up to 20MB</p>
-                                                @else
-                                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-2xl mb-2"></i>
-                                                    <p class="text-sm font-medium text-gray-600">Upload Image</p>
-                                                    <p class="text-xs text-gray-500">Drag & drop or click to browse</p>
-                                                @endif
-                                            </div>
-                                            <input type="file" 
-                                                   id="design_right" 
-                                                   name="design_right" 
-                                                   accept=".jpg,.jpeg,.png"
-                                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                        </div>
-                                    </div>
-                                </div>
+                            <p class="mt-2 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Upload additional design images. New images will be added to existing ones.
+                            </p>
+                            @error('design_images')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @error('design_images.*')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            
+                            <!-- New Images Preview Container -->
+                            <div id="design-images-preview" class="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden">
+                                <h5 class="col-span-full text-sm font-medium text-gray-700 mb-2">New Images to Upload:</h5>
                             </div>
                         </div>
                     </div>
@@ -933,101 +827,132 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// File preview functionality for design uploads
-document.querySelectorAll('input[type="file"]').forEach(function(input) {
-    input.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const container = input.closest('.relative');
-                const existingPreview = container.querySelector('.file-preview');
-                
-                // Remove existing preview if any
-                if (existingPreview) {
-                    existingPreview.remove();
-                }
-                
-                // Create new preview
-                const preview = document.createElement('div');
-                preview.className = 'file-preview mb-3 relative group';
-                preview.innerHTML = `
-                    <img src="${e.target.result}" alt="Preview" class="w-full h-32 object-cover rounded-lg border border-blue-200 cursor-pointer hover:opacity-90 transition-opacity duration-200 design-image" data-title="New Upload Preview">
-                    <div class="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded text-xs">
-                        <i class="fas fa-eye mr-1"></i>New Preview
-                    </div>
-                    <p class="text-xs text-blue-600 mt-1">New file: ${file.name}</p>
-                `;
-                
-                // Insert preview before the upload area
-                const uploadArea = container.querySelector('.flex.items-center.justify-center');
-                uploadArea.parentNode.insertBefore(preview, uploadArea);
-                
-                // Add click event listener to the new preview image
-                const previewImg = preview.querySelector('.design-image');
-                if (previewImg) {
-                    previewImg.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openImageModal(this.src, this.getAttribute('data-title'));
-                    });
-                }
-                
-                // Change upload area appearance to indicate replacement
-                uploadArea.classList.remove('border-gray-300', 'bg-gray-50', 'hover:bg-gray-100');
-                uploadArea.classList.add('border-blue-300', 'bg-blue-50', 'hover:bg-blue-100');
-                
-                const icon = uploadArea.querySelector('i');
-                const text = uploadArea.querySelector('p');
-                const subtext = uploadArea.querySelector('.text-xs');
-                
-                icon.className = 'fas fa-edit text-blue-500 text-2xl mb-2';
-                text.textContent = 'Click to replace image';
-                text.className = 'text-sm text-blue-700';
-                subtext.textContent = 'JPG, PNG up to 20MB';
-                subtext.className = 'text-xs text-blue-600';
-                
-                // Update the live counter
-                updateUploadCounter();
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-});
-
-// Function to update the upload counter
-function updateUploadCounter() {
-    const designInputs = ['design_front', 'design_back', 'design_left', 'design_right'];
-    let uploadedCount = 0;
-    
-    designInputs.forEach(function(designType) {
-        const input = document.querySelector(`input[name="${designType}"]`);
-        const container = input.closest('.relative');
-        const existingImage = container.querySelector('img[src*="' + designType + '"]');
-        const newPreview = container.querySelector('.file-preview');
-        
-        // Count as uploaded if there's an existing image OR a new preview
-        if (existingImage || newPreview) {
-            uploadedCount++;
-        }
-    });
-    
-    // Update the counter display
-    const counterElement = document.querySelector('.text-sm.font-normal.text-gray-600.bg-white.px-3.py-1.rounded-full.border.border-white-200');
-    if (counterElement) {
-        counterElement.textContent = `${uploadedCount}/4 uploaded`;
-    }
-}
-
-// Initialize counter on page load
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Setting up image modal functionality (Edit Page)...');
     
-    // Initialize upload counter
-    updateUploadCounter();
-    
     // Setup product management
     setupProductManagement();
+    
+    // Design images preview functionality
+    const designImagesInput = document.getElementById('design_images');
+    const designImagesPreview = document.getElementById('design-images-preview');
+    
+    if (designImagesInput && designImagesPreview) {
+        designImagesInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                designImagesPreview.classList.remove('hidden');
+                
+                // Clear previous previews (except the heading)
+                const heading = designImagesPreview.querySelector('h5');
+                designImagesPreview.innerHTML = '';
+                if (heading) {
+                    designImagesPreview.appendChild(heading);
+                } else {
+                    const newHeading = document.createElement('h5');
+                    newHeading.className = 'col-span-full text-sm font-medium text-gray-700 mb-2';
+                    newHeading.textContent = 'New Images to Upload:';
+                    designImagesPreview.appendChild(newHeading);
+                }
+                
+                files.forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'relative group';
+                            previewItem.innerHTML = `
+                                <div class="relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+                                    <img src="${e.target.result}" alt="Preview ${index + 1}" class="w-full h-32 object-cover cursor-pointer design-image" data-title="New Upload Preview ${index + 1}">
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                                        <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"></i>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1 truncate" title="${file.name}">${file.name}</p>
+                                <p class="text-xs text-gray-400">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            `;
+                            designImagesPreview.appendChild(previewItem);
+                            
+                            // Add click event listener to the new preview image
+                            const previewImg = previewItem.querySelector('.design-image');
+                            if (previewImg) {
+                                previewImg.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    openImageModal(this.src, this.getAttribute('data-title'));
+                                });
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else {
+                designImagesPreview.classList.add('hidden');
+            }
+        });
+    }
+    
+    // File upload preview functionality - Separated by type
+    // Receipts preview
+    const receiptsInput = document.getElementById('receipts');
+    const receiptsPreview = document.getElementById('receipts-preview');
+    const receiptsList = document.getElementById('receipts-list');
+    
+    if (receiptsInput && receiptsPreview && receiptsList) {
+        receiptsInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                receiptsPreview.classList.remove('hidden');
+                receiptsList.innerHTML = ''; // Clear previous previews
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-2 bg-gray-100 rounded';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-file text-gray-500 mr-2"></i>
+                            <span class="text-sm text-gray-700">${file.name}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    `;
+                    receiptsList.appendChild(fileItem);
+                });
+            } else {
+                receiptsPreview.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Job sheets preview
+    const jobSheetsInput = document.getElementById('job_sheets');
+    const jobSheetsPreview = document.getElementById('job-sheets-preview');
+    const jobSheetsList = document.getElementById('job-sheets-list');
+    
+    if (jobSheetsInput && jobSheetsPreview && jobSheetsList) {
+        jobSheetsInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                jobSheetsPreview.classList.remove('hidden');
+                jobSheetsList.innerHTML = ''; // Clear previous previews
+                
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-2 bg-gray-100 rounded';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-file text-gray-500 mr-2"></i>
+                            <span class="text-sm text-gray-700">${file.name}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    `;
+                    jobSheetsList.appendChild(fileItem);
+                });
+            } else {
+                jobSheetsPreview.classList.add('hidden');
+            }
+        });
+    }
     
     // Function to setup image click events
     function setupImageEvents() {
@@ -1127,10 +1052,74 @@ function addProductRow() {
     checkForDuplicateProducts();
 }
 
+function duplicateProductRow(button) {
+    const productRow = button.closest('.product-row');
+    const productsContainer = document.getElementById('products-container');
+    
+    // Clone the product row
+    const duplicatedRow = productRow.cloneNode(true);
+    
+    // Update the index for the new row
+    const newIndex = productRowCounter++;
+    
+    // Update all the name attributes
+    duplicatedRow.querySelectorAll('[name]').forEach(element => {
+        const nameAttr = element.getAttribute('name');
+        if (nameAttr) {
+            // Extract current index from name (e.g., products[0][product_id] -> 0)
+            const match = nameAttr.match(/\[(\d+)\]/);
+            if (match) {
+                element.name = nameAttr.replace(`[${match[1]}]`, `[${newIndex}]`);
+            }
+        }
+    });
+    
+    // Copy all values from original row
+    const originalProductSelect = productRow.querySelector('.product-select');
+    const originalQuantityInput = productRow.querySelector('.quantity-input');
+    const originalCommentsInput = productRow.querySelector('input[name*="comments"]');
+    
+    const duplicatedProductSelect = duplicatedRow.querySelector('.product-select');
+    const duplicatedQuantityInput = duplicatedRow.querySelector('.quantity-input');
+    const duplicatedCommentsInput = duplicatedRow.querySelector('input[name*="comments"]');
+    const duplicatedStockInfo = duplicatedRow.querySelector('.stock-info .font-medium');
+    
+    // Copy values
+    if (originalProductSelect && duplicatedProductSelect) {
+        duplicatedProductSelect.value = originalProductSelect.value;
+    }
+    if (originalQuantityInput && duplicatedQuantityInput) {
+        duplicatedQuantityInput.value = originalQuantityInput.value;
+    }
+    if (originalCommentsInput && duplicatedCommentsInput) {
+        duplicatedCommentsInput.value = originalCommentsInput.value;
+    }
+    
+    // Update stock info if product is selected
+    if (duplicatedProductSelect && duplicatedStockInfo) {
+        if (duplicatedProductSelect.value) {
+            updateStockInfo(duplicatedProductSelect, duplicatedStockInfo);
+        } else {
+            duplicatedStockInfo.textContent = '-';
+        }
+    }
+    
+    // Add event listeners to the duplicated row
+    addProductRowEventListeners(duplicatedRow);
+    
+    // Insert the duplicated row after the original row
+    productRow.parentNode.insertBefore(duplicatedRow, productRow.nextSibling);
+    
+    // Check for duplicate products
+    checkForDuplicateProducts();
+}
+
 function removeProductRow(button) {
     const productRow = button.closest('.product-row');
     if (document.querySelectorAll('.product-row').length > 1) {
         productRow.remove();
+        // Re-check for duplicates after removal
+        checkForDuplicateProducts();
     }
 }
 
