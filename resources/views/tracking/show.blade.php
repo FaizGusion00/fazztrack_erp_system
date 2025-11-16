@@ -124,7 +124,7 @@
             </div>
             
             @php
-                $totalPhases = 6; // PRINT, PRESS, CUT, SEW, QC, IRON/PACKING
+                $totalPhases = 5; // PRINT, PRESS, CUT, SEW, QC
                 $completedJobs = $order->jobs->where('status', 'Completed')->count();
                 $inProgressJobs = $order->jobs->where('status', 'In Progress')->count();
                 $pendingJobs = $order->jobs->where('status', 'Pending')->count();
@@ -180,7 +180,7 @@
             
             <div class="space-y-4" id="production-steps">
                 @php
-                    $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+                    $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
                 @endphp
                 
                 @foreach($phases as $index => $phase)
@@ -491,7 +491,7 @@
                 }
                 
                 // Update production steps
-                const phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+                const phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
                 phases.forEach((phase, index) => {
                     const stepElement = document.querySelector(`[data-phase="${phase}"]`);
                     if (stepElement) {

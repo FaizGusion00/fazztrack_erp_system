@@ -120,7 +120,7 @@ class Job extends Model
      */
     public function getNextJob()
     {
-        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
         $currentIndex = array_search($this->phase, $phases);
         
         if ($currentIndex !== false && $currentIndex < count($phases) - 1) {

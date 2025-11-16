@@ -1003,12 +1003,6 @@ function updateRejectStatusOptions(phase) {
             'Measurement Issue',
             'Other'
         ],
-        'IRON/PACKING': [
-            'Packing Error',
-            'Label Issue',
-            'Quality Issue',
-            'Other'
-        ]
     };
     
     // Get options for current phase or default options

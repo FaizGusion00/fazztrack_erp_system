@@ -123,8 +123,7 @@
                             <option value="PRESS" {{ old('phase', $user->phase) == 'PRESS' ? 'selected' : '' }}>PRESS - Heat Press Application</option>
                             <option value="CUT" {{ old('phase', $user->phase) == 'CUT' ? 'selected' : '' }}>CUT - Cutting and Trimming</option>
                             <option value="SEW" {{ old('phase', $user->phase) == 'SEW' ? 'selected' : '' }}>SEW - Sewing and Finishing</option>
-                            <option value="QC" {{ old('phase', $user->phase) == 'QC' ? 'selected' : '' }}>QC - Quality Control</option>
-                            <option value="IRON/PACKING" {{ old('phase', $user->phase) == 'IRON/PACKING' ? 'selected' : '' }}>IRON/PACKING - Final Ironing and Packaging</option>
+                            <option value="QC" {{ old('phase', $user->phase) == 'QC' ? 'selected' : '' }}>QC - Quality Control (includes Packing)</option>
                         </select>
                         @error('phase')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

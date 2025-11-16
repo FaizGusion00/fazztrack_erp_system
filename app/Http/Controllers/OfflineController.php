@@ -282,12 +282,9 @@ class OfflineController extends Controller
             $order->update(['status' => 'Order Finished']);
         } else {
             // Check if this was a QC job completion
-            if ($completedJob->phase === 'QC') {
-                $order->update(['status' => 'Job Complete']);
-            }
-            // Check if this was an IRON/PACKING job start
-            elseif ($completedJob->phase === 'IRON/PACKING' && $completedJob->status === 'In Progress') {
-                $order->update(['status' => 'Order Packaging']);
+            if ($completedJob->phase === 'QC' && $completedJob->status === 'Completed') {
+                // QC phase now handles packing, so when QC completes, order is finished
+                $order->update(['status' => 'Order Finished']);
             }
         }
     }

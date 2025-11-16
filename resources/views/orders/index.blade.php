@@ -286,7 +286,7 @@
                                 <span>Production Progress</span>
                                 @php
                                     $completedJobs = $order->jobs->where('status', 'Completed')->count();
-                                    $totalPhases = 6; // PRINT, PRESS, CUT, SEW, QC, IRON/PACKING
+                                    $totalPhases = 5; // PRINT, PRESS, CUT, SEW, QC
                                     $progress = $totalPhases > 0 ? ($completedJobs / $totalPhases) * 100 : 0;
                                 @endphp
                                 <span class="progress-text">{{ $completedJobs }}/{{ $totalPhases }}</span>

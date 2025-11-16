@@ -92,14 +92,6 @@ class DatabaseSeeder extends Seeder
                 'role' => 'Production Staff',
                 'phase' => 'QC',
             ],
-            [
-                'username' => 'packing',
-                'name' => 'Packing Staff',
-                'email' => 'packing@fazztrack.com',
-                'password' => Hash::make('packing123'),
-                'role' => 'Production Staff',
-                'phase' => 'IRON/PACKING',
-            ],
         ];
 
         foreach ($users as $userData) {
@@ -283,7 +275,7 @@ class DatabaseSeeder extends Seeder
             }
 
             // Create jobs for each order
-            $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+            $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
             foreach ($phases as $phase) {
                 Job::create([
                     'order_id' => $order->order_id,

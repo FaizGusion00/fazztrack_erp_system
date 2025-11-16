@@ -607,7 +607,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Select Next Production Phase</label>
                         <div class="space-y-2">
                             @php
-                                $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+                                $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
                                 $completedPhases = $order->jobs->where('status', 'Completed')->pluck('phase')->toArray();
                                 $availablePhases = array_diff($phases, $completedPhases);
                                 

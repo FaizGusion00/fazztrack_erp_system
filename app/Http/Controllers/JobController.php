@@ -340,13 +340,7 @@ class JobController extends Controller
                 $order->update(['delivery_status' => 'Pending']);
             }
         } elseif ($job->phase === 'QC' && $job->status === 'Completed') {
-            // QC phase completed - Job Complete
-            $order->update(['status' => 'Job Complete']);
-        } elseif ($job->phase === 'IRON/PACKING' && $job->status === 'In Progress') {
-            // IRON/PACKING started - Order Packaging
-            $order->update(['status' => 'Order Packaging']);
-        } elseif ($job->phase === 'IRON/PACKING' && $job->status === 'Completed') {
-            // IRON/PACKING completed - Order Finished
+            // QC phase completed - Order Finished (QC now handles packing)
             $order->update(['status' => 'Order Finished']);
             
             // Automatically set delivery status based on delivery method
@@ -400,7 +394,7 @@ class JobController extends Controller
     {
         $request->validate([
             'order_id' => 'required|exists:orders,order_id',
-            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
+            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC',
             'start_quantity' => 'required|integer|min:1',
             'remarks' => 'nullable|string',
         ]);
@@ -450,7 +444,7 @@ class JobController extends Controller
 
         $request->validate([
             'order_id' => 'required|exists:orders,order_id',
-            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
+            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC',
             'status' => 'required|in:Pending,In Progress,Completed,On Hold',
             'start_quantity' => 'nullable|integer|min:1',
             'end_quantity' => 'nullable|integer|min:0',
@@ -730,7 +724,7 @@ class JobController extends Controller
      */
     private function getPreviousJob(Job $job)
     {
-        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
         $currentIndex = array_search($job->phase, $phases);
         
         if ($currentIndex !== false && $currentIndex > 0) {
@@ -745,7 +739,7 @@ class JobController extends Controller
      */
     private function getNextJob(Job $job)
     {
-        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
         $currentIndex = array_search($job->phase, $phases);
         
         if ($currentIndex !== false && $currentIndex < count($phases) - 1) {

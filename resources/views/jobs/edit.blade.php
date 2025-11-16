@@ -79,7 +79,6 @@
                                 <option value="CUT" {{ old('phase', $job->phase) == 'CUT' ? 'selected' : '' }}>CUT</option>
                                 <option value="SEW" {{ old('phase', $job->phase) == 'SEW' ? 'selected' : '' }}>SEW</option>
                                 <option value="QC" {{ old('phase', $job->phase) == 'QC' ? 'selected' : '' }}>QC</option>
-                                <option value="IRON/PACKING" {{ old('phase', $job->phase) == 'IRON/PACKING' ? 'selected' : '' }}>IRON/PACKING</option>
                             </select>
                             @error('phase')
                                 <p class="mt-1 text-xs sm:text-sm text-red-600">{{ $message }}</p>

@@ -155,16 +155,13 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 4. **Design Approved** → Admin/Sales Manager approves design
 5. **Job Created** → Sales Manager creates production jobs for each phase
 6. **Job Start** → Production staff scans QR, starts first phase (PRINT)
-7. **Job Complete** → All production phases completed
-8. **Order Packaging** → IRON/PACKING phase starts
-9. **Order Finished** → Shipping or self-collection
+7. **Job Complete** → All production phases completed (QC handles packing)
+8. **Order Finished** → QC phase completed, ready for shipping or self-collection
 
 ### Enhanced Order Status Progression
 
 - **"Design Approved"** → **"Job Start"** (when first production job starts)
-- **"Job Start"** → **"Job Complete"** (when QC phase completes)
-- **"Job Complete"** → **"Order Packaging"** (when IRON/PACKING starts)
-- **"Order Packaging"** → **"Order Finished"** (when all phases complete)
+- **"Job Start"** → **"Order Finished"** (when QC phase completes - QC handles packing)
 
 ### Production Phases (Sequential Workflow)
 
@@ -172,8 +169,7 @@ docker-compose exec app chmod -R 775 storage bootstrap/cache
 - **PRESS** → Heat press application
 - **CUT** → Cutting and trimming
 - **SEW** → Sewing and finishing
-- **QC** → Quality control and inspection (with remarks & quantities)
-- **IRON/PACKING** → Final ironing and packaging
+- **QC** → Quality control, inspection, and final packing (packing is now handled by QC phase)
 
 ---
 

@@ -440,7 +440,7 @@ class OrderController extends Controller
     public function createJobs(Request $request, Order $order)
     {
         $request->validate([
-            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
+            'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC',
         ]);
 
         $phase = $request->phase;
@@ -453,7 +453,7 @@ class OrderController extends Controller
         }
         
         // Check if previous phases are completed (workflow validation)
-        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC', 'IRON/PACKING'];
+        $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
         $phaseIndex = array_search($phase, $phases);
         
         if ($phaseIndex > 0) {

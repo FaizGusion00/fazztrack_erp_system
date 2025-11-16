@@ -197,7 +197,6 @@
                     <div class="flex justify-between"><span class="font-medium">Cut:</span><span>cut / cut123</span></div>
                     <div class="flex justify-between"><span class="font-medium">Sew:</span><span>sew / sew123</span></div>
                     <div class="flex justify-between"><span class="font-medium">QC:</span><span>qc / qc1234</span></div>
-                    <div class="flex justify-between"><span class="font-medium">Packing:</span><span>packing / packing123</span></div>
                 </div>
             </div>
         </div>

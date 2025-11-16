@@ -109,7 +109,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => 'required|in:SuperAdmin,Admin,Sales Manager,Designer,Production Staff',
-            'phase' => 'nullable|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
+            'phase' => 'nullable|in:PRINT,PRESS,CUT,SEW,QC',
             'is_active' => 'boolean',
         ]);
 
@@ -178,7 +178,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => ['nullable', 'confirmed', Password::defaults()],
             'role' => 'required|in:SuperAdmin,Admin,Sales Manager,Designer,Production Staff',
-            'phase' => 'nullable|in:PRINT,PRESS,CUT,SEW,QC,IRON/PACKING',
+            'phase' => 'nullable|in:PRINT,PRESS,CUT,SEW,QC',
             'is_active' => 'boolean',
         ]);
 

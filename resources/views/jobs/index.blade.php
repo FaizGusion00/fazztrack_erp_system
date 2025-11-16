@@ -67,7 +67,6 @@
                         <option value="CUT" {{ request('phase') == 'CUT' ? 'selected' : '' }}>CUT</option>
                         <option value="SEW" {{ request('phase') == 'SEW' ? 'selected' : '' }}>SEW</option>
                         <option value="QC" {{ request('phase') == 'QC' ? 'selected' : '' }}>QC</option>
-                        <option value="IRON/PACKING" {{ request('phase') == 'IRON/PACKING' ? 'selected' : '' }}>IRON/PACKING</option>
                     </select>
                 </div>
                 <div>
