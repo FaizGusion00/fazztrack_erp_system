@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-<<<<<<< HEAD
+
 use App\Models\Job;
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -60,7 +60,7 @@ class AuthController extends Controller
         Auth::login($user, $remember);
 
         // Log successful login
-        \Log::info('User logged in successfully', [
+        Log::info('User logged in successfully', [
             'user_id' => $user->id,
             'username' => $user->username,
             'role' => $user->role,
@@ -155,47 +155,22 @@ class AuthController extends Controller
         $cacheKey = 'dashboard_stats_superadmin';
         $stats = Cache::remember($cacheKey, 600, function () {
             return [
-<<<<<<< HEAD
-            'total_orders' => \App\Models\Order::count(),
-            'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
-            'in_progress_orders' => \App\Models\Order::whereIn('status', ['Job Start', 'Job Complete', 'Order Packaging'])->count(),
-            'completed_orders' => \App\Models\Order::where('status', 'Order Finished')->count(),
-            'total_clients' => \App\Models\Client::count(),
-            'total_jobs' => \App\Models\Job::count(),
-            'total_revenue' => \App\Models\Order::sum('total_amount'),
-            'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
-            'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
-        ];
-=======
                 'total_orders' => \App\Models\Order::count(),
                 'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
                 'in_progress_orders' => \App\Models\Order::whereIn('status', ['Job Start', 'Job Complete', 'Order Packaging'])->count(),
                 'completed_orders' => \App\Models\Order::where('status', 'Order Finished')->count(),
                 'total_clients' => \App\Models\Client::count(),
-                'total_jobs' => \App\Models\Job::count(),
+                'total_jobs' => Job::count(),
                 'total_revenue' => \App\Models\Order::sum('total_amount'),
                 'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
                 'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
             ];
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         // Cache revenue data for 15 minutes (less frequently changing)
         $revenueCacheKey = 'dashboard_revenue_data';
         $revenueData = Cache::remember($revenueCacheKey, 900, function () {
             $data = [];
-<<<<<<< HEAD
-        for ($i = 11; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $revenue = \App\Models\Order::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->sum('total_amount');
-                $data[] = [
-                'month' => $month->format('M Y'),
-                'revenue' => $revenue
-            ];
-        }
-=======
             for ($i = 11; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
                 $revenue = \App\Models\Order::whereYear('created_at', $month->year)
@@ -206,7 +181,6 @@ class AuthController extends Controller
                     'revenue' => $revenue
                 ];
             }
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             return $data;
         });
 
@@ -214,30 +188,18 @@ class AuthController extends Controller
         $recentOrdersCacheKey = 'dashboard_recent_orders';
         $recent_orders = Cache::remember($recentOrdersCacheKey, 120, function () {
             return \App\Models\Order::with('client')
-<<<<<<< HEAD
-            ->latest()
-            ->take(5)
-            ->get();
-=======
                 ->latest()
                 ->take(5)
                 ->get();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         // Top clients - cache for 10 minutes
         $topClientsCacheKey = 'dashboard_top_clients';
         $top_clients = Cache::remember($topClientsCacheKey, 600, function () {
             return \App\Models\Client::withSum('orders', 'total_amount')
-<<<<<<< HEAD
-            ->orderBy('orders_sum_total_amount', 'desc')
-            ->take(5)
-            ->get();
-=======
                 ->orderBy('orders_sum_total_amount', 'desc')
                 ->take(5)
                 ->get();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         return view('admin.dashboard', compact('stats', 'recent_orders', 'revenueData', 'top_clients'));
@@ -249,57 +211,34 @@ class AuthController extends Controller
         
         // Cache statistics for 5 minutes (Admin dashboard needs more real-time data)
         $cacheKey = 'dashboard_stats_admin';
-        $stats = \Cache::remember($cacheKey, 300, function () {
+        $stats = Cache::remember($cacheKey, 300, function () {
             return [
-<<<<<<< HEAD
-            'pending_approvals' => \App\Models\Order::where('status', 'Order Created')->count(),
-            'design_reviews' => \App\Models\Order::where('status', 'Design Review')->count(),
-            'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
-            'total_revenue' => \App\Models\Order::sum('total_amount'),
-            'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
-        ];
-=======
                 'pending_approvals' => \App\Models\Order::where('status', 'Order Created')->count(),
                 'design_reviews' => \App\Models\Order::where('status', 'Design Review')->count(),
                 'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
                 'total_revenue' => \App\Models\Order::sum('total_amount'),
                 'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
             ];
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         // Orders pending approval - cache for 1 minute (very dynamic)
         $pendingOrdersCacheKey = 'dashboard_pending_orders';
         $pending_orders = Cache::remember($pendingOrdersCacheKey, 60, function () {
             return \App\Models\Order::with('client')
-<<<<<<< HEAD
-            ->where('status', 'Order Created')
-            ->latest()
-            ->take(10)
-            ->get();
-=======
                 ->where('status', 'Order Created')
                 ->latest()
                 ->take(10)
                 ->get();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         // Designs pending review - cache for 1 minute (very dynamic)
         $pendingDesignsCacheKey = 'dashboard_pending_designs';
         $pending_designs = Cache::remember($pendingDesignsCacheKey, 60, function () {
             return \App\Models\Design::with(['order.client', 'designer'])
-<<<<<<< HEAD
-            ->where('status', 'Pending Review')
-            ->latest()
-            ->take(10)
-            ->get();
-=======
                 ->where('status', 'Pending Review')
                 ->latest()
                 ->take(10)
                 ->get();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         return view('admin.admin-dashboard', compact('stats', 'pending_orders', 'pending_designs'));
@@ -314,18 +253,8 @@ class AuthController extends Controller
         
         // Cache statistics for 5 minutes
         $cacheKey = 'dashboard_stats_sales';
-        $stats = \Cache::remember($cacheKey, 300, function () {
+        $stats = Cache::remember($cacheKey, 300, function () {
             return [
-<<<<<<< HEAD
-            'total_orders' => \App\Models\Order::count(),
-            'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
-            'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
-            'design_approved_orders' => \App\Models\Order::where('status', 'Design Approved')->count(),
-            'total_revenue' => \App\Models\Order::sum('total_amount'),
-            'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
-            'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
-        ];
-=======
                 'total_orders' => \App\Models\Order::count(),
                 'pending_orders' => \App\Models\Order::where('status', 'Order Created')->count(),
                 'approved_orders' => \App\Models\Order::where('status', 'Order Approved')->count(),
@@ -334,25 +263,12 @@ class AuthController extends Controller
                 'monthly_revenue' => \App\Models\Order::whereMonth('created_at', now()->month)->sum('total_amount'),
                 'average_order_value' => \App\Models\Order::avg('total_amount') ?? 0,
             ];
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         // Cache revenue data for 15 minutes
         $revenueCacheKey = 'dashboard_revenue_data_sales';
         $revenueData = Cache::remember($revenueCacheKey, 900, function () {
             $data = [];
-<<<<<<< HEAD
-        for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $revenue = \App\Models\Order::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->sum('total_amount');
-                $data[] = [
-                'month' => $month->format('M Y'),
-                'revenue' => $revenue
-            ];
-        }
-=======
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
                 $revenue = \App\Models\Order::whereYear('created_at', $month->year)
@@ -363,7 +279,6 @@ class AuthController extends Controller
                     'revenue' => $revenue
                 ];
             }
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             return $data;
         });
 
@@ -371,30 +286,18 @@ class AuthController extends Controller
         $recentOrdersCacheKey = 'dashboard_recent_orders_sales';
         $recent_orders = Cache::remember($recentOrdersCacheKey, 120, function () {
             return \App\Models\Order::with('client')
-<<<<<<< HEAD
-            ->latest()
-            ->take(5)
-            ->get();
-=======
                 ->latest()
                 ->take(5)
                 ->get();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         // Top clients - cache for 10 minutes
         $topClientsCacheKey = 'dashboard_top_clients_sales';
         $top_clients = Cache::remember($topClientsCacheKey, 600, function () {
             return \App\Models\Client::withSum('orders', 'total_amount')
-<<<<<<< HEAD
-            ->orderBy('orders_sum_total_amount', 'desc')
-            ->take(5)
-            ->get();
-=======
                 ->orderBy('orders_sum_total_amount', 'desc')
                 ->take(5)
                 ->get();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         });
 
         return view('sales.dashboard', compact('stats', 'recent_orders', 'revenueData', 'top_clients'));
@@ -414,14 +317,9 @@ class AuthController extends Controller
     public function productionDashboard()
     {
         // Get all current jobs (not completed) from all phases for progress viewing
-<<<<<<< HEAD
         $currentJobs = Job::where('status', '!=', 'Completed')
             ->with(['order.client', 'assignedUser'])
             ->excludeOnHoldOrders()
-=======
-        $currentJobs = \App\Models\Job::where('status', '!=', 'Completed')
-            ->with(['order.client', 'assignedUser'])
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -429,12 +327,8 @@ class AuthController extends Controller
         $jobsByPhase = $currentJobs->groupBy('phase');
 
         // Get recent completed jobs (last 7 days) for activity tracking
-<<<<<<< HEAD
         $recentCompletedJobs = Job::where('status', 'Completed')
             ->excludeOnHoldOrders()
-=======
-        $recentCompletedJobs = \App\Models\Job::where('status', 'Completed')
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             ->where('end_time', '>=', now()->subDays(7))
             ->with(['order.client', 'assignedUser'])
             ->orderBy('end_time', 'desc')

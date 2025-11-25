@@ -649,6 +649,11 @@
     </div>
 </div>
 
+@php
+    $initialProductRowCount = $order->orderProducts && $order->orderProducts->count() > 0 ? $order->orderProducts->count() : 1;
+@endphp
+<div id="product-row-counter-init" data-count="{{ $initialProductRowCount }}" style="display: none;"></div>
+
 <!-- Image Modal -->
 <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-95 hidden z-50 flex items-center justify-center p-4">
     <div class="relative w-full h-full max-w-7xl max-h-full">
@@ -883,6 +888,11 @@ document.addEventListener('keydown', function(e) {
         closeImageModal();
     }
 });
+</script>
+
+<script>
+// Initialize product row counter
+var productRowCounter = parseInt(document.getElementById('product-row-counter-init')?.getAttribute('data-count') || '1', 10);
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -1081,21 +1091,36 @@ function setupProductManagement() {
 
 function addProductRow() {
     const productsContainer = document.getElementById('products-container');
-    const productRow = document.querySelector('.product-row').cloneNode(true);
+    const existingRow = document.querySelector('.product-row');
+    
+    if (!existingRow) {
+        console.error('No product row template found');
+        return;
+    }
+    
+    const productRow = existingRow.cloneNode(true);
     
     // Update the index for the new row
     const newIndex = productRowCounter++;
     
     // Update all the name attributes
     productRow.querySelectorAll('[name]').forEach(element => {
-        element.name = element.name.replace(/\[\d+\]/, `[${newIndex}]`);
+        const nameAttr = element.getAttribute('name');
+        if (nameAttr) {
+            element.name = nameAttr.replace(/\[\d+\]/, `[${newIndex}]`);
+        }
     });
     
     // Clear the values
-    productRow.querySelector('.product-select').value = '';
-    productRow.querySelector('.quantity-input').value = '1';
-    productRow.querySelector('input[name*="comments"]').value = '';
-    productRow.querySelector('.stock-info .font-medium').textContent = '-';
+    const productSelect = productRow.querySelector('.product-select');
+    const quantityInput = productRow.querySelector('.quantity-input');
+    const commentsInput = productRow.querySelector('input[name*="comments"]');
+    const stockInfo = productRow.querySelector('.stock-info .font-medium');
+    
+    if (productSelect) productSelect.value = '';
+    if (quantityInput) quantityInput.value = '1';
+    if (commentsInput) commentsInput.value = '';
+    if (stockInfo) stockInfo.textContent = '-';
     
     // Add event listeners
     addProductRowEventListeners(productRow);
@@ -1170,10 +1195,18 @@ function duplicateProductRow(button) {
 
 function removeProductRow(button) {
     const productRow = button.closest('.product-row');
-    if (document.querySelectorAll('.product-row').length > 1) {
+    if (!productRow) {
+        console.error('Product row not found');
+        return;
+    }
+    
+    const totalRows = document.querySelectorAll('.product-row').length;
+    if (totalRows > 1) {
         productRow.remove();
         // Re-check for duplicates after removal
         checkForDuplicateProducts();
+    } else {
+        alert('At least one product is required.');
     }
 }
 
@@ -1182,14 +1215,22 @@ function addProductRowEventListeners(productRow) {
     const quantityInput = productRow.querySelector('.quantity-input');
     const stockInfo = productRow.querySelector('.stock-info .font-medium');
     
-    productSelect.addEventListener('change', function() {
-        updateStockInfo(this, stockInfo);
-        checkForDuplicateProducts();
-    });
+    if (productSelect) {
+        productSelect.addEventListener('change', function() {
+            if (stockInfo) {
+                updateStockInfo(this, stockInfo);
+            }
+            checkForDuplicateProducts();
+        });
+    }
     
-    quantityInput.addEventListener('input', function() {
-        updateStockInfo(productSelect, stockInfo);
-    });
+    if (quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            if (stockInfo && productSelect) {
+                updateStockInfo(productSelect, stockInfo);
+            }
+        });
+    }
 }
 
 function updateStockInfo(productSelect, stockInfoElement) {

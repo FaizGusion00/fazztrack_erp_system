@@ -25,10 +25,7 @@ class OfflineController extends Controller
 
         // Get all active jobs that production staff can work on
         $jobs = Job::with(['order.client'])
-<<<<<<< HEAD
             ->excludeOnHoldOrders()
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             ->where('status', '!=', 'Completed')
             ->orderBy('created_at', 'desc')
             ->get()
@@ -132,7 +129,6 @@ class OfflineController extends Controller
                 ]);
 
                 // Update job based on action
-<<<<<<< HEAD
                 $job = Job::with('order')->find($logData['job_id']);
 
                 if ($job && $job->isOrderOnHold()) {
@@ -143,9 +139,6 @@ class OfflineController extends Controller
                         'job_id' => $job->job_id,
                     ], 423);
                 }
-=======
-                $job = Job::find($logData['job_id']);
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                 
                 switch ($logData['action']) {
                     case 'start':

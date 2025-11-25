@@ -6,23 +6,16 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Job;
-<<<<<<< HEAD
 use App\Models\OrderStatusLog;
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\Auth;
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
-<<<<<<< HEAD
     private const HOLD_ELIGIBLE_STATUSES = [
         'Order Approved',
         'Design Review',
@@ -38,8 +31,6 @@ class OrderController extends Controller
         'Completed',
     ];
 
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     /**
      * Display a listing of orders
      */
@@ -73,17 +64,9 @@ class OrderController extends Controller
         $activeTab = $request->get('tab', 'active');
         
         if ($activeTab === 'completed') {
-<<<<<<< HEAD
             $query->whereIn('status', self::COMPLETED_STATUSES);
         } else {
             $query->whereNotIn('status', self::COMPLETED_STATUSES);
-=======
-            // Show only completed orders (delivered)
-            $query->where('status', 'Completed');
-        } else {
-            // Show active orders (not completed)
-            $query->where('status', '!=', 'Completed');
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         }
         
         // Sorting functionality
@@ -105,7 +88,6 @@ class OrderController extends Controller
         $orders = $query->paginate(15)->withQueryString();
         
         // Get counts for tabs
-<<<<<<< HEAD
         $activeCount = Order::whereNotIn('status', self::COMPLETED_STATUSES)->count();
         $completedCount = Order::whereIn('status', self::COMPLETED_STATUSES)->count();
         
@@ -116,12 +98,6 @@ class OrderController extends Controller
             'completedCount' => $completedCount,
             'holdEligibleStatuses' => self::HOLD_ELIGIBLE_STATUSES,
         ]);
-=======
-        $activeCount = Order::where('status', '!=', 'Completed')->count();
-        $completedCount = Order::where('status', 'Completed')->count();
-        
-        return view('orders.index', compact('orders', 'activeTab', 'activeCount', 'completedCount'));
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     }
 
     /**
@@ -280,17 +256,12 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-<<<<<<< HEAD
         $order->load(['client.contacts', 'jobs.assignedUser', 'orderProducts.product', 'statusLogs.user']);
 
         return view('orders.show', [
             'order' => $order,
             'holdEligibleStatuses' => self::HOLD_ELIGIBLE_STATUSES,
         ]);
-=======
-        $order->load(['client.contacts', 'jobs.assignedUser', 'orderProducts.product']);
-        return view('orders.show', compact('order'));
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     }
 
     /**
@@ -516,12 +487,8 @@ class OrderController extends Controller
      */
     public function approve(Order $order)
     {
-<<<<<<< HEAD
         /** @var \App\Models\User $user */
         $user = Auth::user();
-=======
-        $user = auth()->user();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // Only Admin and SuperAdmin can approve payments
         if (!$user->isAdmin() && !$user->isSuperAdmin()) {
@@ -538,7 +505,6 @@ class OrderController extends Controller
      */
     public function putOnHold(Request $request, Order $order)
     {
-<<<<<<< HEAD
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
@@ -581,18 +547,6 @@ class OrderController extends Controller
             $comment,
             $user->id
         );
-
-=======
-        $request->validate([
-            'status_comment' => 'nullable|string',
-        ]);
-
-        $order->update([
-            'status' => 'On Hold',
-            'status_comment' => $request->status_comment ?? 'Order put on hold',
-        ]);
-
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order put on hold.');
     }
@@ -602,7 +556,6 @@ class OrderController extends Controller
      */
     public function resume(Order $order)
     {
-<<<<<<< HEAD
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
@@ -630,14 +583,6 @@ class OrderController extends Controller
             'Order resumed from hold',
             $user->id
         );
-
-=======
-        $order->update([
-            'status' => 'In Progress',
-            'status_comment' => null,
-        ]);
-
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order resumed successfully.');
     }
@@ -652,7 +597,6 @@ class OrderController extends Controller
             ->with('success', 'Order completed successfully.');
     }
 
-<<<<<<< HEAD
     private function logStatusChange(Order $order, ?string $previousStatus, string $newStatus, ?string $comment, int $userId): void
     {
         OrderStatusLog::create([
@@ -664,21 +608,15 @@ class OrderController extends Controller
         ]);
     }
 
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     /**
      * Create jobs for order (Designer/Sales Manager)
      */
     public function createJobs(Request $request, Order $order)
     {
-<<<<<<< HEAD
         if ($order->status === 'On Hold') {
             return redirect()->route('orders.show', $order)
                 ->with('error', 'Jobs cannot be created while the order is on hold. Please resume the order first.');
         }
-
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         $request->validate([
             'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC',
         ]);
@@ -742,12 +680,8 @@ class OrderController extends Controller
      */
     public function updateDelivery(Request $request, Order $order)
     {
-<<<<<<< HEAD
         /** @var \App\Models\User $user */
         $user = Auth::user();
-=======
-        $user = auth()->user();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // Check role-based access
         if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
@@ -786,12 +720,8 @@ class OrderController extends Controller
      */
     public function updatePayment(Request $request, Order $order)
     {
-<<<<<<< HEAD
         /** @var \App\Models\User $user */
         $user = Auth::user();
-=======
-        $user = auth()->user();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // Check role-based access
         if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {

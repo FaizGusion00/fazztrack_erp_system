@@ -4,10 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-<<<<<<< HEAD
 use Illuminate\Support\Carbon;
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 
 class Order extends Model
 {
@@ -21,10 +18,7 @@ class Order extends Model
         'delivery_method',
         'status',
         'status_comment',
-<<<<<<< HEAD
         'status_before_hold',
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         'design_deposit',
         'production_deposit',
         'balance_payment',
@@ -63,10 +57,7 @@ class Order extends Model
         'last_payment_date' => 'datetime',
         'payment_due_date' => 'date',
         'paid_amount' => 'decimal:2',
-<<<<<<< HEAD
         'status_before_hold' => 'string',
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     ];
 
     /**
@@ -136,25 +127,18 @@ class Order extends Model
         return $this->hasMany(OrderReceipt::class, 'order_id', 'order_id');
     }
 
-<<<<<<< HEAD
     public function statusLogs()
     {
         return $this->hasMany(OrderStatusLog::class, 'order_id', 'order_id')->latest();
     }
 
-=======
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     /**
      * Check if order is overdue
      */
     public function isOverdue()
     {
-<<<<<<< HEAD
         $dueDate = $this->due_date_production;
         return $dueDate instanceof Carbon ? $dueDate->lt(now()) : false;
-=======
-        return $this->due_date_production < now();
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     }
 
     /**
@@ -162,12 +146,8 @@ class Order extends Model
      */
     public function isDueSoon()
     {
-<<<<<<< HEAD
         $dueDate = $this->due_date_production;
         return $dueDate instanceof Carbon ? $dueDate->diffInDays(now()) <= 7 : false;
-=======
-        return $this->due_date_production->diffInDays(now()) <= 7;
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     }
 
     /**
@@ -175,11 +155,7 @@ class Order extends Model
      */
     public function getDesignFilesArray()
     {
-<<<<<<< HEAD
         return is_array($this->design_files) ? $this->design_files : [];
-=======
-        return is_array($this->design_files) ? $this->design_files : (json_decode($this->design_files, true) ?: []);
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     }
 
     /**
