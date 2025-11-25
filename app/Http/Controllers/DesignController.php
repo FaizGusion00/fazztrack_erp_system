@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Design;
+use App\Models\OrderStatusLog;
 use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,17 @@ class DesignController extends Controller
         // Only Designer, Admin, Sales Manager, SuperAdmin can access
         if (!$user->isDesigner() && !$user->isAdmin() && !$user->isSuperAdmin() && !$user->isSalesManager()) {
             abort(403, 'Access denied. Only designers, admins, and sales managers can access this page.');
+        }
+        
+        // For designers, also get orders that need design work
+        $ordersNeedingDesign = collect();
+        if ($user->isDesigner()) {
+            // Get orders with status "Order Approved" that don't have any designs yet
+            $ordersNeedingDesign = Order::where('status', 'Order Approved')
+                ->whereDoesntHave('designs')
+                ->with('client')
+                ->orderBy('due_date_design', 'asc')
+                ->get();
         }
         
         $query = Design::with(['order.client', 'designer', 'approvedBy', 'rejectedBy']);
@@ -109,7 +121,7 @@ class DesignController extends Controller
         
         $view = $request->get('view', 'table');
         
-        return view('designs.index', compact('designs', 'pendingCount', 'approvedCount', 'rejectedCount', 'view'));
+        return view('designs.index', compact('designs', 'pendingCount', 'approvedCount', 'rejectedCount', 'view', 'ordersNeedingDesign', 'user'));
     }
 
     /**
@@ -224,26 +236,37 @@ class DesignController extends Controller
         }
         
         $request->validate([
-            'design_front' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'design_back' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'design_left' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'design_right' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'design_files' => 'required|array|min:1',
+            'design_files.*' => 'file|mimes:png,jpg,jpeg,gif,ai,eps,pdf,psd,rar,zip,7z|max:51200', // 50MB max per file
             'design_notes' => 'nullable|string|max:1000',
         ]);
 
         $designFiles = [];
         
-        // Handle design file uploads
-        $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
-        foreach ($designFields as $field) {
-            if ($request->hasFile($field)) {
-                $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
+        // Handle multiple design file uploads
+        if ($request->hasFile('design_files')) {
+            foreach ($request->file('design_files') as $file) {
+                $storedPath = StorageService::store($file, 'designs/draft');
+                // Store with original filename as key for easy reference
+                $designFiles[] = [
+                    'path' => $storedPath,
+                    'original_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ];
             }
         }
 
         // Calculate next version number
         $maxVersion = $order->designs()->max('version') ?? 0;
         $nextVersion = $maxVersion + 1;
+        
+        // Validate workflow: Can only upload design if order is in "Order Approved" status
+        if ($order->status !== 'Order Approved') {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['order_id' => "Cannot upload design. Order must be in 'Order Approved' status first. Current status: {$order->status}"]);
+        }
         
         // Create design record
         // Note: design_files is cast to 'array' in model, so Laravel will auto-encode
@@ -256,7 +279,17 @@ class DesignController extends Controller
         ]);
 
         // Update order status to Design Review
+        $previousStatus = $order->status;
         $order->update(['status' => 'Design Review']);
+        
+        // Log status change
+        OrderStatusLog::create([
+            'order_id' => $order->order_id,
+            'user_id' => $user->id,
+            'previous_status' => $previousStatus,
+            'new_status' => 'Design Review',
+            'comment' => 'Design uploaded',
+        ]);
         
         // Clear dashboard cache when new design is created
         Cache::forget('dashboard_stats_admin');
@@ -330,10 +363,8 @@ class DesignController extends Controller
         }
         
         $request->validate([
-            'design_front' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'design_back' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'design_left' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'design_right' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'design_files' => 'nullable|array',
+            'design_files.*' => 'file|mimes:png,jpg,jpeg,gif,ai,eps,pdf,psd,rar,zip,7z|max:51200', // 50MB max per file
             'design_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -345,33 +376,67 @@ class DesignController extends Controller
             
             $designFiles = [];
             
-            // Handle design file uploads
-            $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
-            foreach ($designFields as $field) {
-                if ($request->hasFile($field)) {
-                    $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
-                } else {
-                    // Copy from previous version if not uploaded
-                    // design_files is already cast to array in model, so use directly
-                    $oldFiles = is_array($design->design_files) ? $design->design_files : [];
-                    if (isset($oldFiles[$field])) {
-                        $designFiles[$field] = $oldFiles[$field];
+            // Handle new file uploads
+            if ($request->hasFile('design_files')) {
+                foreach ($request->file('design_files') as $file) {
+                    $storedPath = StorageService::store($file, 'designs/draft');
+                    $designFiles[] = [
+                        'path' => $storedPath,
+                        'original_name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'mime_type' => $file->getMimeType(),
+                    ];
+                }
+            }
+            
+            // If no new files uploaded, copy from previous version
+            if (empty($designFiles)) {
+                $oldFiles = is_array($design->design_files) ? $design->design_files : [];
+                // Handle both old format (associative array) and new format (indexed array)
+                if (!empty($oldFiles)) {
+                    // Check if old format (associative with keys like 'design_front')
+                    if (isset($oldFiles['design_front']) || isset($oldFiles[0])) {
+                        // New format (indexed array)
+                        if (isset($oldFiles[0]) && is_array($oldFiles[0])) {
+                            $designFiles = $oldFiles;
+                        } else {
+                            // Old format - convert to new format
+                            foreach ($oldFiles as $key => $path) {
+                                if (is_string($path)) {
+                                    $designFiles[] = [
+                                        'path' => $path,
+                                        'original_name' => ucfirst(str_replace('_', ' ', $key)) . '.' . pathinfo($path, PATHINFO_EXTENSION),
+                                        'size' => 0,
+                                        'mime_type' => 'image/jpeg',
+                                    ];
+                                }
+                            }
+                        }
                     }
                 }
             }
             
             // Create new design record
-            // Note: design_files is cast to 'array' in model, so Laravel will auto-encode
             $newDesign = $design->order->designs()->create([
                 'designer_id' => $user->id,
-                'design_files' => $designFiles, // Array - Laravel will auto JSON encode
+                'design_files' => $designFiles,
                 'design_notes' => $request->design_notes,
                 'status' => 'Pending Review',
                 'version' => $nextVersion,
             ]);
             
-            // Update order status to Design Review
+            // Update order status to Design Review (when new version uploaded after rejection)
+            $previousStatus = $design->order->status;
             $design->order->update(['status' => 'Design Review']);
+            
+            // Log status change
+            OrderStatusLog::create([
+                'order_id' => $design->order->order_id,
+                'user_id' => $user->id,
+                'previous_status' => $previousStatus,
+                'new_status' => 'Design Review',
+                'comment' => 'New design version uploaded after rejection',
+            ]);
             
             // Clear dashboard cache when new design version is created
             Cache::forget('dashboard_stats_admin');
@@ -382,18 +447,18 @@ class DesignController extends Controller
         }
         
         // For non-rejected designs, update existing design
-        // design_files is already cast to array in model, so use directly
         $designFiles = is_array($design->design_files) ? $design->design_files : [];
         
-        // Handle design file uploads
-        $designFields = ['design_front', 'design_back', 'design_left', 'design_right'];
-        foreach ($designFields as $field) {
-            if ($request->hasFile($field)) {
-                // Delete old file if exists
-                if (isset($designFiles[$field])) {
-                    StorageService::delete($designFiles[$field]);
-                }
-                $designFiles[$field] = StorageService::store($request->file($field), 'designs/draft');
+        // Handle new file uploads - add to existing files
+        if ($request->hasFile('design_files')) {
+            foreach ($request->file('design_files') as $file) {
+                $storedPath = StorageService::store($file, 'designs/draft');
+                $designFiles[] = [
+                    'path' => $storedPath,
+                    'original_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ];
             }
         }
 
@@ -425,6 +490,12 @@ class DesignController extends Controller
             abort(403, 'Access denied. Only sales managers and super admins can approve designs.');
         }
         
+        // Validate workflow: Can only approve design if order is in "Design Review" status
+        if ($design->order->status !== 'Design Review') {
+            return redirect()->route('designs.show', $design)
+                ->with('error', "Cannot approve design. Order must be in 'Design Review' status first. Current status: {$design->order->status}");
+        }
+        
         $design->update([
             'status' => 'Approved',
             'approved_by' => $user->id,
@@ -432,7 +503,17 @@ class DesignController extends Controller
         ]);
 
         // Update order status to Design Approved for finalization by Sales Manager
+        $previousStatus = $design->order->status;
         $design->order->update(['status' => 'Design Approved']);
+        
+        // Log status change
+        OrderStatusLog::create([
+            'order_id' => $design->order->order_id,
+            'user_id' => $user->id,
+            'previous_status' => $previousStatus,
+            'new_status' => 'Design Approved',
+            'comment' => 'Design approved',
+        ]);
         
         // Clear dashboard cache when design is approved
         Cache::forget('dashboard_stats_superadmin');
@@ -460,6 +541,12 @@ class DesignController extends Controller
         $request->validate([
             'feedback' => 'required|string|max:1000',
         ]);
+        
+        // Validate workflow: Can only reject design if order is in "Design Review" status
+        if ($design->order->status !== 'Design Review') {
+            return redirect()->route('designs.show', $design)
+                ->with('error', "Cannot reject design. Order must be in 'Design Review' status first. Current status: {$design->order->status}");
+        }
 
         $design->update([
             'status' => 'Rejected',
@@ -467,6 +554,9 @@ class DesignController extends Controller
             'rejected_by' => $user->id,
             'rejected_at' => now(),
         ]);
+        
+        // Note: Order status stays as "Design Review" when design is rejected
+        // This allows designer to upload a new version
         
         // Clear dashboard cache when design is rejected
         Cache::forget('dashboard_stats_admin');

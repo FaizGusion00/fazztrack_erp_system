@@ -142,6 +142,21 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
+                        @php
+                            $statusColors = [
+                                'Order Created' => 'bg-yellow-100 text-yellow-800',
+                                'Order Approved' => 'bg-blue-100 text-blue-800',
+                                'Design Review' => 'bg-purple-100 text-purple-800',
+                                'Design Approved' => 'bg-indigo-100 text-indigo-800',
+                                'Job Created' => 'bg-orange-100 text-orange-800',
+                                'Job Start' => 'bg-primary-100 text-primary-800',
+                                'Job Complete' => 'bg-teal-100 text-teal-800',
+                                'Order Packaging' => 'bg-pink-100 text-pink-800',
+                                'Order Finished' => 'bg-green-100 text-green-800',
+                                'Completed' => 'bg-green-100 text-green-800',
+                                'On Hold' => 'bg-red-100 text-red-800'
+                            ];
+                        @endphp
                         @forelse($orders as $order)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ $order->order_id }}</td>
@@ -149,7 +164,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->client->name }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->delivery_method }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $order->status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">{{ $order->status }}</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-800' }}">{{ $order->status }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-2"><i class="fas fa-eye mr-1"></i>View</a>
@@ -408,15 +423,22 @@ function refreshOrderStatuses() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Update status badge
+                        // Update status badge with proper colors
+                        const statusColorMap = {
+                            'Order Created': 'bg-yellow-100 text-yellow-800',
+                            'Order Approved': 'bg-blue-100 text-blue-800',
+                            'Design Review': 'bg-purple-100 text-purple-800',
+                            'Design Approved': 'bg-indigo-100 text-indigo-800',
+                            'Job Created': 'bg-orange-100 text-orange-800',
+                            'Job Start': 'bg-primary-100 text-primary-800',
+                            'Job Complete': 'bg-teal-100 text-teal-800',
+                            'Order Packaging': 'bg-pink-100 text-pink-800',
+                            'Order Finished': 'bg-green-100 text-green-800',
+                            'Completed': 'bg-green-100 text-green-800',
+                            'On Hold': 'bg-red-100 text-red-800'
+                        };
                         statusElement.textContent = data.order.status;
-                        statusElement.className = `order-status inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            data.order.status === 'Job Created' ? 'bg-gray-100 text-gray-800' :
-                            data.order.status === 'Job Start' ? 'bg-blue-100 text-blue-800' :
-                            data.order.status === 'Job Complete' ? 'bg-green-100 text-green-800' :
-                            data.order.status === 'Order Finished' ? 'bg-purple-100 text-purple-800' :
-                            'bg-yellow-100 text-yellow-800'
-                        }`;
+                        statusElement.className = 'order-status inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' + (statusColorMap[data.order.status] || 'bg-gray-100 text-gray-800');
                         
                         // Update progress
                         const completedJobs = data.completed_jobs || 0;

@@ -14,13 +14,6 @@
                 </h1>
                 <p class="mt-2 text-gray-600">Manage designs, review submissions, and track approval workflow.</p>
             </div>
-            @if(auth()->user()->isDesigner())
-            <a href="{{ route('designs.create') }}" 
-               class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-lg font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Upload Design
-            </a>
-            @endif
         </div>
     </div>
 
@@ -117,6 +110,120 @@
             </div>
         </form>
     </div>
+
+    <!-- Orders Needing Design (for Designers only - All Designs tab only) -->
+    @if(auth()->user()->isDesigner() && isset($ordersNeedingDesign) && $ordersNeedingDesign->count() > 0 && (request('tab', 'all') === 'all'))
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <i class="fas fa-tasks mr-2 text-primary-500"></i>
+                Orders Needing Design Work
+                <span class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $ordersNeedingDesign->count() }}</span>
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">These orders have been approved and are waiting for design upload.</p>
+        </div>
+        
+        @if($view === 'table')
+        <!-- Table View -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order #</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($ordersNeedingDesign as $order)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $order->order_id }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->job_name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->client->name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ $order->due_date_design->format('M d, Y') }}
+                            @if($order->due_date_design->isPast())
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> Overdue
+                                </span>
+                            @elseif($order->due_date_design->diffInDays(now()) <= 3)
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-clock mr-1"></i> Due Soon
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ $order->status }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="{{ route('designs.create', ['order_id' => $order->order_id]) }}" 
+                               class="inline-flex items-center px-3 py-1.5 bg-primary-500 text-white rounded-md hover:bg-primary-600 mr-2">
+                                <i class="fas fa-upload mr-1"></i>
+                                Upload Design
+                            </a>
+                            <a href="{{ route('orders.show', $order) }}" 
+                               class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                <i class="fas fa-eye mr-1"></i>
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
+        <!-- Cards View -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($ordersNeedingDesign as $order)
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-900">{{ $order->job_name }}</h4>
+                            <p class="text-sm text-gray-600 mt-1">{{ $order->client->name }}</p>
+                            <p class="text-xs text-gray-500 mt-1">Order #{{ $order->order_id }}</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-calendar w-4 mr-2 text-gray-400"></i>
+                            <span>Due: {{ $order->due_date_design->format('M d, Y') }}</span>
+                        </div>
+                        @if($order->due_date_design->isPast())
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-exclamation-circle mr-1"></i> Overdue
+                            </span>
+                        @elseif($order->due_date_design->diffInDays(now()) <= 3)
+                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fas fa-clock mr-1"></i> Due Soon
+                            </span>
+                        @endif
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{{ route('designs.create', ['order_id' => $order->order_id]) }}" 
+                           class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-primary-500 border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary-600 transition-colors">
+                            <i class="fas fa-upload mr-2"></i>
+                            Upload Design
+                        </a>
+                        <a href="{{ route('orders.show', $order) }}" 
+                           class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                           title="View Order">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+    </div>
+    @endif
 
     @if($view === 'table')
         <!-- Designs Table View -->

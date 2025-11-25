@@ -183,10 +183,43 @@
     @endif
 
     <!-- Raw Files -->
+    @php
+        $designFiles = $design->getDesignFilesArray();
+        $fileList = [];
+        $fileUrls = [];
+        
+        // Handle both old format (associative array) and new format (indexed array)
+        if (!empty($designFiles)) {
+            // Check if new format (indexed array with objects)
+            if (isset($designFiles[0]) && is_array($designFiles[0]) && isset($designFiles[0]['path'])) {
+                // New format
+                $fileList = $designFiles;
+                foreach ($designFiles as $file) {
+                    if (isset($file['path']) && !empty($file['path'])) {
+                        $fileUrls[] = \App\Services\StorageService::url($file['path']);
+                    }
+                }
+            } else {
+                // Old format - convert to new format
+                foreach ($designFiles as $key => $path) {
+                    if (is_string($path) && !empty($path)) {
+                        $fileList[] = [
+                            'path' => $path,
+                            'original_name' => ucfirst(str_replace('_', ' ', $key)) . '.' . pathinfo($path, PATHINFO_EXTENSION),
+                            'size' => 0,
+                            'mime_type' => 'image/jpeg',
+                        ];
+                        $fileUrls[] = \App\Services\StorageService::url($path);
+                    }
+                }
+            }
+        }
+    @endphp
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div id="design-files-data" data-urls="{{ htmlspecialchars(json_encode($fileUrls), ENT_QUOTES, 'UTF-8') }}" style="display: none;"></div>
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-lg font-medium text-gray-900">Raw Files (Version {{ $design->version }})</h3>
-            @if((auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager()) && count($design->getDesignFilesArray()) > 0)
+            @if((auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager()) && count($fileList) > 0)
             <button onclick="downloadAllDesigns()" 
                     class="inline-flex items-center px-3 py-1.5 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors">
                 <i class="fas fa-download mr-2"></i>
@@ -195,130 +228,83 @@
             @endif
         </div>
         <div class="p-6">
-            @php
-                $designFiles = $design->getDesignFilesArray();
-                $frontUrl = isset($designFiles['design_front']) ? \App\Services\StorageService::url($designFiles['design_front']) : '';
-                $backUrl = isset($designFiles['design_back']) ? \App\Services\StorageService::url($designFiles['design_back']) : '';
-                $leftUrl = isset($designFiles['design_left']) ? \App\Services\StorageService::url($designFiles['design_left']) : '';
-                $rightUrl = isset($designFiles['design_right']) ? \App\Services\StorageService::url($designFiles['design_right']) : '';
-            @endphp
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                @if(isset($designFiles['design_front']))
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Front Design</h4>
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ $frontUrl }}" 
-                             alt="Front Design" 
-                             class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                             data-image-url="{{ htmlspecialchars($frontUrl, ENT_QUOTES, 'UTF-8') }}"
-                             data-image-title="Front Design"
-                             onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)">
-                        <div class="mt-2 flex items-center space-x-2">
-                            <a href="{{ $frontUrl }}" 
+            
+            @if(count($fileList) > 0)
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($fileList as $index => $file)
+                    @php
+                        $filePath = is_array($file) ? $file['path'] : $file;
+                        $fileName = is_array($file) && isset($file['original_name']) ? $file['original_name'] : (is_array($file) ? basename($filePath) : basename($filePath));
+                        $fileUrl = \App\Services\StorageService::url($filePath);
+                        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                        $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                        $isArchive = in_array($fileExtension, ['rar', 'zip', '7z']);
+                        $fileSize = is_array($file) && isset($file['size']) ? $file['size'] : 0;
+                        $fileSizeFormatted = $fileSize > 0 ? ($fileSize > 1024 * 1024 ? number_format($fileSize / (1024 * 1024), 2) . ' MB' : number_format($fileSize / 1024, 1) . ' KB') : 'Unknown';
+                    @endphp
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 truncate" title="{{ $fileName }}">
+                                    {{ $fileName }}
+                                </h4>
+                                <p class="text-xs text-gray-500 mt-1">{{ $fileSizeFormatted }}</p>
+                            </div>
+                        </div>
+                        
+                        @if($isImage)
+                        <div class="mb-3">
+                            <img src="{{ $fileUrl }}" 
+                                 alt="{{ $fileName }}" 
+                                 class="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-gray-200"
+                                 data-image-url="{{ htmlspecialchars($fileUrl, ENT_QUOTES, 'UTF-8') }}"
+                                 data-image-title="{{ htmlspecialchars($fileName, ENT_QUOTES, 'UTF-8') }}"
+                                 onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center hidden">
+                                <i class="fas fa-image text-gray-400 text-2xl"></i>
+                            </div>
+                        </div>
+                        @else
+                        <div class="mb-3 flex items-center justify-center h-32 bg-gray-50 rounded-lg border border-gray-200">
+                            @if($isArchive)
+                                <i class="fas fa-file-archive text-purple-500 text-4xl"></i>
+                            @elseif($fileExtension === 'pdf')
+                                <i class="fas fa-file-pdf text-red-500 text-4xl"></i>
+                            @elseif(in_array($fileExtension, ['ai', 'eps']))
+                                <i class="fas fa-file-image text-blue-500 text-4xl"></i>
+                            @else
+                                <i class="fas fa-file text-gray-400 text-4xl"></i>
+                            @endif
+                        </div>
+                        @endif
+                        
+                        <div class="flex items-center space-x-2">
+                            <a href="{{ $fileUrl }}" 
+                               download="{{ $fileName }}"
                                target="_blank"
-                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
-                                <i class="fas fa-download mr-1"></i>
+                               class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-primary-500 text-white text-sm font-medium rounded-md hover:bg-primary-600 transition-colors">
+                                <i class="fas fa-download mr-2"></i>
                                 Download
                             </a>
-                            <button data-image-url="{{ htmlspecialchars($frontUrl, ENT_QUOTES, 'UTF-8') }}"
-                                    data-image-title="Front Design"
+                            @if($isImage)
+                            <button data-image-url="{{ htmlspecialchars($fileUrl, ENT_QUOTES, 'UTF-8') }}"
+                                    data-image-title="{{ htmlspecialchars($fileName, ENT_QUOTES, 'UTF-8') }}"
                                     onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)" 
-                                    class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
-                                <i class="fas fa-expand mr-1"></i>
-                                View Full
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-expand"></i>
                             </button>
+                            @endif
                         </div>
                     </div>
-                </div>
-                @endif
-
-                @if(isset($designFiles['design_back']))
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Back Design</h4>
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ $backUrl }}" 
-                             alt="Back Design" 
-                             class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                             data-image-url="{{ htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8') }}"
-                             data-image-title="Back Design"
-                             onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)">
-                        <div class="mt-2 flex items-center space-x-2">
-                            <a href="{{ $backUrl }}" 
-                               target="_blank"
-                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
-                                <i class="fas fa-download mr-1"></i>
-                                Download
-                            </a>
-                            <button data-image-url="{{ htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8') }}"
-                                    data-image-title="Back Design"
-                                    onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)" 
-                                    class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
-                                <i class="fas fa-expand mr-1"></i>
-                                View Full
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                @if(isset($designFiles['design_left']))
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Left Design</h4>
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ $leftUrl }}" 
-                             alt="Left Design" 
-                             class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                             data-image-url="{{ htmlspecialchars($leftUrl, ENT_QUOTES, 'UTF-8') }}"
-                             data-image-title="Left Design"
-                             onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)">
-                        <div class="mt-2 flex items-center space-x-2">
-                            <a href="{{ $leftUrl }}" 
-                               target="_blank"
-                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
-                                <i class="fas fa-download mr-1"></i>
-                                Download
-                            </a>
-                            <button data-image-url="{{ htmlspecialchars($leftUrl, ENT_QUOTES, 'UTF-8') }}"
-                                    data-image-title="Left Design"
-                                    onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)" 
-                                    class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
-                                <i class="fas fa-expand mr-1"></i>
-                                View Full
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                @if(isset($designFiles['design_right']))
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Right Design</h4>
-                    <div class="border border-gray-200 rounded-lg p-4">
-                        <img src="{{ $rightUrl }}" 
-                             alt="Right Design" 
-                             class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                             data-image-url="{{ htmlspecialchars($rightUrl, ENT_QUOTES, 'UTF-8') }}"
-                             data-image-title="Right Design"
-                             onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)">
-                        <div class="mt-2 flex items-center space-x-2">
-                            <a href="{{ $rightUrl }}" 
-                               target="_blank"
-                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
-                                <i class="fas fa-download mr-1"></i>
-                                Download
-                            </a>
-                            <button data-image-url="{{ htmlspecialchars($rightUrl, ENT_QUOTES, 'UTF-8') }}"
-                                    data-image-title="Right Design"
-                                    onclick="openImageModal(this.dataset.imageUrl, this.dataset.imageTitle)" 
-                                    class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
-                                <i class="fas fa-expand mr-1"></i>
-                                View Full
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endif
+                @endforeach
             </div>
+            @else
+            <div class="text-center py-12">
+                <i class="fas fa-file text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-500">No design files uploaded yet.</p>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -607,27 +593,33 @@
     </div>
 </div>
 
-@php
-    $designFilesForDownload = $design->getDesignFilesArray();
-    $fileUrls = [];
-    foreach ($designFilesForDownload as $key => $path) {
-        if (!empty($path)) {
-            $fileUrls[] = \App\Services\StorageService::url($path);
-        }
-    }
-@endphp
-
 <script>
+// Design file URLs for download - read from data attribute
+const designFileUrlsData = document.getElementById('design-files-data')?.getAttribute('data-urls');
+const designFileUrls = designFileUrlsData ? JSON.parse(designFileUrlsData) : [];
+
 let currentImageUrl = '';
 let isZoomed = false;
 
 function openImageModal(imageUrl, title) {
+    if (!imageUrl) return;
+    
     currentImageUrl = imageUrl;
-    document.getElementById('modalImage').src = imageUrl;
-    document.getElementById('modalTitle').textContent = title || 'Image Preview';
-    document.getElementById('imageModal').classList.remove('hidden');
+    const modalImage = document.getElementById('modalImage');
+    const modalTitle = document.getElementById('modalTitle');
+    const imageModal = document.getElementById('imageModal');
+    
+    if (!modalImage || !modalTitle || !imageModal) {
+        console.error('Modal elements not found');
+        return;
+    }
+    
+    modalImage.src = imageUrl;
+    modalTitle.textContent = title || 'Image Preview';
+    imageModal.classList.remove('hidden');
     isZoomed = false;
-    document.getElementById('modalImage').classList.remove('scale-150');
+    modalImage.classList.remove('scale-150');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeImageModal() {

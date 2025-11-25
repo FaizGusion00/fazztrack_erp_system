@@ -79,87 +79,56 @@
             @csrf
             @method('PUT')
             
-            <!-- Raw Files -->
+            <!-- Design Files Upload -->
             <div class="mb-6">
-                <h4 class="text-md font-medium text-gray-900 mb-4">Design Views</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="design_front" class="block text-sm font-medium text-gray-700 mb-2">
-                            Front Design <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="file" 
-                                   id="design_front" 
-                                   name="design_front" 
-                                   accept="image/*"
-                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 @error('design_front') border-red-300 @enderror">
-                        </div>
-                        @error('design_front')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        @if(isset($design->getDesignFilesArray()['design_front']))
-                        <p class="mt-1 text-xs text-gray-500">Current: {{ basename($design->getDesignFilesArray()['design_front']) }}</p>
-                        @endif
-                    </div>
-
-                    <div>
-                        <label for="design_back" class="block text-sm font-medium text-gray-700 mb-2">
-                            Back Design <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="file" 
-                                   id="design_back" 
-                                   name="design_back" 
-                                   accept="image/*"
-                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 @error('design_back') border-red-300 @enderror">
-                        </div>
-                        @error('design_back')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        @if(isset($design->getDesignFilesArray()['design_back']))
-                        <p class="mt-1 text-xs text-gray-500">Current: {{ basename($design->getDesignFilesArray()['design_back']) }}</p>
-                        @endif
-                    </div>
-
-                    <div>
-                        <label for="design_left" class="block text-sm font-medium text-gray-700 mb-2">
-                            Left Design
-                        </label>
-                        <div class="relative">
-                            <input type="file" 
-                                   id="design_left" 
-                                   name="design_left" 
-                                   accept="image/*"
-                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 @error('design_left') border-red-300 @enderror">
-                        </div>
-                        @error('design_left')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        @if(isset($design->getDesignFilesArray()['design_left']))
-                        <p class="mt-1 text-xs text-gray-500">Current: {{ basename($design->getDesignFilesArray()['design_left']) }}</p>
-                        @endif
-                    </div>
-
-                    <div>
-                        <label for="design_right" class="block text-sm font-medium text-gray-700 mb-2">
-                            Right Design
-                        </label>
-                        <div class="relative">
-                            <input type="file" 
-                                   id="design_right" 
-                                   name="design_right" 
-                                   accept="image/*"
-                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 @error('design_right') border-red-300 @enderror">
-                        </div>
-                        @error('design_right')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                        @if(isset($design->getDesignFilesArray()['design_right']))
-                        <p class="mt-1 text-xs text-gray-500">Current: {{ basename($design->getDesignFilesArray()['design_right']) }}</p>
-                        @endif
-                    </div>
+                <label for="design_files" class="block text-sm font-medium text-gray-700 mb-2">
+                    Add More Design Files
+                </label>
+                <div class="relative">
+                    <input type="file" 
+                           id="design_files" 
+                           name="design_files[]" 
+                           multiple
+                           accept=".png,.jpg,.jpeg,.gif,.ai,.eps,.pdf,.psd,.rar,.zip,.7z"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 @error('design_files') border-red-300 @enderror">
+                </div>
+                <p class="mt-2 text-xs text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    You can upload multiple files at once. Supported formats: PNG, JPG, AI, EPS, PDF, PSD, RAR, ZIP, 7Z. New files will be added to existing files.
+                </p>
+                @error('design_files')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                @error('design_files.*')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                
+                <!-- File Preview -->
+                <div id="file-preview" class="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden">
+                    <h5 class="col-span-full text-sm font-medium text-gray-700 mb-2">New Files to Add:</h5>
                 </div>
             </div>
+            
+            <!-- Current Files Info -->
+            @php
+                $currentFiles = $design->getDesignFilesArray();
+                $fileCount = 0;
+                if (!empty($currentFiles)) {
+                    if (isset($currentFiles[0]) && is_array($currentFiles[0])) {
+                        $fileCount = count($currentFiles);
+                    } else {
+                        $fileCount = count(array_filter($currentFiles));
+                    }
+                }
+            @endphp
+            @if($fileCount > 0)
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Currently {{ $fileCount }} file(s) uploaded. New files will be added to the existing files.
+                </p>
+            </div>
+            @endif
 
             <!-- Design Notes -->
             <div class="mb-6">
@@ -193,14 +162,64 @@
 </div>
 
 <script>
-// File preview functionality
-document.querySelectorAll('input[type="file"]').forEach(input => {
-    input.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            // You can add file preview functionality here
-            console.log('File selected:', file.name);
+// Multiple file preview functionality
+document.getElementById('design_files').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    const previewContainer = document.getElementById('file-preview');
+    
+    if (files.length === 0) {
+        previewContainer.classList.add('hidden');
+        return;
+    }
+    
+    // Clear existing previews (except heading)
+    const heading = previewContainer.querySelector('h5');
+    previewContainer.innerHTML = '';
+    if (heading) {
+        previewContainer.appendChild(heading);
+    } else {
+        const newHeading = document.createElement('h5');
+        newHeading.className = 'col-span-full text-sm font-medium text-gray-700 mb-2';
+        newHeading.textContent = 'New Files to Add:';
+        previewContainer.appendChild(newHeading);
+    }
+    
+    previewContainer.classList.remove('hidden');
+    
+    files.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'border border-gray-200 rounded-lg p-3 bg-gray-50';
+        
+        const isImage = file.type.startsWith('image/');
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const isArchive = ['rar', 'zip', '7z'].includes(fileExtension);
+        
+        let previewContent = '';
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewContent = `
+                    <img src="${e.target.result}" alt="${file.name}" class="w-full h-24 object-cover rounded mb-2">
+                    <p class="text-xs text-gray-700 font-medium truncate" title="${file.name}">${file.name}</p>
+                    <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
+                `;
+                fileItem.innerHTML = previewContent;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            const iconClass = isArchive ? 'fa-file-archive' : 'fa-file';
+            const iconColor = isArchive ? 'text-purple-500' : 'text-blue-500';
+            previewContent = `
+                <div class="flex items-center justify-center h-24 mb-2">
+                    <i class="fas ${iconClass} ${iconColor} text-4xl"></i>
+                </div>
+                <p class="text-xs text-gray-700 font-medium truncate" title="${file.name}">${file.name}</p>
+                <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</p>
+            `;
+            fileItem.innerHTML = previewContent;
         }
+        
+        previewContainer.appendChild(fileItem);
     });
 });
 </script>

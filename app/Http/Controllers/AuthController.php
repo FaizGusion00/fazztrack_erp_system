@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-
 use App\Models\Job;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -316,10 +314,20 @@ class AuthController extends Controller
      */
     public function productionDashboard()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // STRICT WORKFLOW: Production staff can only see jobs from orders in production phase
+        // Order status must be "Job Start" or higher
+        $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+        
         // Get all current jobs (not completed) from all phases for progress viewing
         $currentJobs = Job::where('status', '!=', 'Completed')
             ->with(['order.client', 'assignedUser'])
             ->excludeOnHoldOrders()
+            ->whereHas('order', function($query) use ($productionAllowedStatuses) {
+                $query->whereIn('status', $productionAllowedStatuses);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -330,6 +338,9 @@ class AuthController extends Controller
         $recentCompletedJobs = Job::where('status', 'Completed')
             ->excludeOnHoldOrders()
             ->where('end_time', '>=', now()->subDays(7))
+            ->whereHas('order', function($query) use ($productionAllowedStatuses) {
+                $query->whereIn('status', $productionAllowedStatuses);
+            })
             ->with(['order.client', 'assignedUser'])
             ->orderBy('end_time', 'desc')
             ->take(20)

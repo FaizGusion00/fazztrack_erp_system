@@ -201,16 +201,16 @@
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                             <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">End Quantity</label>
-                                <input type="number" id="end-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter quantity">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">End Quantity <span class="text-red-500">*</span></label>
+                                <input type="number" id="end-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter quantity" required min="0">
                             </div>
-                            <div>
+                            <div id="reject-quantity-container" class="hidden">
                                 <label class="block text-xs font-medium text-gray-700 mb-1">Reject Quantity</label>
-                                <input type="number" id="reject-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter reject quantity">
+                                <input type="number" id="reject-quantity" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter reject quantity" min="0">
                             </div>
                         </div>
                         
-                        <div class="mb-3">
+                        <div id="reject-status-container" class="mb-3 hidden">
                             <label class="block text-xs font-medium text-gray-700 mb-1">Reject Status</label>
                             <select id="reject-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select reject status</option>
@@ -579,17 +579,17 @@ function initScanner() {
                 } else {
                     // Generic instructions
                     platformInstructions = `
-                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
-                            <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
-                            <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
-                                <li>Look for the camera icon in your browser's address bar</li>
-                                <li>Click it and select "Allow" for camera access</li>
-                                <li>Or go to your browser settings → Privacy → Site Settings → Camera</li>
-                                <li>Make sure this site is allowed to use the camera</li>
+                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left">
+                        <p class="text-sm font-semibold text-yellow-800 mb-2">How to enable camera access:</p>
+                        <ol class="text-xs text-yellow-700 space-y-1 list-decimal list-inside">
+                            <li>Look for the camera icon in your browser's address bar</li>
+                            <li>Click it and select "Allow" for camera access</li>
+                            <li>Or go to your browser settings → Privacy → Site Settings → Camera</li>
+                            <li>Make sure this site is allowed to use the camera</li>
                                 <li>Refresh the page and try again</li>
-                            </ol>
-                        </div>
-                    `;
+                        </ol>
+                    </div>
+                `;
                 }
                 
                 instructions = platformInstructions;
@@ -691,8 +691,8 @@ function initScanner() {
                             <li>Select <strong>"Ask"</strong> or <strong>"Allow"</strong></li>
                             <li>Or go to <strong>Website Data</strong> → Find this site → Set Camera to <strong>"Allow"</strong></li>
                             <li>Return to Safari, refresh page, and try again</li>
-                        </ol>
-                    </div>
+                                </ol>
+                            </div>
                 `;
             } else if (platform.isAndroid) {
                 platformInstructions = `
@@ -704,8 +704,8 @@ function initScanner() {
                             <li>Set <strong>Camera</strong> to <strong>"Allow"</strong></li>
                             <li>Or go to Android <strong>Settings</strong> → <strong>Apps</strong> → <strong>Chrome</strong> → <strong>Permissions</strong> → <strong>Camera</strong> → <strong>Allow</strong></li>
                             <li>Refresh the page and try again</li>
-                        </ol>
-                    </div>
+                                </ol>
+                            </div>
                 `;
             } else if (platform.isChrome) {
                 platformInstructions = `
@@ -717,8 +717,8 @@ function initScanner() {
                             <li>Or go to <strong>Chrome Settings</strong> → <strong>Privacy and security</strong> → <strong>Site Settings</strong> → <strong>Camera</strong></li>
                             <li>Find this site and set to <strong>"Allow"</strong></li>
                             <li>Refresh the page and try again</li>
-                        </ol>
-                    </div>
+                                </ol>
+                            </div>
                 `;
             } else if (platform.isFirefox) {
                 platformInstructions = `
@@ -731,7 +731,7 @@ function initScanner() {
                             <li>Or go to <strong>Firefox Settings</strong> → <strong>Privacy & Security</strong> → <strong>Permissions</strong> → <strong>Camera</strong></li>
                             <li>Refresh the page and try again</li>
                         </ol>
-                    </div>
+                        </div>
                 `;
             } else if (platform.isSafari) {
                 platformInstructions = `
@@ -1095,42 +1095,72 @@ function showJobModal(job) {
                     ${job.order.status}
                 </span>
             </div>
+            ${job.status === 'In Progress' && job.start_quantity ? `
+            <div>
+                <span class="text-xs font-medium text-gray-500">Start Quantity:</span>
+                <p class="text-sm font-bold text-gray-900">${job.start_quantity}</p>
+            </div>
+            ` : ''}
+            ${job.assigned_user ? `
+            <div>
+                <span class="text-xs font-medium text-gray-500">Started By:</span>
+                <p class="text-sm font-bold text-gray-900">${job.assigned_user.name || 'Unknown'}</p>
+            </div>
+            ` : job.assignedUser ? `
+            <div>
+                <span class="text-xs font-medium text-gray-500">Started By:</span>
+                <p class="text-sm font-bold text-gray-900">${job.assignedUser.name || 'Unknown'}</p>
+            </div>
+            ` : ''}
         </div>
     `;
 
-    // Show workflow status
+    // Show workflow status - only for Pending jobs
     const workflowStatus = document.getElementById('workflow-status');
     const workflowInfo = document.getElementById('workflow-info');
-    workflowStatus.classList.remove('hidden');
     
-    // Get workflow information
-    fetch(`/jobs/${job.job_id}/workflow`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.previous_job) {
+    if (job.status === 'Pending') {
+        // Only show workflow status for pending jobs
+        workflowStatus.classList.remove('hidden');
+        
+        // Get workflow information
+        fetch(`/jobs/${job.job_id}/workflow`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.previous_job) {
+                    workflowInfo.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-info-circle text-blue-500"></i>
+                            <span>Previous phase: <strong>${data.previous_job.phase}</strong> (${data.previous_job.status})</span>
+                        </div>
+                    `;
+                } else {
+                    workflowInfo.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-check-circle text-green-500"></i>
+                            <span>Ready to start - no previous phase required</span>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
                 workflowInfo.innerHTML = `
                     <div class="flex items-center space-x-2">
-                        <i class="fas fa-info-circle text-blue-500"></i>
-                        <span>Previous phase: <strong>${data.previous_job.phase}</strong> (${data.previous_job.status})</span>
+                        <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+                        <span>Unable to load workflow information</span>
                     </div>
                 `;
-            } else {
-                workflowInfo.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <i class="fas fa-check-circle text-green-500"></i>
-                        <span>Ready to start - no previous phase required</span>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            workflowInfo.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-exclamation-triangle text-yellow-500"></i>
-                    <span>Unable to load workflow information</span>
-                </div>
-            `;
-        });
+            });
+    } else if (job.status === 'In Progress') {
+        // Hide workflow status for in-progress jobs - show job progress info instead
+        workflowStatus.classList.add('hidden');
+    } else if (job.status === 'Completed') {
+        // Hide workflow status for completed jobs
+        workflowStatus.classList.add('hidden');
+    } else {
+        // Hide for other statuses
+        workflowStatus.classList.add('hidden');
+    }
 
     // Show time tracking if job is in progress
     const timeTracking = document.getElementById('time-tracking');
@@ -1286,7 +1316,13 @@ function updateButtonStates(job) {
                 startBtn.innerHTML = '<i class="fas fa-play mr-2"></i>Start Job';
             });
     } else if (job.status === 'In Progress') {
-        startBtn.classList.add('hidden');
+        // Show start button but DISABLE it (not hide) - show it's already started
+        startBtn.classList.remove('hidden');
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Job Started';
+        startBtn.className = 'flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed text-sm font-medium';
+        
+        // Show end button - enabled
         endBtn.classList.remove('hidden');
         endBtn.disabled = false;
         endBtn.innerHTML = '<i class="fas fa-stop mr-2"></i>End Job';
@@ -1367,9 +1403,8 @@ function startJobImmediately(startQuantity) {
         return;
     }
     
-    // For CUT and QC phases, start_quantity is required
-    const phasesRequiringStartQuantity = ['CUT', 'QC'];
-    if (phasesRequiringStartQuantity.includes(currentJob.phase) && (!startQuantity || startQuantity <= 0)) {
+    // ALL phases require start_quantity - mandatory for tracking production quantities
+    if (!startQuantity || startQuantity <= 0) {
         console.error('❌ [JOB] Start quantity is required for', currentJob.phase, 'phase');
         showError(`Start quantity is required for ${currentJob.phase} phase. Please enter a valid start quantity.`);
         button.disabled = false;
@@ -1379,7 +1414,7 @@ function startJobImmediately(startQuantity) {
     
     const startUrl = `/jobs/${currentJob.job_id}/start`;
     const requestBody = {
-        start_quantity: startQuantity || null
+        start_quantity: parseInt(startQuantity)
     };
     
     console.log('🔵 [JOB] Sending start job request to:', startUrl);
@@ -1986,8 +2021,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmEndJobBtn = document.getElementById('confirm-end-job');
     const cancelEndJobBtn = document.getElementById('cancel-end-job');
     const endQuantityInput = document.getElementById('end-quantity');
-    const rejectQuantityInput = document.getElementById('reject-quantity');
-    const rejectStatusSelect = document.getElementById('reject-status');
     
     console.log('🔵 [INIT] Setting up job modal event listeners...');
     
@@ -1995,29 +2028,22 @@ document.addEventListener('DOMContentLoaded', function() {
         startJobBtn.addEventListener('click', function() {
             console.log('🔵 [JOB] Start job button clicked');
             if (currentJob) {
-                // Check if this is CUT or QC phase - show form for these phases
-                const phasesWithStartQuantity = ['CUT', 'QC'];
-                if (phasesWithStartQuantity.includes(currentJob.phase)) {
-                    // Show start job form
-                    const startBtn = document.getElementById('start-job');
-                    const startJobForm = document.getElementById('start-job-form');
-                    const confirmStartJobBtn = document.getElementById('confirm-start-job');
-                    const cancelStartJobBtn = document.getElementById('cancel-start-job');
-                    
-                    startBtn.classList.add('hidden');
-                    startJobForm.classList.remove('hidden');
-                    confirmStartJobBtn.classList.remove('hidden');
-                    cancelStartJobBtn.classList.remove('hidden');
-                    
-                    // Focus on the start quantity input
-                    document.getElementById('start-quantity').focus();
-                    
-                    // Add visual feedback
-                    showSuccess('Please enter the start quantity for this phase');
-                } else {
-                    // For other phases, start immediately without form
-                    startJobImmediately(null);
-                }
+                // ALL phases require start_quantity - show form for all phases
+                const startBtn = document.getElementById('start-job');
+                const startJobForm = document.getElementById('start-job-form');
+                const confirmStartJobBtn = document.getElementById('confirm-start-job');
+                const cancelStartJobBtn = document.getElementById('cancel-start-job');
+                
+                startBtn.classList.add('hidden');
+                startJobForm.classList.remove('hidden');
+                confirmStartJobBtn.classList.remove('hidden');
+                cancelStartJobBtn.classList.remove('hidden');
+                
+                // Focus on the start quantity input
+                document.getElementById('start-quantity').focus();
+                
+                // Add visual feedback
+                showSuccess('Please enter the start quantity for this phase');
             }
         });
         console.log('✅ [INIT] Start job button listener attached');
@@ -2084,8 +2110,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 const confirmEndJobBtn = document.getElementById('confirm-end-job');
                 const cancelEndJobBtn = document.getElementById('cancel-end-job');
                 
-                // Update reject status options based on current phase
-                updateRejectStatusOptions(currentJob.phase);
+                // Show/hide reject fields based on phase - only CUT and QC can have reject
+                const phasesWithReject = ['CUT', 'QC'];
+                const rejectQuantityContainer = document.getElementById('reject-quantity-container');
+                const rejectStatusContainer = document.getElementById('reject-status-container');
+                
+                if (phasesWithReject.includes(currentJob.phase)) {
+                    // Show reject fields for CUT and QC
+                    rejectQuantityContainer.classList.remove('hidden');
+                    rejectStatusContainer.classList.remove('hidden');
+                    // Update reject status options based on current phase
+                    updateRejectStatusOptions(currentJob.phase);
+                } else {
+                    // Hide reject fields for other phases (PRINT, PRESS, SEW)
+                    rejectQuantityContainer.classList.add('hidden');
+                    rejectStatusContainer.classList.add('hidden');
+                    // Clear reject values
+                    document.getElementById('reject-quantity').value = '';
+                    document.getElementById('reject-status').value = '';
+                }
                 
                 // Hide the end button and show the form
                 endBtn.classList.add('hidden');
@@ -2112,18 +2155,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Get form data
                 const endQuantityInput = document.getElementById('end-quantity').value.trim();
-                const rejectQuantityInput = document.getElementById('reject-quantity').value.trim();
-                const rejectStatus = document.getElementById('reject-status').value.trim();
                 const remarks = document.getElementById('remarks').value.trim();
                 
                 // Convert to integers (null if empty)
                 const endQuantity = endQuantityInput ? parseInt(endQuantityInput, 10) : null;
-                const rejectQuantity = rejectQuantityInput ? parseInt(rejectQuantityInput, 10) : null;
+                
+                // Reject fields only for CUT and QC phases
+                const phasesWithReject = ['CUT', 'QC'];
+                let rejectQuantity = null;
+                let rejectStatus = null;
+                
+                if (phasesWithReject.includes(currentJob.phase)) {
+                    const rejectQuantityInput = document.getElementById('reject-quantity').value.trim();
+                    rejectStatus = document.getElementById('reject-status').value.trim();
+                    rejectQuantity = rejectQuantityInput ? parseInt(rejectQuantityInput, 10) : null;
+                }
                 
                 console.log('🔵 [JOB] End job form data (raw):', { 
                     endQuantityInput, 
-                    rejectQuantityInput, 
-                    rejectStatus, 
+                    rejectQuantityInput: phasesWithReject.includes(currentJob.phase) ? document.getElementById('reject-quantity').value.trim() : 'N/A (not for this phase)',
+                    rejectStatus: phasesWithReject.includes(currentJob.phase) ? document.getElementById('reject-status').value.trim() : 'N/A (not for this phase)',
                     remarks 
                 });
                 console.log('🔵 [JOB] End job form data (processed):', { 
@@ -2133,9 +2184,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     remarks 
                 });
                 
-                // Validate form data
-                if (!endQuantity && !rejectQuantity) {
-                    showError('Please enter either end quantity or reject quantity');
+                // Validate form data - end_quantity is REQUIRED for all phases
+                if (!endQuantityInput || endQuantity === null || endQuantity < 0) {
+                    showError('End quantity is required. Please enter a valid end quantity (0 or greater).');
+                    document.getElementById('end-quantity').focus();
                     return;
                 }
                 
@@ -2145,14 +2197,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                if (rejectQuantityInput && (isNaN(rejectQuantity) || rejectQuantity < 0)) {
-                    showError('Reject quantity must be a valid number (0 or greater)');
-                    return;
-                }
-                
-                if (rejectQuantity && rejectQuantity > 0 && !rejectStatus) {
-                    showError('Please select a reject status when there are rejected items');
-                    return;
+                // Reject validation only for CUT and QC phases
+                if (phasesWithReject.includes(currentJob.phase)) {
+                    const rejectQuantityInput = document.getElementById('reject-quantity').value.trim();
+                    if (rejectQuantityInput && (isNaN(rejectQuantity) || rejectQuantity < 0)) {
+                        showError('Reject quantity must be a valid number (0 or greater)');
+                        return;
+                    }
+                    
+                    if (rejectQuantity && rejectQuantity > 0 && !rejectStatus) {
+                        showError('Please select a reject status when there are rejected items');
+                        return;
+                    }
                 }
                 
                 // Show loading state
@@ -2169,10 +2225,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Prepare request body
+                // Prepare request body - end_quantity is REQUIRED
                 const requestBody = {
-                    end_quantity: endQuantity,
-                    reject_quantity: rejectQuantity,
+                    end_quantity: endQuantity, // Required, already validated above
+                    reject_quantity: rejectQuantity || null,
                     reject_status: rejectStatus || null,
                     remarks: remarks || null
                 };
@@ -2430,8 +2486,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Clear form fields
             document.getElementById('end-quantity').value = '';
-            document.getElementById('reject-quantity').value = '';
-            document.getElementById('reject-status').value = '';
+            const rejectQuantityField = document.getElementById('reject-quantity');
+            const rejectStatusField = document.getElementById('reject-status');
+            if (rejectQuantityField) rejectQuantityField.value = '';
+            if (rejectStatusField) rejectStatusField.value = '';
             document.getElementById('remarks').value = '';
             
             // Show feedback
@@ -2447,6 +2505,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         console.log('✅ [INIT] End quantity input listener attached');
     }
+    
+    // Reject fields event listeners - only attach if elements exist
+    // These fields are only shown for CUT and QC phases
+    const rejectQuantityInput = document.getElementById('reject-quantity');
+    const rejectStatusSelect = document.getElementById('reject-status');
     
     if (rejectQuantityInput) {
         rejectQuantityInput.addEventListener('input', function() {
@@ -2477,37 +2540,45 @@ function validateEndJobForm() {
     const rejectStatus = document.getElementById('reject-status').value;
     const confirmBtn = document.getElementById('confirm-end-job');
     
-    // Check if at least one quantity is entered
-    const hasQuantity = (endQuantity && endQuantity > 0) || (rejectQuantity && rejectQuantity > 0);
+    // end_quantity is REQUIRED for all phases
+    const hasEndQuantity = endQuantity && endQuantity >= 0;
     
     // Check if reject status is selected when reject quantity is entered
     const hasRejectStatus = !rejectQuantity || rejectQuantity == 0 || rejectStatus;
     
     // Visual feedback for form fields
     const endQuantityField = document.getElementById('end-quantity');
-    const rejectQuantityField = document.getElementById('reject-quantity');
-    const rejectStatusField = document.getElementById('reject-status');
     
     // Reset all field styles
     endQuantityField.classList.remove('border-red-500', 'border-green-500');
-    rejectQuantityField.classList.remove('border-red-500', 'border-green-500');
-    rejectStatusField.classList.remove('border-red-500', 'border-green-500');
     
     // Add visual feedback
     if (endQuantity && endQuantity > 0) {
         endQuantityField.classList.add('border-green-500');
     }
     
-    if (rejectQuantity && rejectQuantity > 0) {
-        rejectQuantityField.classList.add('border-green-500');
-        if (rejectStatus) {
-            rejectStatusField.classList.add('border-green-500');
-        } else {
-            rejectStatusField.classList.add('border-red-500');
+    // Reject fields validation only for CUT and QC phases
+    if (currentJob && phasesWithReject.includes(currentJob.phase)) {
+        const rejectQuantityField = document.getElementById('reject-quantity');
+        const rejectStatusField = document.getElementById('reject-status');
+        const rejectQuantity = rejectQuantityField ? rejectQuantityField.value : '';
+        const rejectStatus = rejectStatusField ? rejectStatusField.value : '';
+        
+        // Reset reject field styles
+        if (rejectQuantityField) rejectQuantityField.classList.remove('border-red-500', 'border-green-500');
+        if (rejectStatusField) rejectStatusField.classList.remove('border-red-500', 'border-green-500');
+        
+        if (rejectQuantity && rejectQuantity > 0) {
+            if (rejectQuantityField) rejectQuantityField.classList.add('border-green-500');
+            if (rejectStatus) {
+                if (rejectStatusField) rejectStatusField.classList.add('border-green-500');
+            } else {
+                if (rejectStatusField) rejectStatusField.classList.add('border-red-500');
+            }
         }
     }
     
-    if (hasQuantity && hasRejectStatus) {
+    if (hasEndQuantity && hasRejectStatus) {
         confirmBtn.disabled = false;
         confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
     } else {

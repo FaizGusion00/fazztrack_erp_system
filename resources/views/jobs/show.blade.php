@@ -72,44 +72,122 @@
                         </div>
                     </div>
 
-                    <!-- Design Previews - Left Side -->
+                    <!-- Design Files - Left Side -->
                     @php
-                        $designFiles = $job->order->getDesignFilesArray();
-                        $designImages = [];
-                        // Support both old format (keyed) and new format (array)
-                        if (is_array($designFiles)) {
-                            foreach ($designFiles as $key => $value) {
-                                if (is_numeric($key)) {
-                                    // New format: array of paths
-                                    $designImages[] = $value;
-                                } else {
-                                    // Old format: keyed array (design_front, design_back, etc.)
-                                    if (!empty($value)) {
-                                        $designImages[] = $value;
+                        // Get approved design files
+                        $designFiles = [];
+                        if (isset($approvedDesign) && $approvedDesign) {
+                            $designFilesArray = $approvedDesign->getDesignFilesArray();
+                            if (is_array($designFilesArray)) {
+                                foreach ($designFilesArray as $file) {
+                                    // New format: array with path, original_name, etc.
+                                    if (is_array($file) && isset($file['path'])) {
+                                        $designFiles[] = $file;
+                                    } 
+                                    // Old format: just a path string
+                                    elseif (is_string($file)) {
+                                        $designFiles[] = [
+                                            'path' => $file,
+                                            'original_name' => basename($file),
+                                        ];
                                     }
                                 }
                             }
                         }
+                        
+                        // Helper function to check if file is an image
+                        $isImageFile = function($file) {
+                            $path = is_array($file) ? ($file['path'] ?? '') : $file;
+                            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                            return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
+                        };
+                        
+                        // Helper function to get file icon
+                        $getFileIcon = function($file) {
+                            $path = is_array($file) ? ($file['path'] ?? '') : $file;
+                            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                            $iconMap = [
+                                'rar' => 'fa-file-archive',
+                                'zip' => 'fa-file-archive',
+                                '7z' => 'fa-file-archive',
+                                'ai' => 'fa-file-image',
+                                'eps' => 'fa-file-image',
+                                'psd' => 'fa-file-image',
+                                'pdf' => 'fa-file-pdf',
+                            ];
+                            return $iconMap[$ext] ?? 'fa-file';
+                        };
+                        
+                        // Helper function to format file size
+                        $formatFileSize = function($size) {
+                            if (!$size) return '';
+                            $units = ['B', 'KB', 'MB', 'GB'];
+                            $i = 0;
+                            while ($size >= 1024 && $i < count($units) - 1) {
+                                $size /= 1024;
+                                $i++;
+                            }
+                            return round($size, 2) . ' ' . $units[$i];
+                        };
                     @endphp
-                    @if(count($designImages) > 0)
+                    @if(count($designFiles) > 0)
                     <div class="space-y-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Design Images</h4>
-                        @foreach($designImages as $index => $imagePath)
-                        <div>
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Design Image {{ $index + 1 }}</h4>
-                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden">
-                                <img src="@fileUrl($imagePath)" 
-                                     alt="Design Image {{ $index + 1 }}" 
-                                     class="w-full h-full object-cover">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Design Files</h4>
+                        @foreach($designFiles as $index => $file)
+                        @php
+                            $filePath = is_array($file) ? ($file['path'] ?? '') : $file;
+                            $fileName = is_array($file) ? ($file['original_name'] ?? basename($filePath)) : basename($filePath);
+                            $fileSize = is_array($file) ? ($file['size'] ?? null) : null;
+                            $isImage = $isImageFile($file);
+                            $fileIcon = $getFileIcon($file);
+                        @endphp
+                        <div class="border border-gray-200 rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">File {{ $index + 1 }}</span>
+                                @if($fileSize)
+                                <span class="text-xs text-gray-500">{{ $formatFileSize($fileSize) }}</span>
+                                @endif
                             </div>
+                            @if($isImage)
+                            <!-- Image Preview -->
+                            <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden mb-2">
+                                <img src="@fileUrl($filePath)" 
+                                     alt="{{ $fileName }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-gray-400\'><i class=\'fas fa-image text-4xl\'></i></div>'">
+                            </div>
+                            <a href="@fileUrl($filePath)" 
+                               download="{{ $fileName }}"
+                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
+                                <i class="fas fa-download mr-2"></i>
+                                Download: {{ $fileName }}
+                            </a>
+                            @else
+                            <!-- Non-Image File Download Link -->
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas {{ $fileIcon }} text-2xl text-gray-600"></i>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $fileName }}</p>
+                                        <p class="text-xs text-gray-500">{{ strtoupper(pathinfo($filePath, PATHINFO_EXTENSION)) }} File</p>
+                                    </div>
+                                </div>
+                                <a href="@fileUrl($filePath)" 
+                                   download="{{ $fileName }}"
+                                   class="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors">
+                                    <i class="fas fa-download mr-2"></i>
+                                    Download
+                                </a>
+                            </div>
+                            @endif
                         </div>
                         @endforeach
                     </div>
                     @else
                     <div class="space-y-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Design Images</h4>
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Design Files</h4>
                         <div class="w-full h-48 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                            <p class="text-sm text-gray-500">No design images available</p>
+                            <p class="text-sm text-gray-500">No design files available</p>
                         </div>
                     </div>
                     @endif

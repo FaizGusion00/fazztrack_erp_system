@@ -146,8 +146,23 @@ class JobController extends Controller
             // Check if user can access this job
             /** @var \App\Models\User $user */
             $user = Auth::user();
-            if ($user->isProductionStaff() && $job->assigned_user_id !== $user->id) {
-                return response()->json(['error' => 'Access denied'], 403);
+            // REMOVED: Assignment check - any production staff with matching phase can access
+            if ($user->isProductionStaff()) {
+                if ($job->phase !== $user->phase) {
+                    return response()->json(['error' => 'Access denied. Job phase does not match your assigned phase.'], 403);
+                }
+                
+                // STRICT WORKFLOW: Check order status - production can only access if order is in production phase
+                $order = $job->order;
+                $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+                $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+                
+                if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                    return response()->json([
+                        'error' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                        'current_order_status' => $order->status
+                    ], 403);
+                }
             }
 
             return response()->json([
@@ -176,7 +191,8 @@ class JobController extends Controller
             ], 423);
         }
         
-        // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
+        // Check permissions - Production staff can access jobs matching their phase
+        // NO ASSIGNMENT REQUIRED - Any production staff with matching phase can start
         if ($user->isProductionStaff()) {
             // Check if job phase matches user's phase
             if ($job->phase !== $user->phase) {
@@ -186,19 +202,34 @@ class JobController extends Controller
                     'user_phase' => $user->phase
                 ], 403);
             }
-            
-            // Check if job is assigned to someone else
-            if ($job->assigned_user_id && $job->assigned_user_id !== $user->id) {
-                return response()->json([
-                    'error' => 'Access denied. This job is assigned to another user.',
-                    'assigned_user_id' => $job->assigned_user_id,
-                    'current_user_id' => $user->id
-                ], 403);
-            }
+            // REMOVED: No need to check if assigned to someone else
+            // Any production staff with matching phase can start the job
         }
 
+        // Check job status - refresh from database to get latest status
+        $job->refresh();
         if ($job->status !== 'Pending') {
-            return response()->json(['error' => 'Job cannot be started'], 400);
+            // If already in progress, allow resume/continue (not restart)
+            if ($job->status === 'In Progress') {
+                return response()->json([
+                    'error' => 'Job is already in progress',
+                    'reason' => 'This job has already been started',
+                    'current_status' => $job->status,
+                    'job_id' => $job->job_id,
+                    'phase' => $job->phase,
+                    'started_by' => $job->assignedUser ? $job->assignedUser->name : 'Unknown',
+                    'start_time' => $job->start_time ? $job->start_time->toISOString() : null
+                ], 400);
+            }
+            
+            return response()->json([
+                'error' => 'Job cannot be started',
+                'reason' => 'Job status must be Pending',
+                'current_status' => $job->status,
+                'required_status' => 'Pending',
+                'job_id' => $job->job_id,
+                'phase' => $job->phase
+            ], 400);
         }
 
         // STRICT WORKFLOW: Check if previous job is completed
@@ -211,26 +242,45 @@ class JobController extends Controller
                 'message' => "Please complete {$previousJob->phase} phase first."
             ], 400);
         }
-
-        // For CUT and QC phases, start_quantity is required
-        $phasesRequiringStartQuantity = ['CUT', 'QC'];
-        $validationRules = [];
         
-        if (in_array($job->phase, $phasesRequiringStartQuantity)) {
-            $validationRules['start_quantity'] = 'required|integer|min:1';
+        // Validate order status: Can only start job if order is in correct status
+        $order = $job->order;
+        $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+        
+        // STRICT WORKFLOW: For production staff, order must be in production phase
+        if ($user->isProductionStaff()) {
+            $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+            if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                return response()->json([
+                    'error' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                    'current_status' => $order->status,
+                    'required_statuses' => $productionAllowedStatuses
+                ], 400);
+            }
         } else {
-            $validationRules['start_quantity'] = 'nullable|integer|min:1';
+            // For SuperAdmin/Sales Manager, allow earlier statuses (for testing/admin purposes)
+            $allowedStatuses = ['Design Approved', 'Job Created', 'Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+            if (!in_array($currentStatus, $allowedStatuses, true)) {
+                return response()->json([
+                    'error' => 'Cannot start job. Order must be in Design Approved, Job Created, Job Start, or Job Complete status.',
+                    'current_status' => $order->status,
+                    'required_statuses' => $allowedStatuses
+                ], 400);
+            }
         }
-        
-        $request->validate($validationRules);
+
+        // ALL phases require start_quantity - mandatory for tracking production quantities
+        $request->validate([
+            'start_quantity' => 'required|integer|min:1',
+        ]);
+        $startQuantity = (int)$request->input('start_quantity');
 
         // Start the job with timestamp
-        $job->startJob($request->start_quantity);
+        $job->startJob($startQuantity);
 
-        // Assign user if not already assigned
-        if (!$job->assigned_user_id) {
-            $job->update(['assigned_user_id' => $user->id]);
-        }
+        // Auto-assign to current user when they start (for tracking purposes)
+        // This is optional - just for tracking who started the job
+        $job->update(['assigned_user_id' => $user->id]);
 
         // Update order status to Job Start if this is the first job started
         $order = $job->order;
@@ -240,9 +290,10 @@ class JobController extends Controller
         $totalJobs = $allJobs->count();
         
         // Enhanced order status update for job start
+        // Only update if order is in correct status (workflow validation)
         if ($order->status === 'Job Created' || $order->status === 'Design Approved') {
             $order->update(['status' => 'Job Start']);
-        } elseif ($inProgressJobs > 0 && $completedJobs === 0) {
+        } elseif ($inProgressJobs > 0 && $completedJobs === 0 && ($order->status === 'Job Created' || $order->status === 'Design Approved')) {
             // First job started - update to Job Start
             $order->update(['status' => 'Job Start']);
         }
@@ -274,7 +325,8 @@ class JobController extends Controller
             ], 423);
         }
         
-        // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
+        // Check permissions - Production staff can access jobs matching their phase
+        // NO ASSIGNMENT REQUIRED - Any production staff with matching phase can complete
         if ($user->isProductionStaff()) {
             // Check if job phase matches user's phase
             if ($job->phase !== $user->phase) {
@@ -284,15 +336,8 @@ class JobController extends Controller
                     'user_phase' => $user->phase
                 ], 403);
             }
-            
-            // Check if job is assigned to someone else
-            if ($job->assigned_user_id && $job->assigned_user_id !== $user->id) {
-                return response()->json([
-                    'error' => 'Access denied. This job is assigned to another user.',
-                    'assigned_user_id' => $job->assigned_user_id,
-                    'current_user_id' => $user->id
-                ], 403);
-            }
+            // REMOVED: No need to check if assigned to someone else
+            // Any production staff with matching phase can complete the job
         }
 
         // Refresh job from database to get latest status
@@ -307,31 +352,47 @@ class JobController extends Controller
             ], 400);
         }
 
-        // Validate and convert input data
-        $validated = $request->validate([
-            'end_quantity' => 'nullable|integer|min:0',
-            'reject_quantity' => 'nullable|integer|min:0',
-            'reject_status' => 'nullable|string|max:255',
+        // ALL phases require end_quantity - mandatory for tracking production output
+        // Reject quantity and reject status ONLY for CUT and QC phases
+        $phasesWithReject = ['CUT', 'QC'];
+        $validationRules = [
+            'end_quantity' => 'required|integer|min:0',
             'remarks' => 'nullable|string',
-        ]);
+        ];
+        
+        if (in_array($job->phase, $phasesWithReject)) {
+            // CUT and QC phases can have reject quantity and reject status
+            $validationRules['reject_quantity'] = 'nullable|integer|min:0';
+            $validationRules['reject_status'] = 'nullable|string|max:255';
+        }
+        
+        $validated = $request->validate($validationRules);
 
         // Convert empty strings to null for nullable fields
-        $endQuantity = $request->filled('end_quantity') ? (int)$request->end_quantity : null;
-        $rejectQuantity = $request->filled('reject_quantity') ? (int)$request->reject_quantity : null;
-        $rejectStatus = $request->filled('reject_status') && $request->reject_status !== '' ? $request->reject_status : null;
+        $endQuantity = (int)$request->input('end_quantity'); // Required, so always convert
         $remarks = $request->filled('remarks') && $request->remarks !== '' ? $request->remarks : null;
-
-        // Additional validation: if reject_quantity is provided and > 0, reject_status is required
-        if ($rejectQuantity !== null && $rejectQuantity > 0 && empty($rejectStatus)) {
-            return response()->json([
-                'error' => 'Reject status is required when reject quantity is greater than 0.'
-            ], 422);
+        
+        // Reject fields only for CUT and QC phases
+        $rejectQuantity = null;
+        $rejectStatus = null;
+        if (in_array($job->phase, $phasesWithReject)) {
+            $rejectQuantity = $request->filled('reject_quantity') ? (int)$request->reject_quantity : null;
+            $rejectStatus = $request->filled('reject_status') && $request->reject_status !== '' ? $request->reject_status : null;
+            
+            // Additional validation: if reject_quantity is provided and > 0, reject_status is required
+            if ($rejectQuantity !== null && $rejectQuantity > 0 && empty($rejectStatus)) {
+                return response()->json([
+                    'error' => 'Reject status is required when reject quantity is greater than 0.'
+                ], 422);
+            }
         }
 
-        // Additional validation: at least one quantity must be provided
-        if ($endQuantity === null && $rejectQuantity === null) {
+        // Additional validation: end_quantity should not exceed start_quantity (if start_quantity exists)
+        if ($job->start_quantity !== null && $endQuantity > $job->start_quantity) {
             return response()->json([
-                'error' => 'Either end quantity or reject quantity must be provided.'
+                'error' => 'End quantity cannot be greater than start quantity.',
+                'start_quantity' => $job->start_quantity,
+                'end_quantity' => $endQuantity
             ], 422);
         }
 
@@ -352,32 +413,40 @@ class JobController extends Controller
         $completedJobs = $allJobs->where('status', 'Completed')->count();
         $totalJobs = $allJobs->count();
         
-        // Enhanced order status update logic
+        // Enhanced order status update logic with workflow validation
         if ($completedJobs === $totalJobs && $totalJobs > 0) {
             // All jobs completed - Order Finished
-            $order->update(['status' => 'Order Finished']);
-            
-            // Automatically set delivery status based on delivery method
-            if ($order->delivery_method === 'Self Collect') {
-                $order->update(['delivery_status' => 'Pending']);
-            } else {
-                $order->update(['delivery_status' => 'Pending']);
+            // Validate: Can only go to Order Finished from Job Complete or Order Packaging
+            if (in_array($order->status, ['Job Start', 'Job Complete', 'Order Packaging'], true)) {
+                $order->update(['status' => 'Order Finished']);
+                
+                // Automatically set delivery status based on delivery method
+                if ($order->delivery_method === 'Self Collect') {
+                    $order->update(['delivery_status' => 'Pending']);
+                } else {
+                    $order->update(['delivery_status' => 'Pending']);
+                }
             }
         } elseif ($job->phase === 'QC' && $job->status === 'Completed') {
             // QC phase completed - Order Finished (QC now handles packing)
-            $order->update(['status' => 'Order Finished']);
-            
-            // Automatically set delivery status based on delivery method
-            if ($order->delivery_method === 'Self Collect') {
-                $order->update(['delivery_status' => 'Pending']);
-            } else {
-                $order->update(['delivery_status' => 'Pending']);
+            // Validate: Can only go to Order Finished from Job Start or Job Complete
+            if (in_array($order->status, ['Job Start', 'Job Complete'], true)) {
+                $order->update(['status' => 'Order Finished']);
+                
+                // Automatically set delivery status based on delivery method
+                if ($order->delivery_method === 'Self Collect') {
+                    $order->update(['delivery_status' => 'Pending']);
+                } else {
+                    $order->update(['delivery_status' => 'Pending']);
+                }
             }
         } elseif ($completedJobs > 0 && $completedJobs < $totalJobs) {
-            // Some jobs completed but not all - keep current status or update to Job Start
+            // Some jobs completed but not all - keep status as Job Start (don't change to Job Complete yet)
+            // Only update to Job Start if order is still in earlier status
             if ($order->status === 'Job Created' || $order->status === 'Design Approved') {
                 $order->update(['status' => 'Job Start']);
             }
+            // Keep as "Job Start" while jobs are in progress - don't change to "Job Complete" until ALL jobs are done
         }
 
         return response()->json([
@@ -398,8 +467,10 @@ class JobController extends Controller
      */
     public function show(Job $job)
     {
-        $job->load(['order.client', 'assignedUser']);
-        return view('jobs.show', compact('job'));
+        $job->load(['order.client', 'order.designs', 'assignedUser']);
+        // Get approved design files for display
+        $approvedDesign = $job->order->designs()->where('status', 'Approved')->first();
+        return view('jobs.show', compact('job', 'approvedDesign'));
     }
 
     /**
@@ -416,12 +487,49 @@ class JobController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // Only SuperAdmin and Sales Manager can create jobs directly
+        if (!$user->isSuperAdmin() && !$user->isSalesManager()) {
+            return redirect()->route('jobs.index')
+                ->with('error', 'You do not have permission to create jobs.');
+        }
+        
         $request->validate([
             'order_id' => 'required|exists:orders,order_id',
             'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC',
             'start_quantity' => 'required|integer|min:1',
             'remarks' => 'nullable|string',
         ]);
+
+        $order = Order::findOrFail($request->order_id);
+        
+        // STRICT WORKFLOW: Check order status and design approval
+        $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+        if ($currentStatus !== 'Design Approved' && $currentStatus !== 'Job Created' && $currentStatus !== 'Job Start') {
+            return redirect()->route('jobs.index')
+                ->with('error', "Cannot create job. Order must be in 'Design Approved' status first. Current status: {$order->status}");
+        }
+        
+        // STRICT WORKFLOW: Check if designs exist and are approved
+        $order->load('designs');
+        // Check for approved designs (case-insensitive: 'Approved' or 'approved')
+        $approvedDesigns = $order->designs->filter(function($design) {
+            return strtolower($design->status) === 'approved';
+        });
+        
+        if ($approvedDesigns->isEmpty()) {
+            return redirect()->route('jobs.index')
+                ->with('error', "Cannot create job. Order must have at least one approved design first. Current designs: {$order->designs->count()}");
+        }
+        
+        // Check if this phase already exists
+        $existingJob = $order->jobs()->where('phase', $request->phase)->first();
+        if ($existingJob) {
+            return redirect()->route('jobs.index')
+                ->with('error', "A job for {$request->phase} phase already exists for this order.");
+        }
 
         $job = Job::create([
             'order_id' => $request->order_id,
@@ -605,40 +713,46 @@ class JobController extends Controller
         
         // SuperAdmin and Sales Manager can access all jobs
         if ($user->isSuperAdmin() || $user->isSalesManager()) {
-            $job->load(['order.client']);
+            $job->load(['order.client', 'assignedUser']);
             return response()->json([
                 'success' => true,
                 'job' => $job
             ]);
         }
         
-        // Production staff can access:
-        // 1. Jobs assigned to them
-        // 2. Unassigned jobs that match their phase
+        // Production staff can access jobs that match their phase
+        // NO ASSIGNMENT REQUIRED - Any production staff with matching phase can access
+        // BUT: Order status must be "Job Start" or higher (production phase)
         if ($user->isProductionStaff()) {
-            $canAccess = false;
-            
-            // Check if job is assigned to this user
-            if ($job->assigned_user_id === $user->id) {
-                $canAccess = true;
-            }
-            // Check if job is unassigned and matches user's phase
-            elseif (!$job->assigned_user_id && $job->phase === $user->phase) {
-                $canAccess = true;
-            }
-            
-            if ($canAccess) {
-                $job->load(['order.client']);
-                return response()->json([
-                    'success' => true,
-                    'job' => $job
-                ]);
-            } else {
+            // Check if job phase matches user's phase
+            if ($job->phase !== $user->phase) {
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Access denied. This job is not assigned to you or does not match your phase.'
+                    'message' => 'Access denied. This job phase does not match your assigned phase.',
+                    'job_phase' => $job->phase,
+                    'user_phase' => $user->phase
                 ]);
             }
+            
+            // STRICT WORKFLOW: Check order status - production can only access if order is in production phase
+            $order = $job->order;
+            $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+            $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+            
+            if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                    'current_order_status' => $order->status,
+                    'required_statuses' => $productionAllowedStatuses
+                ], 403);
+            }
+            
+            $job->load(['order.client', 'assignedUser']);
+            return response()->json([
+                'success' => true,
+                'job' => $job
+            ]);
         }
         
         // Default: deny access
@@ -680,40 +794,42 @@ class JobController extends Controller
             ]);
         }
         
-        // Production staff can access:
-        // 1. Jobs assigned to them
-        // 2. Unassigned jobs that match their phase
+        // Production staff can access jobs that match their phase
+        // BUT: Order status must be "Job Start" or higher (production phase)
         if ($user->isProductionStaff()) {
-            $canAccess = false;
-            
-            // Check if job is assigned to this user
-            if ($job->assigned_user_id === $user->id) {
-                $canAccess = true;
-            }
-            // Check if job is unassigned and matches user's phase
-            elseif (!$job->assigned_user_id && $job->phase === $user->phase) {
-                $canAccess = true;
-            }
-            
-            if ($canAccess) {
-                $previousJob = $this->getPreviousJob($job);
-                $nextJob = $this->getNextJob($job);
-                
+            // Check if job phase matches user's phase
+            if ($job->phase !== $user->phase) {
                 return response()->json([
-                    'success' => true,
-                    'previous_job' => $previousJob,
-                    'next_job' => $nextJob,
-                    'can_start' => !$previousJob || $previousJob->status === 'Completed',
-                    'workflow_message' => $previousJob && $previousJob->status !== 'Completed' 
-                        ? "Please complete {$previousJob->phase} phase first." 
-                        : "Ready to start {$job->phase} phase."
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Access denied. This job is not assigned to you or does not match your phase.'
+                    'success' => false,
+                    'message' => 'Access denied. This job phase does not match your assigned phase.'
                 ]);
             }
+            
+            // STRICT WORKFLOW: Check order status - production can only access if order is in production phase
+            $order = $job->order;
+            $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+            $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+            
+            if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                    'current_order_status' => $order->status
+                ]);
+            }
+            
+            $previousJob = $this->getPreviousJob($job);
+            $nextJob = $this->getNextJob($job);
+            
+            return response()->json([
+                'success' => true,
+                'previous_job' => $previousJob,
+                'next_job' => $nextJob,
+                'can_start' => !$previousJob || $previousJob->status === 'Completed',
+                'workflow_message' => $previousJob && $previousJob->status !== 'Completed' 
+                    ? "Please complete {$previousJob->phase} phase first." 
+                    : "Ready to start {$job->phase} phase."
+            ]);
         }
         
         // Default: deny access

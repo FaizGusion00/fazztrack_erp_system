@@ -135,15 +135,23 @@
 
                                         <!-- Progress Info -->
                                         <div class="space-y-2 text-xs">
-                                            @if($job->assignedUser)
+                                            @if($job->status === 'Pending')
+                                                {{-- For Pending jobs, show "Available" - no assignment needed --}}
+                                                <div class="flex items-center text-green-600">
+                                                    <i class="fas fa-check-circle w-3 mr-2"></i>
+                                                    <span>Available - Ready to Start</span>
+                                                </div>
+                                            @elseif($job->assignedUser)
+                                                {{-- For In Progress/Completed jobs, show who started it --}}
                                                 <div class="flex items-center text-gray-600">
                                                     <i class="fas fa-user w-3 mr-2"></i>
-                                                    <span>Assigned: {{ $job->assignedUser->name }}</span>
+                                                    <span>Started by: {{ $job->assignedUser->name }}</span>
                                                 </div>
                                             @else
-                                                <div class="flex items-center text-orange-600">
-                                                    <i class="fas fa-exclamation-triangle w-3 mr-2"></i>
-                                                    <span>Unassigned</span>
+                                                {{-- Fallback for jobs without assigned user (shouldn't happen for In Progress) --}}
+                                                <div class="flex items-center text-gray-500">
+                                                    <i class="fas fa-info-circle w-3 mr-2"></i>
+                                                    <span>No assignee</span>
                                                 </div>
                                             @endif
 
@@ -247,12 +255,6 @@
                             </div>
                         </div>
                     @endforeach
-                </div>
-                <div class="mt-4 text-center">
-                    <a href="{{ route('reports.production') }}"
-                       class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium">
-                        <i class="fas fa-chart-bar mr-2"></i>View Full Production Report
-                    </a>
                 </div>
             @else
                 <div class="text-center py-8">

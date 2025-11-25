@@ -250,7 +250,11 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $job->assignedUser->name ?? 'Unassigned' }}
+                                    @if($job->status === 'Pending')
+                                        Available
+                                    @else
+                                        {{ $job->assignedUser->name ?? 'N/A' }}
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $job->created_at->format('d M Y') }}

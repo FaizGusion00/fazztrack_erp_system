@@ -303,13 +303,6 @@
                             </button>
                         @endif
 
-                        @if(in_array($order->status, ['Job Start', 'Order Finished'], true) && $canManageHold)
-                            <button onclick="showCreateJobsModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                                <i class="fas fa-tasks mr-2"></i>
-                                Create Additional Jobs
-                            </button>
-                        @endif
-
                         @if($order->status === 'In Progress' && $order->jobs->where('status', 'Completed')->count() === $order->jobs->count() && $order->jobs->count() > 0)
                             <form method="POST" action="{{ route('orders.complete', $order) }}" class="w-full">
                                 @csrf
@@ -378,11 +371,48 @@
                         Production Jobs
                     </h3>
                     @if($canManageHold)
-                        @if($order->status === 'Order Approved' && $order->jobs->count() === 0)
+                        @php
+                            // Check if we can create next phase job
+                            $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
+                            $existingPhases = $order->jobs->pluck('phase')->toArray();
+                            $completedPhases = $order->jobs->where('status', 'Completed')->pluck('phase')->toArray();
+                            
+                            // Find next phase that doesn't exist yet
+                            $nextPhase = null;
+                            foreach ($phases as $phase) {
+                                if (!in_array($phase, $existingPhases)) {
+                                    // Check if previous phase is completed (or this is the first phase)
+                                    $phaseIndex = array_search($phase, $phases);
+                                    if ($phaseIndex === 0) {
+                                        // First phase - can create if order is in correct status
+                                        $nextPhase = $phase;
+                                        break;
+                                    } else {
+                                        // Check if previous phase is completed
+                                        $previousPhase = $phases[$phaseIndex - 1];
+                                        if (in_array($previousPhase, $completedPhases)) {
+                                            $nextPhase = $phase;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Can create jobs if:
+                            // 1. No jobs exist and order is Design Approved
+                            // 2. Next phase can be created (previous phase completed)
+                            $canCreateJobs = ($order->status === 'Design Approved' && $order->jobs->count() === 0) || 
+                                            ($nextPhase !== null && in_array($order->status, ['Design Approved', 'Job Created', 'Job Start', 'Job Complete'], true));
+                        @endphp
+                        @if($canCreateJobs)
                             <button onclick="showCreateJobsModal()" 
                                     class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-md font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                 <i class="fas fa-plus mr-2"></i>
-                                Create Jobs
+                                @if($order->jobs->count() > 0)
+                                    Create Next Phase Job
+                                @else
+                                    Create Jobs
+                                @endif
                             </button>
                         @endif
                     @endif
@@ -393,17 +423,21 @@
                     <!-- Job Progress Overview -->
                     <div class="mb-6">
                         @php
-                            $totalJobs = $order->jobs->count();
-                            $completedJobs = $order->jobs->where('status', 'Completed')->count();
-                            $progress = $totalJobs > 0 ? ($completedJobs / $totalJobs) * 100 : 0;
+                            // Total phases that should exist (all 5 phases)
+                            $totalPhases = 5; // PRINT, PRESS, CUT, SEW, QC
+                            $existingJobs = $order->jobs;
+                            $completedJobs = $existingJobs->where('status', 'Completed')->count();
+                            // Progress is based on completed phases out of total phases
+                            $progress = $totalPhases > 0 ? ($completedJobs / $totalPhases) * 100 : 0;
                         @endphp
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-sm font-medium text-gray-700">Production Progress</span>
-                            <span class="text-sm font-medium text-gray-900">{{ $completedJobs }}/{{ $totalJobs }} completed</span>
+                            <span class="text-sm font-medium text-gray-900">{{ $completedJobs }}/{{ $totalPhases }} phases completed</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-primary-600 h-2 rounded-full transition-all duration-300" data-progress="{{ $progress ?? 0 }}" style="width: 0%;"></div>
                         </div>
+                        <div class="mt-1 text-xs text-gray-500 text-right">{{ number_format($progress, 1) }}%</div>
                     </div>
 
                     <!-- Jobs List -->
@@ -442,8 +476,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Job Progress -->
-                                @if($job->start_quantity && $job->end_quantity)
+                                <!-- Job Progress - Only show for in-progress jobs, not completed ones -->
+                                @if($job->status === 'In Progress' && $job->start_quantity && $job->end_quantity)
                                 <div class="mt-3">
                                     <div class="flex justify-between text-sm text-gray-600 mb-1">
                                         <span>Progress</span>
@@ -455,6 +489,13 @@
                                         @endphp
                                         <div class="bg-green-600 h-1 rounded-full job-progress-bar" data-progress="{{ $jobProgress ?? 0 }}" style="width: 0%;"></div>
                                     </div>
+                                </div>
+                                @endif
+                                
+                                <!-- Completed Job Summary -->
+                                @if($job->status === 'Completed' && $job->start_quantity && $job->end_quantity)
+                                <div class="mt-3 text-xs text-gray-600">
+                                    <span>Output: {{ number_format($job->end_quantity) }} / {{ number_format($job->start_quantity) }} units</span>
                                 </div>
                                 @endif
 
@@ -469,19 +510,67 @@
                                 @endif
                             </div>
                         @endforeach
+                        
+                        <!-- Create Next Phase Job Button (after jobs list) -->
+                        @if($canManageHold)
+                            @php
+                                // Check if we can create next phase job
+                                $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
+                                $existingPhases = $order->jobs->pluck('phase')->toArray();
+                                $completedPhases = $order->jobs->where('status', 'Completed')->pluck('phase')->toArray();
+                                
+                                // Find next phase that doesn't exist yet
+                                $nextPhase = null;
+                                foreach ($phases as $phase) {
+                                    if (!in_array($phase, $existingPhases)) {
+                                        // Check if previous phase is completed (or this is the first phase)
+                                        $phaseIndex = array_search($phase, $phases);
+                                        if ($phaseIndex === 0) {
+                                            // First phase - can create if order is in correct status
+                                            if (in_array($order->status, ['Design Approved', 'Job Created', 'Job Start', 'Job Complete'], true)) {
+                                                $nextPhase = $phase;
+                                                break;
+                                            }
+                                        } else {
+                                            // Check if previous phase is completed
+                                            $previousPhase = $phases[$phaseIndex - 1];
+                                            if (in_array($previousPhase, $completedPhases)) {
+                                                $nextPhase = $phase;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @if($nextPhase !== null)
+                                <div class="mt-6 pt-6 border-t border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900">Ready for Next Phase</h4>
+                                            <p class="text-xs text-gray-500 mt-1">All previous phases are completed. Create {{ $nextPhase }} job to continue.</p>
+                                        </div>
+                                        <button onclick="showCreateJobsModal()" 
+                                                class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-md font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                            <i class="fas fa-plus mr-2"></i>
+                                            Create {{ $nextPhase }} Job
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                 @else
                     <div class="text-center py-8">
                         <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">No production jobs yet</h3>
                         <p class="text-gray-500 mb-4">
-                            @if($order->status === 'Order Approved')
+                            @if($order->status === 'Order Approved' || $order->status === 'Design Approved')
                                 Create production jobs to start the manufacturing process.
                             @else
                                 Jobs will be created after the order is approved.
                             @endif
                         </p>
-                        @if($order->status === 'Order Approved' && $canManageHold)
+                        @if(($order->status === 'Order Approved' || $order->status === 'Design Approved') && $canManageHold)
                             <button onclick="showCreateJobsModal()" 
                                     class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-md font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                 <i class="fas fa-plus mr-2"></i>
@@ -684,15 +773,29 @@
                         <div class="space-y-2">
                             @php
                                 $phases = ['PRINT', 'PRESS', 'CUT', 'SEW', 'QC'];
+                                $existingPhases = $order->jobs->pluck('phase')->toArray();
                                 $completedPhases = $order->jobs->where('status', 'Completed')->pluck('phase')->toArray();
-                                $availablePhases = array_diff($phases, $completedPhases);
                                 
-                                // Find the next phase to create
+                                // Find the next phase to create (must not exist and previous phase must be completed)
                                 $nextPhase = null;
                                 foreach ($phases as $phase) {
-                                    if (!in_array($phase, $completedPhases)) {
-                                        $nextPhase = $phase;
-                                        break;
+                                    if (!in_array($phase, $existingPhases)) {
+                                        // Check if previous phase is completed (or this is the first phase)
+                                        $phaseIndex = array_search($phase, $phases);
+                                        if ($phaseIndex === 0) {
+                                            // First phase - can create if order is in correct status
+                                            if (in_array($order->status, ['Design Approved', 'Job Created', 'Job Start', 'Job Complete'], true)) {
+                                                $nextPhase = $phase;
+                                                break;
+                                            }
+                                        } else {
+                                            // Check if previous phase is completed
+                                            $previousPhase = $phases[$phaseIndex - 1];
+                                            if (in_array($previousPhase, $completedPhases)) {
+                                                $nextPhase = $phase;
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                             @endphp
@@ -709,15 +812,6 @@
                                         Next Phase
                                     </span>
                                 </label>
-                                
-                                @if(count($availablePhases) > 1)
-                                    <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                        <p class="text-xs text-yellow-800">
-                                            <i class="fas fa-info-circle mr-1"></i>
-                                            Only the next phase is recommended. Creating jobs out of order may cause workflow issues.
-                                        </p>
-                                    </div>
-                                @endif
                             @else
                                 <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
                                     <div class="flex items-center">

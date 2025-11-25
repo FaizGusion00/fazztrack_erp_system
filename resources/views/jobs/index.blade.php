@@ -108,14 +108,15 @@
                 
                 <!-- Order Header Card -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-sm border border-white/20 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                    <!-- Order Summary Header -->
-                    <div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+                    <!-- Order Summary Header (Clickable) -->
+                    <div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 cursor-pointer hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 transition-colors" 
+                         onclick="toggleOrderJobs({{ $orderId }})">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                            <div class="flex items-center space-x-3 sm:space-x-4">
+                            <div class="flex items-center space-x-3 sm:space-x-4 flex-1">
                                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
                                     <span class="text-white text-sm sm:text-base font-bold">{{ substr($client->name, 0, 1) }}</span>
                                 </div>
-                                <div>
+                                <div class="flex-1">
                                     <h3 class="text-lg sm:text-xl font-bold text-gray-900">Order #{{ $order->order_id }}</h3>
                                     <p class="text-sm sm:text-base text-gray-600">{{ $order->job_name }}</p>
                                     <p class="text-xs sm:text-sm text-gray-500">{{ $client->name }}</p>
@@ -128,12 +129,21 @@
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                     RM {{ number_format($order->total_amount, 2) }}
                                 </span>
+                                <a href="{{ route('orders.show', $order) }}" 
+                                   onclick="event.stopPropagation();"
+                                   class="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-xs font-medium shadow-sm">
+                                    <i class="fas fa-eye mr-1.5"></i>
+                                    View Order
+                                </a>
+                                <button class="ml-2 text-gray-500 hover:text-gray-700 transition-transform duration-200 order-arrow-{{ $orderId }}" type="button">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Jobs List for this Order -->
-                    <div class="divide-y divide-gray-200">
+                    <!-- Jobs List for this Order (Collapsible) -->
+                    <div class="divide-y divide-gray-200 order-jobs-{{ $orderId }}" style="display: none;">
                         @foreach($orderJobs as $job)
                         <div class="p-4 sm:p-6 lg:p-8 hover:bg-gray-50/50 transition-colors duration-200">
                             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
@@ -185,42 +195,22 @@
                                     </div>
                                 </div>
 
-                                <!-- Status and Progress -->
-                                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                                    <!-- Status Badge -->
-                                    <div class="flex items-center space-x-2">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-                                            @if($job->status === 'Pending') bg-yellow-100 text-yellow-800 border border-yellow-200
-                                            @elseif($job->status === 'In Progress') bg-blue-100 text-blue-800 border border-blue-200
-                                            @elseif($job->status === 'Completed') bg-green-100 text-green-800 border border-green-200
-                                            @else bg-red-100 text-red-800 border border-red-200
-                                            @endif">
-                                            <div class="w-2 h-2 rounded-full mr-2
-                                                @if($job->status === 'Pending') bg-yellow-500
-                                                @elseif($job->status === 'In Progress') bg-blue-500
-                                                @elseif($job->status === 'Completed') bg-green-500
-                                                @else bg-red-500
-                                                @endif"></div>
-                                            {{ $job->status }}
-                                        </span>
-                                    </div>
-
-                                    <!-- Progress Bar -->
-                                    @if($job->start_quantity && $job->end_quantity)
-                                    <div class="flex-1 min-w-0 sm:min-w-[200px]">
-                                        <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
-                                            <span>Progress</span>
-                                            @php
-                                                $progress = $job->end_quantity > 0 ? ($job->end_quantity / $job->start_quantity) * 100 : 0;
-                                            @endphp
-                                            <span>{{ number_format($progress, 1) }}%</span>
-                                        </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-2">
-                                            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-300" 
-                                                 style="width: {{ $progress }}%"></div>
-                                        </div>
-                                    </div>
-                                    @endif
+                                <!-- Status Badge -->
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                        @if($job->status === 'Pending') bg-yellow-100 text-yellow-800 border border-yellow-200
+                                        @elseif($job->status === 'In Progress') bg-blue-100 text-blue-800 border border-blue-200
+                                        @elseif($job->status === 'Completed') bg-green-100 text-green-800 border border-green-200
+                                        @else bg-red-100 text-red-800 border border-red-200
+                                        @endif">
+                                        <div class="w-2 h-2 rounded-full mr-2
+                                            @if($job->status === 'Pending') bg-yellow-500
+                                            @elseif($job->status === 'In Progress') bg-blue-500
+                                            @elseif($job->status === 'Completed') bg-green-500
+                                            @else bg-red-500
+                                            @endif"></div>
+                                        {{ $job->status }}
+                                    </span>
                                 </div>
 
                                 <!-- Action Buttons -->
@@ -351,6 +341,30 @@ function startJob(jobId) {
             console.error('Error:', error);
             alert('Failed to start job');
         });
+    }
+}
+
+// Toggle order jobs visibility
+function toggleOrderJobs(orderId) {
+    const jobsContainer = document.querySelector('.order-jobs-' + orderId);
+    const arrow = document.querySelector('.order-arrow-' + orderId);
+    
+    if (jobsContainer) {
+        const isHidden = jobsContainer.style.display === 'none';
+        jobsContainer.style.display = isHidden ? 'block' : 'none';
+        
+        if (arrow) {
+            const icon = arrow.querySelector('i');
+            if (icon) {
+                if (isHidden) {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+        }
     }
 }
 

@@ -23,10 +23,17 @@ class OfflineController extends Controller
             return response()->json(['error' => 'Access denied'], 403);
         }
 
+        // STRICT WORKFLOW: Production staff can only see jobs from orders in production phase
+        // Order status must be "Job Start" or higher
+        $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+        
         // Get all active jobs that production staff can work on
         $jobs = Job::with(['order.client'])
             ->excludeOnHoldOrders()
             ->where('status', '!=', 'Completed')
+            ->whereHas('order', function($query) use ($productionAllowedStatuses) {
+                $query->whereIn('status', $productionAllowedStatuses);
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($job) {

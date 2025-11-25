@@ -32,6 +32,78 @@ class OrderController extends Controller
     ];
 
     /**
+     * Valid order status workflow sequence
+     */
+    private const STATUS_WORKFLOW = [
+        'Order Created',
+        'Order Approved',
+        'Design Review',
+        'Design Approved',
+        'Job Created',
+        'Job Start',
+        'Job Complete',
+        'Order Packaging',
+        'Order Finished',
+        'Completed',
+    ];
+
+    /**
+     * Validate if order can transition to target status
+     */
+    private function canTransitionToStatus(Order $order, string $targetStatus): array
+    {
+        $currentStatus = $order->status;
+        
+        // Allow "On Hold" to resume to previous status
+        if ($currentStatus === 'On Hold' && $order->status_before_hold) {
+            $currentStatus = $order->status_before_hold;
+        }
+        
+        // Completed orders cannot change
+        if (in_array($currentStatus, self::COMPLETED_STATUSES, true)) {
+            return [
+                'allowed' => false,
+                'message' => "Cannot change status. Order is already {$currentStatus}."
+            ];
+        }
+        
+        $currentIndex = array_search($currentStatus, self::STATUS_WORKFLOW);
+        $targetIndex = array_search($targetStatus, self::STATUS_WORKFLOW);
+        
+        if ($currentIndex === false || $targetIndex === false) {
+            return [
+                'allowed' => false,
+                'message' => "Invalid status transition from {$currentStatus} to {$targetStatus}."
+            ];
+        }
+        
+        // Allow same status (no change)
+        if ($currentIndex === $targetIndex) {
+            return ['allowed' => true, 'message' => ''];
+        }
+        
+        // Allow forward progression (next step only)
+        if ($targetIndex === $currentIndex + 1) {
+            return ['allowed' => true, 'message' => ''];
+        }
+        
+        // Disallow skipping steps
+        if ($targetIndex > $currentIndex + 1) {
+            $nextRequiredStatus = self::STATUS_WORKFLOW[$currentIndex + 1];
+            return [
+                'allowed' => false,
+                'message' => "Cannot skip to {$targetStatus}. Order must first be {$nextRequiredStatus}."
+            ];
+        }
+        
+        // Disallow backward progression (except for On Hold resume)
+        return [
+            'allowed' => false,
+            'message' => "Cannot revert status from {$currentStatus} to {$targetStatus}."
+        ];
+    }
+
+    /**
      * Display a listing of orders
      */
     public function index(Request $request)
@@ -169,8 +241,8 @@ class OrderController extends Controller
             foreach ($request->file('design_images') as $imageFile) {
                 if ($imageFile && $imageFile->isValid()) {
                     $designImages[] = StorageService::store($imageFile, 'designs/final');
-                }
             }
+        }
         }
         
         // Store as array - Laravel will automatically JSON encode due to 'array' cast in model
@@ -323,7 +395,7 @@ class OrderController extends Controller
 
         // Handle job sheets - delete and add
         $existingJobSheets = [];
-        if ($order->job_sheet) {
+            if ($order->job_sheet) {
             // Check if it's JSON (new format) or string (old format)
             $decoded = json_decode($order->job_sheet, true);
             if (is_array($decoded)) {
@@ -354,7 +426,7 @@ class OrderController extends Controller
             foreach ($request->file('job_sheets') as $jobSheetFile) {
                 if ($jobSheetFile && $jobSheetFile->isValid()) {
                     $existingJobSheets[] = StorageService::store($jobSheetFile, 'job_sheets');
-                }
+            }
             }
         }
         
@@ -400,7 +472,7 @@ class OrderController extends Controller
             foreach ($request->file('design_images') as $imageFile) {
                 if ($imageFile && $imageFile->isValid()) {
                     $designImages[] = StorageService::store($imageFile, 'designs/final');
-                }
+        }
             }
         }
         
@@ -495,7 +567,30 @@ class OrderController extends Controller
             abort(403, 'Access denied. Only admins can approve payments.');
         }
         
+        // Validate workflow: Can only approve if order is in "Order Created" status
+        if ($order->status !== 'Order Created') {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "Cannot approve payment. Order status must be 'Order Created'. Current status: {$order->status}");
+        }
+        
+        $validation = $this->canTransitionToStatus($order, 'Order Approved');
+        if (!$validation['allowed']) {
+            return redirect()->route('orders.show', $order)
+                ->with('error', $validation['message']);
+        }
+        
+        $previousStatus = $order->status;
         $order->update(['status' => 'Order Approved']);
+        
+        // Log status change
+        OrderStatusLog::create([
+            'order_id' => $order->order_id,
+            'user_id' => $user->id,
+            'previous_status' => $previousStatus,
+            'new_status' => 'Order Approved',
+            'comment' => 'Payment approved',
+        ]);
+        
         return redirect()->route('orders.show', $order)
             ->with('success', 'Payment approved successfully. Order is now ready for design.');
     }
@@ -592,7 +687,33 @@ class OrderController extends Controller
      */
     public function complete(Order $order)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // Validate workflow: Can only complete if order is in "Order Finished" status
+        if ($order->status !== 'Order Finished') {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "Cannot complete order. Order must be in 'Order Finished' status first. Current status: {$order->status}");
+        }
+        
+        $validation = $this->canTransitionToStatus($order, 'Completed');
+        if (!$validation['allowed']) {
+            return redirect()->route('orders.show', $order)
+                ->with('error', $validation['message']);
+        }
+        
+        $previousStatus = $order->status;
         $order->update(['status' => 'Completed']);
+        
+        // Log status change
+        OrderStatusLog::create([
+            'order_id' => $order->order_id,
+            'user_id' => $user->id,
+            'previous_status' => $previousStatus,
+            'new_status' => 'Completed',
+            'comment' => 'Order completed',
+        ]);
+        
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order completed successfully.');
     }
@@ -617,6 +738,26 @@ class OrderController extends Controller
             return redirect()->route('orders.show', $order)
                 ->with('error', 'Jobs cannot be created while the order is on hold. Please resume the order first.');
         }
+        
+        // Validate workflow: Can only create jobs if order is in "Design Approved" status
+        $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+        if ($currentStatus !== 'Design Approved' && $currentStatus !== 'Job Created' && $currentStatus !== 'Job Start') {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "Cannot create jobs. Order must be in 'Design Approved' status first. Current status: {$order->status}");
+        }
+        
+        // STRICT WORKFLOW: Check if designs exist and are approved
+        $order->load('designs');
+        // Check for approved designs (case-insensitive: 'Approved' or 'approved')
+        $approvedDesigns = $order->designs->filter(function($design) {
+            return strtolower($design->status) === 'approved';
+        });
+        
+        if ($approvedDesigns->isEmpty()) {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "Cannot create jobs. Order must have at least one approved design first. Current designs: {$order->designs->count()}");
+        }
+        
         $request->validate([
             'phase' => 'required|in:PRINT,PRESS,CUT,SEW,QC',
         ]);
@@ -645,12 +786,30 @@ class OrderController extends Controller
         }
 
         // Create the job
-        Job::create([
+        $job = Job::create([
             'order_id' => $order->order_id,
             'phase' => $phase,
             'status' => 'Pending',
             'qr_code' => 'QR_' . Str::random(10) . '_' . $phase,
         ]);
+        
+        // Update order status to "Job Created" if this is the first job
+        if ($order->status === 'Design Approved') {
+            $validation = $this->canTransitionToStatus($order, 'Job Created');
+            if ($validation['allowed']) {
+                $previousStatus = $order->status;
+                $order->update(['status' => 'Job Created']);
+                
+                // Log status change
+                OrderStatusLog::create([
+                    'order_id' => $order->order_id,
+                    'user_id' => Auth::id(),
+                    'previous_status' => $previousStatus,
+                    'new_status' => 'Job Created',
+                    'comment' => "First job ({$phase}) created",
+                ]);
+            }
+        }
 
         return redirect()->route('orders.show', $order)
             ->with('success', "{$phase} job created successfully.");
