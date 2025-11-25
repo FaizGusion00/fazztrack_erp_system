@@ -107,11 +107,129 @@ class JobController extends Controller
 
             // If not JSON, try different QR code formats
             if (!$jobId) {
-                if (preg_match('/QR_([A-Za-z0-9]+)_([A-Z]+)/', $qrData, $matches)) {
-                    // Format: QR_EVLrykvkjc_PRINT (QR_code_phase)
-                    $jobId = $matches[1];
+                // First, try to find job by qr_code field directly (most reliable)
+                $job = Job::with(['order.client', 'assignedUser'])
+                    ->where('qr_code', $qrData)
+                    ->first();
+                
+                if ($job) {
+                    // Found job by QR code, proceed with validation
+                    if ($job->isOrderOnHold()) {
+                        return response()->json(['error' => 'This order is currently on hold. Please resume the order before continuing production.'], 423);
+                    }
+
+                    // Check if user can access this job
+                    /** @var \App\Models\User $user */
+                    $user = Auth::user();
+                    if ($user->isProductionStaff()) {
+                        if ($job->phase !== $user->phase) {
+                            return response()->json(['error' => 'Access denied. Job phase does not match your assigned phase.'], 403);
+                        }
+                        
+                        // STRICT WORKFLOW: Check order status
+                        $order = $job->order;
+                        $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+                        $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+                        
+                        if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                            return response()->json([
+                                'error' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                                'current_order_status' => $order->status
+                            ], 403);
+                        }
+                    }
+
+                    return response()->json([
+                        'job' => $job,
+                        'can_start' => $job->status === 'Pending',
+                        'can_end' => $job->status === 'In Progress',
+                    ]);
+                }
+                
+                // If not found by qr_code, try parsing different formats
+                if (preg_match('/^QR_([A-Za-z0-9]+)_([A-Z]+)$/', $qrData, $matches)) {
+                    // Format: QR_EVLrykvkjc_PRINT - find job by qr_code field in database
+                    $job = Job::with(['order.client', 'assignedUser'])
+                        ->where('qr_code', $qrData)
+                        ->first();
+                    
+                    if ($job) {
+                        // Found job by QR code, proceed with validation
+                        if ($job->isOrderOnHold()) {
+                            return response()->json(['error' => 'This order is currently on hold. Please resume the order before continuing production.'], 423);
+                        }
+
+                        // Check if user can access this job
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+                        if ($user->isProductionStaff()) {
+                            if ($job->phase !== $user->phase) {
+                                return response()->json(['error' => 'Access denied. Job phase does not match your assigned phase.'], 403);
+                            }
+                            
+                            // STRICT WORKFLOW: Check order status
+                            $order = $job->order;
+                            $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+                            $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+                            
+                            if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                                return response()->json([
+                                    'error' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                                    'current_order_status' => $order->status
+                                ], 403);
+                            }
+                        }
+
+                        return response()->json([
+                            'job' => $job,
+                            'can_start' => $job->status === 'Pending',
+                            'can_end' => $job->status === 'In Progress',
+                        ]);
+                    }
+                } elseif (preg_match('/^JOB-(\d+)-([A-Z]+)$/', $qrData, $matches)) {
+                    // Format: JOB-4-PRINT (JOB-order_id-phase) - find job by order_id and phase
+                    $orderId = $matches[1];
+                    $phase = $matches[2];
+                    $job = Job::with(['order.client', 'assignedUser'])
+                        ->where('order_id', $orderId)
+                        ->where('phase', $phase)
+                        ->first();
+                    
+                    if ($job) {
+                        // Found job by order_id and phase, proceed with validation
+                        if ($job->isOrderOnHold()) {
+                            return response()->json(['error' => 'This order is currently on hold. Please resume the order before continuing production.'], 423);
+                        }
+
+                        // Check if user can access this job
+                        /** @var \App\Models\User $user */
+                        $user = Auth::user();
+                        if ($user->isProductionStaff()) {
+                            if ($job->phase !== $user->phase) {
+                                return response()->json(['error' => 'Access denied. Job phase does not match your assigned phase.'], 403);
+                            }
+                            
+                            // STRICT WORKFLOW: Check order status
+                            $order = $job->order;
+                            $currentStatus = $order->status === 'On Hold' ? ($order->status_before_hold ?? $order->status) : $order->status;
+                            $productionAllowedStatuses = ['Job Start', 'Job Complete', 'Order Packaging', 'Order Finished', 'Completed'];
+                            
+                            if (!in_array($currentStatus, $productionAllowedStatuses, true)) {
+                                return response()->json([
+                                    'error' => 'Order is not ready for production. Order status must be "Job Start" or higher.',
+                                    'current_order_status' => $order->status
+                                ], 403);
+                            }
+                        }
+
+                        return response()->json([
+                            'job' => $job,
+                            'can_start' => $job->status === 'Pending',
+                            'can_end' => $job->status === 'In Progress',
+                        ]);
+                    }
                 } elseif (preg_match('/QR_(\d+)/', $qrData, $matches)) {
-                    // Format: QR_123
+                    // Format: QR_123 (legacy format with numeric job ID)
                     $jobId = $matches[1];
                 } elseif (preg_match('/JOB_(\d+)/', $qrData, $matches)) {
                     // Format: JOB_123

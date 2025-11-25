@@ -22,7 +22,21 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        
+        // Permissions Policy - Allow camera for scanner pages, block for others
+        // Check if this is a scanner-related route
+        $isScannerRoute = $request->is('jobs/scanner') || 
+                         $request->is('jobs/*/qr') || 
+                         $request->is('scanner*') ||
+                         ($request->route() && in_array($request->route()->getName(), ['jobs.scanner', 'jobs.qr']));
+        
+        if ($isScannerRoute) {
+            // Allow camera access for scanner pages
+            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(self)');
+        } else {
+            // Block camera for other pages (security)
+            $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        }
         
         // Content Security Policy
         $csp = "default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; " .

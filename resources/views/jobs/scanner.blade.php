@@ -357,31 +357,11 @@ function initScanner() {
         return;
     }
 
-    // For other browsers, try to check permission status first (if supported)
-    if (navigator.permissions && navigator.permissions.query) {
-        console.log('🔵 [SCANNER] Checking camera permission status...');
-        // Try to query camera permission (may not work on all browsers)
-        navigator.permissions.query({ name: 'camera' })
-            .then(function(result) {
-                console.log('🔵 [SCANNER] Camera permission status:', result.state);
-                if (result.state === 'denied') {
-                    console.error('❌ [SCANNER] Camera permission is denied');
-                    showPermissionDeniedError(platform);
-                    return;
-                }
-                // If permission is 'prompt' or 'granted', proceed with request
-                requestCameraAccess(platform);
-            })
-            .catch(function(err) {
-                console.warn('⚠️ [SCANNER] Permission query not supported, proceeding with request:', err);
-                // If permission query is not supported (e.g., Safari, some mobile browsers), proceed with request
-                requestCameraAccess(platform);
-            });
-    } else {
-        console.log('🔵 [SCANNER] Permission query API not available, proceeding with request');
-        // Permission query not available (Safari, older browsers) - proceed with request
-        requestCameraAccess(platform);
-    }
+    // For other browsers, directly request camera access
+    // Don't check permission status first as it can be inaccurate/cached
+    // Instead, try to request access and handle errors if permission is actually denied
+    console.log('🔵 [SCANNER] Proceeding with direct camera access request');
+    requestCameraAccess(platform);
     
     // Function to request camera access with platform-specific handling
     function requestCameraAccess(platform) {
