@@ -18,6 +18,10 @@ use App\Http\Controllers\DeliveryController;
 Route::get('/', [AuthController::class, 'showLogin'])->name('home');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+<<<<<<< HEAD
+=======
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 
 // Public tracking routes
 Route::get('/tracking', [TrackingController::class, 'searchForm'])->name('tracking.search');
@@ -32,8 +36,11 @@ Route::get('/api/health', function () {
 
 // Protected routes - require authentication
 Route::middleware(['auth'])->group(function () {
+<<<<<<< HEAD
 
     Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     
     // Dashboard routes
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');

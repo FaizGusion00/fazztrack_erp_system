@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Builder;
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -49,6 +52,7 @@ class Job extends Model
         return $this->belongsTo(Order::class, 'order_id', 'order_id');
     }
 
+<<<<<<< HEAD
     public function scopeExcludeOnHoldOrders(Builder $query): Builder
     {
         return $query->whereHas('order', function ($orderQuery) {
@@ -65,6 +69,8 @@ class Job extends Model
                 ->exists();
     }
 
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     /**
      * Get the assigned user for the job.
      */

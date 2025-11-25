@@ -25,8 +25,12 @@ class JobController extends Controller
                 ->with('error', 'You do not have permission to view jobs.');
         }
         
+<<<<<<< HEAD
         $query = Job::with(['order.client', 'assignedUser'])
             ->excludeOnHoldOrders();
+=======
+        $query = Job::with(['order.client', 'assignedUser']);
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // Search functionality
         if ($request->filled('search')) {
@@ -139,10 +143,13 @@ class JobController extends Controller
             $job = Job::with(['order.client', 'assignedUser'])
                 ->findOrFail($jobId);
 
+<<<<<<< HEAD
             if ($job->isOrderOnHold()) {
                 return response()->json(['error' => 'This order is currently on hold. Please resume the order before continuing production.'], 423);
             }
 
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             // Check if user can access this job
             /** @var \App\Models\User $user */
             $user = Auth::user();
@@ -168,6 +175,7 @@ class JobController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+<<<<<<< HEAD
         $job->loadMissing('order');
 
         if ($job->isOrderOnHold()) {
@@ -175,6 +183,8 @@ class JobController extends Controller
                 'error' => 'Order is currently on hold. Please resume the order before starting this job.'
             ], 423);
         }
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
         if ($user->isProductionStaff()) {
@@ -266,6 +276,7 @@ class JobController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+<<<<<<< HEAD
         $job->loadMissing('order');
 
         if ($job->isOrderOnHold()) {
@@ -273,6 +284,8 @@ class JobController extends Controller
                 'error' => 'Order is currently on hold. Please resume the order before completing this job.'
             ], 423);
         }
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // Check permissions - Production staff can access jobs matching their phase or unassigned jobs
         if ($user->isProductionStaff()) {
@@ -407,7 +420,11 @@ class JobController extends Controller
      */
     public function create()
     {
+<<<<<<< HEAD
         $orders = Order::where('status', 'Approved')->get();
+=======
+        $orders = \App\Models\Order::where('status', 'Approved')->get();
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         return view('jobs.create', compact('orders'));
     }
 
@@ -449,7 +466,11 @@ class JobController extends Controller
                 ->with('error', 'You do not have permission to edit jobs.');
         }
 
+<<<<<<< HEAD
         $orders = Order::where('status', '!=', 'Order Finished')->get();
+=======
+        $orders = \App\Models\Order::where('status', '!=', 'Order Finished')->get();
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         $users = User::where('role', 'Production Staff')->get();
         
         return view('jobs.edit', compact('job', 'orders', 'users'));
@@ -594,6 +615,7 @@ class JobController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+<<<<<<< HEAD
         $job->loadMissing('order');
 
         if ($job->isOrderOnHold() && !$user->isSuperAdmin() && !$user->isSalesManager()) {
@@ -602,6 +624,8 @@ class JobController extends Controller
                 'message' => 'This order is currently on hold. Please resume it before accessing job details.'
             ], 423);
         }
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // SuperAdmin and Sales Manager can access all jobs
         if ($user->isSuperAdmin() || $user->isSalesManager()) {
@@ -655,6 +679,7 @@ class JobController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+<<<<<<< HEAD
         $job->loadMissing('order');
 
         if ($job->isOrderOnHold() && !$user->isSuperAdmin() && !$user->isSalesManager()) {
@@ -663,6 +688,8 @@ class JobController extends Controller
                 'message' => 'This order is currently on hold. Please resume it before continuing the workflow.'
             ], 423);
         }
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         
         // SuperAdmin and Sales Manager can access all jobs
         if ($user->isSuperAdmin() || $user->isSalesManager()) {
@@ -748,7 +775,10 @@ class JobController extends Controller
     {
         $jobs = Job::select('job_id', 'phase', 'status', 'order_id')
             ->with(['order:order_id,job_name'])
+<<<<<<< HEAD
             ->excludeOnHoldOrders()
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             ->get();
         
         return response()->json([

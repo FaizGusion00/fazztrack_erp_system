@@ -3,10 +3,13 @@
 @section('title', 'Order Details - Fazztrack')
 
 @section('content')
+<<<<<<< HEAD
 @php
     $currentUser = auth()->user();
     $canManageHold = $currentUser->isSuperAdmin() || $currentUser->isSalesManager();
 @endphp
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -59,6 +62,7 @@
                             <h4 class="text-sm font-medium text-gray-500 mb-2">Status</h4>
                             @php
                                 $statusColors = [
+<<<<<<< HEAD
                                     'Order Created' => 'bg-yellow-100 text-yellow-800',
                                     'Order Approved' => 'bg-blue-100 text-blue-800',
                                     'Design Review' => 'bg-purple-100 text-purple-800',
@@ -70,6 +74,13 @@
                                     'Order Finished' => 'bg-green-100 text-green-800',
                                     'Completed' => 'bg-green-100 text-green-800',
                                     'On Hold' => 'bg-red-100 text-red-800',
+=======
+                                    'Pending' => 'bg-yellow-100 text-yellow-800',
+                                    'Approved' => 'bg-blue-100 text-blue-800',
+                                    'On Hold' => 'bg-red-100 text-red-800',
+                                    'In Progress' => 'bg-primary-100 text-primary-800',
+                                    'Completed' => 'bg-green-100 text-green-800'
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                 ];
                             @endphp
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
@@ -246,7 +257,11 @@
             </div>
 
             <!-- Order Actions -->
+<<<<<<< HEAD
             @if($currentUser->isAdmin() || $currentUser->isSuperAdmin() || $currentUser->isSalesManager())
+=======
+            @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900 flex items-center">
@@ -255,8 +270,13 @@
                     </h3>
                 </div>
                 <div class="p-6">
+<<<<<<< HEAD
                     <div class="space-y-4">
                         @if($order->status === 'Order Created' && ($currentUser->isAdmin() || $currentUser->isSuperAdmin()))
+=======
+                    <div class="space-y-3">
+                        @if($order->status === 'Order Created')
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <form method="POST" action="{{ route('orders.approve', $order) }}" class="w-full">
                                 @csrf
                                 <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
@@ -264,6 +284,7 @@
                                     Approve Payment
                                 </button>
                             </form>
+<<<<<<< HEAD
                         @endif
 
                         @if($canManageHold && in_array($order->status, $holdEligibleStatuses ?? [], true))
@@ -279,14 +300,23 @@
                                               class="w-full rounded-md border border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm"
                                               placeholder="Explain why this order should be on hold (optional)"></textarea>
                                 </div>
+=======
+                        @elseif($order->status === 'Order Approved')
+                            <form method="POST" action="{{ route('orders.hold', $order) }}" class="w-full">
+                                @csrf
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                 <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
                                     <i class="fas fa-pause mr-2"></i>
                                     Put On Hold
                                 </button>
                             </form>
+<<<<<<< HEAD
                         @endif
 
                         @if($canManageHold && $order->status === 'On Hold')
+=======
+                        @elseif($order->status === 'On Hold')
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <form method="POST" action="{{ route('orders.resume', $order) }}" class="w-full">
                                 @csrf
                                 <button type="submit" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
@@ -294,6 +324,7 @@
                                     Resume Order
                                 </button>
                             </form>
+<<<<<<< HEAD
                         @endif
 
                         @if($order->status === 'Design Approved' && $canManageHold)
@@ -308,6 +339,29 @@
                                 <i class="fas fa-tasks mr-2"></i>
                                 Create Additional Jobs
                             </button>
+=======
+                        @elseif($order->status === 'Design Approved')
+                            @if(auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin())
+                                <button onclick="showCreateJobsModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    <i class="fas fa-tasks mr-2"></i>
+                                    Create Production Jobs
+                                </button>
+                            @endif
+                        @elseif($order->status === 'Job Start')
+                            @if(auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin())
+                                <button onclick="showCreateJobsModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    <i class="fas fa-tasks mr-2"></i>
+                                    Create Additional Jobs
+                                </button>
+                            @endif
+                        @elseif($order->status === 'Order Finished')
+                            @if(auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin())
+                                <button onclick="showCreateJobsModal()" class="w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 border border-transparent rounded-md font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                                    <i class="fas fa-tasks mr-2"></i>
+                                    Create Additional Jobs
+                                </button>
+                            @endif
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                         @endif
 
                         @if($order->status === 'In Progress' && $order->jobs->where('status', 'Completed')->count() === $order->jobs->count() && $order->jobs->count() > 0)
@@ -324,6 +378,7 @@
                 </div>
             </div>
             @endif
+<<<<<<< HEAD
 
             @if($order->statusLogs->count() > 0)
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
@@ -365,6 +420,8 @@
                 </div>
             </div>
             @endif
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
         </div>
     </div>
 
@@ -377,8 +434,13 @@
                         <i class="fas fa-tasks mr-2 text-primary-500"></i>
                         Production Jobs
                     </h3>
+<<<<<<< HEAD
                     @if($canManageHold)
                         @if($order->status === 'Order Approved' && $order->jobs->count() === 0)
+=======
+                    @if(auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin())
+                        @if($order->status === 'Approved' && $order->jobs->count() === 0)
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <button onclick="showCreateJobsModal()" 
                                     class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-md font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                 <i class="fas fa-plus mr-2"></i>
@@ -475,13 +537,21 @@
                         <i class="fas fa-tasks text-gray-400 text-4xl mb-4"></i>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">No production jobs yet</h3>
                         <p class="text-gray-500 mb-4">
+<<<<<<< HEAD
                             @if($order->status === 'Order Approved')
+=======
+                            @if($order->status === 'Approved')
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                 Create production jobs to start the manufacturing process.
                             @else
                                 Jobs will be created after the order is approved.
                             @endif
                         </p>
+<<<<<<< HEAD
                         @if($order->status === 'Order Approved' && $canManageHold)
+=======
+                        @if($order->status === 'Approved' && (auth()->user()->isSalesManager() || auth()->user()->isSuperAdmin()))
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <button onclick="showCreateJobsModal()" 
                                     class="inline-flex items-center px-4 py-2 bg-primary-500 border border-transparent rounded-md font-medium text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                                 <i class="fas fa-plus mr-2"></i>

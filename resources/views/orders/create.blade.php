@@ -107,12 +107,21 @@
                                             <i class="fas fa-copy mr-1"></i>
                                             Copy
                                         </button>
+<<<<<<< HEAD
                                     <button type="button" 
                                             onclick="removeProductRow(this)"
                                             class="text-red-600 hover:text-red-800 text-sm font-medium">
                                         <i class="fas fa-trash mr-1"></i>
                                         Remove
                                     </button>
+=======
+                                        <button type="button" 
+                                                onclick="removeProductRow(this)"
+                                                class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                            <i class="fas fa-trash mr-1"></i>
+                                            Remove
+                                        </button>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                     </div>
                                 </div>
                             </div>
@@ -307,6 +316,7 @@
                     <!-- Design Views (Optional) -->
                     <div class="space-y-4">
                         <h4 class="text-md font-medium text-gray-900">Design Views <span class="text-gray-500 text-sm font-normal">(Optional)</span></h4>
+<<<<<<< HEAD
                             <div>
                             <label for="design_images" class="block text-sm font-medium text-gray-700 mb-2">
                                 Design Images (Multiple) <span class="text-gray-500 font-normal text-xs">- Optional, for customer reference only</span>
@@ -321,6 +331,22 @@
                                         <p class="text-xs text-gray-500">JPG, PNG (MAX. 20MB per image)</p>
                                         <p class="text-xs text-gray-400 mt-1">You can select multiple images at once</p>
                                         </div>
+=======
+                        <div>
+                            <label for="design_images" class="block text-sm font-medium text-gray-700 mb-2">
+                                Design Images (Multiple) <span class="text-gray-500 font-normal text-xs">- Optional, for customer reference only</span>
+                            </label>
+                            <div class="flex items-center justify-center w-full">
+                                <label for="design_images" class="flex flex-col items-center justify-center w-full h-40 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i class="fas fa-images text-gray-400 text-2xl mb-2"></i>
+                                        <p class="mb-2 text-sm text-gray-500">
+                                            <span class="font-semibold">Click to upload</span> or drag and drop
+                                        </p>
+                                        <p class="text-xs text-gray-500">JPG, PNG (MAX. 20MB per image)</p>
+                                        <p class="text-xs text-gray-400 mt-1">You can select multiple images at once</p>
+                                    </div>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                     <input id="design_images" name="design_images[]" type="file" class="hidden" accept=".jpg,.jpeg,.png" multiple>
                                 </label>
                             </div>
@@ -430,7 +456,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const jobSheetsInput = document.getElementById('job_sheets');
     const jobSheetsPreview = document.getElementById('job-sheets-preview');
     const jobSheetsList = document.getElementById('job-sheets-list');
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
     if (jobSheetsInput && jobSheetsPreview && jobSheetsList) {
         jobSheetsInput.addEventListener('change', function(e) {
             const files = Array.from(e.target.files);
@@ -497,8 +527,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             designImagesPreview.appendChild(previewItem);
                         };
                         reader.readAsDataURL(file);
+<<<<<<< HEAD
             }
         });
+=======
+                    }
+                });
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
             } else {
                 designImagesPreview.classList.add('hidden');
             }

@@ -208,12 +208,21 @@
                              class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="openImageModal('@fileUrl($designFiles['design_front'])', 'Front Design')">
                         <div class="mt-2 flex items-center space-x-2">
+<<<<<<< HEAD
                         <a href="@fileUrl($designFiles['design_front'])" 
                            target="_blank"
                                class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
                             Download
                         </a>
+=======
+                            <a href="@fileUrl($designFiles['design_front'])" 
+                               target="_blank"
+                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
+                                <i class="fas fa-download mr-1"></i>
+                                Download
+                            </a>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <button onclick="openImageModal('@fileUrl($designFiles['design_front'])', 'Front Design')" 
                                     class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
                                 <i class="fas fa-expand mr-1"></i>
@@ -233,12 +242,21 @@
                              class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="openImageModal('@fileUrl($designFiles['design_back'])', 'Back Design')">
                         <div class="mt-2 flex items-center space-x-2">
+<<<<<<< HEAD
                         <a href="@fileUrl($designFiles['design_back'])" 
                            target="_blank"
                                class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
                             Download
                         </a>
+=======
+                            <a href="@fileUrl($designFiles['design_back'])" 
+                               target="_blank"
+                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
+                                <i class="fas fa-download mr-1"></i>
+                                Download
+                            </a>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <button onclick="openImageModal('@fileUrl($designFiles['design_back'])', 'Back Design')" 
                                     class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
                                 <i class="fas fa-expand mr-1"></i>
@@ -258,12 +276,21 @@
                              class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="openImageModal('@fileUrl($designFiles['design_left'])', 'Left Design')">
                         <div class="mt-2 flex items-center space-x-2">
+<<<<<<< HEAD
                         <a href="@fileUrl($designFiles['design_left'])" 
                            target="_blank"
                                class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
                             Download
                         </a>
+=======
+                            <a href="@fileUrl($designFiles['design_left'])" 
+                               target="_blank"
+                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
+                                <i class="fas fa-download mr-1"></i>
+                                Download
+                            </a>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <button onclick="openImageModal('@fileUrl($designFiles['design_left'])', 'Left Design')" 
                                     class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
                                 <i class="fas fa-expand mr-1"></i>
@@ -283,12 +310,21 @@
                              class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="openImageModal('@fileUrl($designFiles['design_right'])', 'Right Design')">
                         <div class="mt-2 flex items-center space-x-2">
+<<<<<<< HEAD
                         <a href="@fileUrl($designFiles['design_right'])" 
                            target="_blank"
                                class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
                             <i class="fas fa-download mr-1"></i>
                             Download
                         </a>
+=======
+                            <a href="@fileUrl($designFiles['design_right'])" 
+                               target="_blank"
+                               class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700">
+                                <i class="fas fa-download mr-1"></i>
+                                Download
+                            </a>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             <button onclick="openImageModal('@fileUrl($designFiles['design_right'])', 'Right Design')" 
                                     class="inline-flex items-center text-sm text-gray-600 hover:text-gray-700">
                                 <i class="fas fa-expand mr-1"></i>
@@ -325,7 +361,11 @@
         </div>
         <div class="p-6">
             <div class="bg-red-50 border-l-4 border-red-400 p-4">
+<<<<<<< HEAD
             <p class="text-gray-700">{{ $design->feedback }}</p>
+=======
+                <p class="text-gray-700">{{ $design->feedback }}</p>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                 @if($design->rejected_by)
                 <p class="text-sm text-gray-500 mt-2">
                     <i class="fas fa-user mr-1"></i>
@@ -458,7 +498,11 @@
                     </div>
                     <button onclick="hideApproveModal()" class="text-white hover:text-gray-200 transition-colors">
                         <i class="fas fa-times text-xl"></i>
+<<<<<<< HEAD
                 </button>
+=======
+                    </button>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                 </div>
             </div>
             <div class="p-6">
@@ -478,6 +522,7 @@
                         </div>
                     </div>
                 </div>
+<<<<<<< HEAD
             <div class="flex space-x-3">
                 <button onclick="hideApproveModal()" 
                             class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
@@ -491,6 +536,21 @@
                             Approve Design
                     </button>
                 </form>
+=======
+                <div class="flex space-x-3">
+                    <button onclick="hideApproveModal()" 
+                            class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                        Cancel
+                    </button>
+                    <form method="POST" action="{{ route('designs.approve', $design) }}" class="flex-1">
+                        @csrf
+                        <button type="submit" 
+                                class="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all font-medium shadow-lg">
+                            <i class="fas fa-check mr-2"></i>
+                            Approve Design
+                        </button>
+                    </form>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                 </div>
             </div>
         </div>
@@ -511,12 +571,20 @@
                     </div>
                     <button onclick="hideRejectModal()" class="text-white hover:text-gray-200 transition-colors">
                         <i class="fas fa-times text-xl"></i>
+<<<<<<< HEAD
                 </button>
+=======
+                    </button>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                 </div>
             </div>
             <div class="p-6">
                 <form method="POST" action="{{ route('designs.reject', $design) }}" id="reject-form">
+<<<<<<< HEAD
                 @csrf
+=======
+                    @csrf
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                     <div class="mb-4">
                         <div class="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
                             <i class="fas fa-times-circle text-red-600 text-3xl"></i>
@@ -524,6 +592,7 @@
                         <p class="text-gray-700 text-center mb-2">Please provide feedback for the designer</p>
                         <p class="text-sm text-gray-500 text-center">The designer will use this feedback to revise the design.</p>
                     </div>
+<<<<<<< HEAD
                 <div class="mb-4">
                     <label for="feedback" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-comment-dots mr-1"></i>
@@ -535,6 +604,19 @@
                                   class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
                                   placeholder="Provide detailed feedback for the designer. What needs to be changed or improved?"
                               required></textarea>
+=======
+                    <div class="mb-4">
+                        <label for="feedback" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-comment-dots mr-1"></i>
+                            Feedback <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="feedback" 
+                                  name="feedback" 
+                                  rows="5"
+                                  class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                                  placeholder="Provide detailed feedback for the designer. What needs to be changed or improved?"
+                                  required></textarea>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                         <p class="text-xs text-gray-500 mt-1">Minimum 10 characters required</p>
                     </div>
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
@@ -545,6 +627,7 @@
                                 <p class="text-xs mt-1">Rejecting will allow the designer to create a new version with your feedback.</p>
                             </div>
                         </div>
+<<<<<<< HEAD
                 </div>
                 <div class="flex space-x-3">
                     <button type="button" 
@@ -555,6 +638,18 @@
                     <button type="submit" 
                                 class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all font-medium shadow-lg">
                         <i class="fas fa-times mr-2"></i>
+=======
+                    </div>
+                    <div class="flex space-x-3">
+                        <button type="button" 
+                                onclick="hideRejectModal()"
+                                class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-lg hover:from-red-600 hover:to-pink-700 transition-all font-medium shadow-lg">
+                            <i class="fas fa-times mr-2"></i>
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             Reject Design
                         </button>
                     </div>

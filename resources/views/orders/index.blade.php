@@ -3,10 +3,13 @@
 @section('title', 'Orders - Fazztrack')
 
 @section('content')
+<<<<<<< HEAD
 @php
     $currentUser = auth()->user();
     $canManageHold = $currentUser->isSuperAdmin() || $currentUser->isSalesManager();
 @endphp
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
@@ -308,7 +311,11 @@
                             <i class="fas fa-eye mr-1"></i>
                             View
                         </a>
+<<<<<<< HEAD
                         @if(!in_array($order->status, ['Completed', 'Order Finished'], true))
+=======
+                        @if($order->status !== 'Completed')
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                         <a href="{{ route('orders.edit', $order) }}" 
                            class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                             <i class="fas fa-edit mr-1"></i>
@@ -323,11 +330,19 @@
                         @endif
                     </div>
 
+<<<<<<< HEAD
                     <!-- Order Actions -->
                     @if($currentUser->isAdmin() || $currentUser->isSuperAdmin() || $currentUser->isSalesManager())
                         <div class="mt-3 pt-3 border-t border-gray-200">
                             <div class="flex space-x-2">
                                 @if($order->status === 'Order Created' && ($currentUser->isAdmin() || $currentUser->isSuperAdmin()))
+=======
+                    <!-- Admin Actions -->
+                    @if(auth()->user()->isAdmin())
+                        <div class="mt-3 pt-3 border-t border-gray-200">
+                            <div class="flex space-x-2">
+                                @if($order->status === 'Pending')
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                     <form method="POST" action="{{ route('orders.approve', $order) }}" class="flex-1">
                                         @csrf
                                         <button type="submit" 
@@ -336,9 +351,13 @@
                                             Approve
                                         </button>
                                     </form>
+<<<<<<< HEAD
                                 @endif
 
                                 @if($canManageHold && in_array($order->status, $holdEligibleStatuses ?? [], true))
+=======
+                                @elseif($order->status === 'Approved')
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                     <form method="POST" action="{{ route('orders.hold', $order) }}" class="flex-1">
                                         @csrf
                                         <button type="submit" 
@@ -348,6 +367,7 @@
                                         </button>
                                     </form>
                                 @endif
+<<<<<<< HEAD
 
                                 @if($canManageHold && $order->status === 'On Hold')
                                     <form method="POST" action="{{ route('orders.resume', $order) }}" class="flex-1">
@@ -359,6 +379,8 @@
                                         </button>
                                     </form>
                                 @endif
+=======
+>>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                             </div>
                         </div>
                     @endif
