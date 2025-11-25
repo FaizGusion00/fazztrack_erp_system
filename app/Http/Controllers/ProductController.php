@@ -1,0 +1,271 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use App\Services\StorageService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+
+class ProductController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can access products.');
+        }
+
+        $query = Product::query();
+        
+        // Sorting functionality
+        $sort = $request->get('sort', 'latest_added');
+        switch ($sort) {
+            case 'latest_added':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'latest_updated':
+                $query->orderBy('updated_at', 'desc');
+                break;
+            case 'alphabetical':
+                $query->orderBy('name', 'asc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+        
+        $products = $query->paginate(10)->withQueryString();
+        
+        return view('products.index', compact('products'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can create products.');
+        }
+
+        return view('products.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can create products.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'size' => 'required|string|max:50',
+            'stock' => 'required|integer|min:0',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'comments' => 'nullable|string',
+            'status' => 'required|in:Active,Inactive',
+            'category' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:50',
+            'material' => 'nullable|string|max:100',
+        ]);
+
+        $productData = $request->except('images');
+        
+        // Handle image uploads
+        $images = [];
+        if ($request->hasFile('images')) {
+            $images = StorageService::storeMultiple($request->file('images'), 'products');
+        }
+        
+        $productData['images'] = $images;
+
+        Product::create($productData);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Product created successfully.');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can view products.');
+        }
+
+        // Eager load orders with their clients to avoid N+1 queries
+        $product->load(['orders.client']);
+
+        return view('products.show', compact('product'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Product $product)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can edit products.');
+        }
+
+        return view('products.edit', compact('product'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Product $product)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can update products.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'size' => 'required|string|max:50',
+            'stock' => 'required|integer|min:0',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'comments' => 'nullable|string',
+            'status' => 'required|in:Active,Inactive',
+            'category' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:50',
+            'material' => 'nullable|string|max:100',
+        ]);
+
+        $productData = $request->except('images');
+        
+        // Handle image uploads
+        if ($request->hasFile('images')) {
+            // Delete old images
+            if ($product->images) {
+                StorageService::deleteMultiple($product->images);
+            }
+            
+            $images = StorageService::storeMultiple($request->file('images'), 'products');
+            $productData['images'] = $images;
+        }
+
+        $product->update($productData);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Product updated successfully.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Product $product)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can delete products.');
+        }
+
+        // Delete product images
+        if ($product->images) {
+            StorageService::deleteMultiple($product->images);
+        }
+
+        $product->delete();
+
+        return redirect()->route('products.index')
+            ->with('success', 'Product deleted successfully.');
+    }
+
+    /**
+     * Update stock for a product
+     */
+    public function updateStock(Request $request, Product $product)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied. Only SuperAdmin, Admin, and Sales Manager can update stock.');
+        }
+
+        $request->validate([
+            'stock' => 'required|integer|min:0',
+        ]);
+
+        $product->update(['stock' => $request->stock]);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Product stock updated successfully.');
+    }
+
+    /**
+     * Get products for order creation (AJAX)
+     */
+    public function getProductsForOrder()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied.');
+        }
+
+        $products = Product::active()->inStock()
+            ->select('product_id', 'name', 'size', 'stock', 'category', 'color')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($products);
+    }
+
+    /**
+     * Get product details (AJAX)
+     */
+    public function getProductDetails(Product $product)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        // Check if user has access to products
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$user->isSalesManager()) {
+            abort(403, 'Access denied.');
+        }
+
+        return response()->json([
+            'product_id' => $product->product_id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'size' => $product->size,
+            'stock' => $product->stock,
+            'category' => $product->category,
+            'color' => $product->color,
+            'material' => $product->material,
+            'comments' => $product->comments,
+            'first_image' => $product->first_image_url,
+        ]);
+    }
+} 

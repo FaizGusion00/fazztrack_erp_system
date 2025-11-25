@@ -1,0 +1,144 @@
+# Laravel Framework
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+
+# Laravel specific - Cache directories (should be ignored in production)
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+!/storage/app/public/uploads/
+!/storage/app/public/qr-codes/
+!/storage/app/public/templates/
+!/storage/app/public/designs/
+!/storage/app/public/receipts/
+!/storage/app/public/job-sheets/
+
+# Composer
+composer.phar
+/vendor/
+
+# NPM
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files - MUST BE IGNORED IN PRODUCTION
+.env
+.env.backup
+.env.production
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Database
+*.sql
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+*.cache
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Security - Keys and certificates
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Uploads and generated files in public directory
+/public/uploads/
+/public/qr-codes/
+/public/templates/
+/public/designs/
+/public/receipts/
+/public/job-sheets/
+
+# Backup files
+*.tar.gz
+*.zip
+backups/
+
+# Testing
+/coverage/
+.phpunit.cache/
+
+# Application specific - Storage uploads (keep structure, ignore files)
+/storage/app/public/uploads/*
+!/storage/app/public/uploads/.gitignore
+/storage/app/public/qr-codes/*
+!/storage/app/public/qr-codes/.gitignore
+/storage/app/public/templates/*
+!/storage/app/public/templates/.gitignore
+/storage/app/public/designs/*
+!/storage/app/public/designs/.gitignore
+/storage/app/public/receipts/*
+!/storage/app/public/receipts/.gitignore
+/storage/app/public/job-sheets/*
+!/storage/app/public/job-sheets/.gitignore
+
+# Local development
+docker-compose.local.yml
+
+# IDE specific
+*.sublime-project
+*.sublime-workspace
+
+# OS specific
+desktop.ini
