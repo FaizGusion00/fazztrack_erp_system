@@ -168,7 +168,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                 <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-2"><i class="fas fa-eye mr-1"></i>View</a>
+                                @if(!auth()->user()->isDesigner())
                                 <a href="{{ route('orders.edit', $order) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"><i class="fas fa-edit mr-1"></i>Edit</a>
+                                @endif
                             </td>
                         </tr>
                         @empty
@@ -201,10 +203,12 @@
                                class="text-primary-600 hover:text-primary-700 p-1">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            @if(!auth()->user()->isDesigner())
                             <a href="{{ route('orders.edit', $order) }}" 
                                class="text-gray-600 hover:text-gray-700 p-1">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            @endif
                             @if((auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()) && $order->status === 'Order Created')
                                 <form method="POST" action="{{ route('orders.approve', $order) }}" class="inline">
                                     @csrf
@@ -323,13 +327,13 @@
                             <i class="fas fa-eye mr-1"></i>
                             View
                         </a>
-                        @if(!in_array($order->status, ['Completed', 'Order Finished'], true))
+                        @if(!auth()->user()->isDesigner() && !in_array($order->status, ['Completed', 'Order Finished'], true))
                         <a href="{{ route('orders.edit', $order) }}" 
                            class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                             <i class="fas fa-edit mr-1"></i>
                             Edit
                         </a>
-                        @else
+                        @elseif(!auth()->user()->isDesigner())
                         <a href="{{ route('deliveries.show', $order) }}" 
                            class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 transition-colors">
                             <i class="fas fa-truck mr-1"></i>

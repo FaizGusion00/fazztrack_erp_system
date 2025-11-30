@@ -242,6 +242,22 @@
                     </div>
 
                     <div>
+                        <label for="pola_link" class="block text-sm font-medium text-gray-700 mb-2">
+                            Pola (Pattern) Link
+                        </label>
+                        <input type="url" 
+                               id="pola_link" 
+                               name="pola_link"
+                               value="{{ old('pola_link', $order->pola_link) }}"
+                               placeholder="https://drive.google.com/..."
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 @error('pola_link') border-red-300 @enderror">
+                        <p class="mt-1 text-sm text-gray-500">Google Drive link for pola (grading patterns for multiple sizes)</p>
+                        @error('pola_link')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
                         <label for="download_link" class="block text-sm font-medium text-gray-700 mb-2">
                             Download Link
                         </label>

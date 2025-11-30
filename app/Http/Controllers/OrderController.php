@@ -325,9 +325,11 @@ class OrderController extends Controller
 
     /**
      * Display the specified order
+     * @param Order $order
      */
     public function show(Order $order)
     {
+        /** @var \App\Models\Order $order */
         $order->load(['client.contacts', 'jobs.assignedUser', 'orderProducts.product', 'statusLogs.user']);
 
         return view('orders.show', [
@@ -341,6 +343,14 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // Designer role can only view orders, not edit them
+        if ($user->isDesigner()) {
+            abort(403, 'Access denied. Designers can only view orders, not edit them.');
+        }
+        
         // Optimize: Select only needed columns instead of all()
         $clients = Client::select('client_id', 'name')->orderBy('name')->get();
         $products = Product::active()->select('product_id', 'name', 'stock')->orderBy('name')->get();
@@ -353,6 +363,14 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // Designer role can only view orders, not edit them
+        if ($user->isDesigner()) {
+            abort(403, 'Access denied. Designers can only view orders, not edit them.');
+        }
+        
         $request->validate([
             'client_id' => 'required|exists:clients,client_id',
             'products' => 'required|array|min:1',
@@ -434,6 +452,7 @@ class OrderController extends Controller
         $orderData['job_sheet'] = !empty($existingJobSheets) ? json_encode($existingJobSheets) : null;
 
         // Handle design images - delete and add
+        /** @var \App\Models\Order $order */
         $existingDesignFiles = $order->getDesignFilesArray();
         $designImages = [];
         
@@ -524,7 +543,9 @@ class OrderController extends Controller
         if ($request->has('delete_receipts') && is_array($request->delete_receipts)) {
             foreach ($request->delete_receipts as $receiptId) {
                 if (!empty($receiptId)) {
+                    /** @var \App\Models\OrderReceipt|null $receipt */
                     $receipt = \App\Models\OrderReceipt::find($receiptId);
+                    /** @var \App\Models\Order $order */
                     if ($receipt && $receipt->order_id === $order->order_id) {
                         // Delete file from storage
                         StorageService::delete($receipt->file_path);
@@ -579,6 +600,7 @@ class OrderController extends Controller
                 ->with('error', $validation['message']);
         }
         
+        /** @var \App\Models\Order $order */
         $previousStatus = $order->status;
         $order->update(['status' => 'Order Approved']);
         
@@ -626,6 +648,7 @@ class OrderController extends Controller
             'status_comment' => 'nullable|string|max:500',
         ]);
 
+        /** @var \App\Models\Order $order */
         $previousStatus = $order->status;
         $comment = $request->status_comment ?? 'Order put on hold';
 
@@ -756,6 +779,12 @@ class OrderController extends Controller
         if ($approvedDesigns->isEmpty()) {
             return redirect()->route('orders.show', $order)
                 ->with('error', "Cannot create jobs. Order must have at least one approved design first. Current designs: {$order->designs->count()}");
+        }
+        
+        // STRICT WORKFLOW: Check if pola_link exists (required after design approved)
+        if (empty($order->pola_link)) {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "Cannot create jobs. Pola (pattern) link must be added first. Please add the pola link in Design Management > Pola Design tab.");
         }
         
         $request->validate([

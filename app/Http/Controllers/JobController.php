@@ -190,6 +190,7 @@ class JobController extends Controller
                     // Format: JOB-4-PRINT (JOB-order_id-phase) - find job by order_id and phase
                     $orderId = $matches[1];
                     $phase = $matches[2];
+                    /** @var \App\Models\Job|null $job */
                     $job = Job::with(['order.client', 'assignedUser'])
                         ->where('order_id', $orderId)
                         ->where('phase', $phase)
@@ -254,6 +255,7 @@ class JobController extends Controller
                 return response()->json(['error' => 'Invalid job ID format'], 400);
             }
 
+            /** @var \App\Models\Job $job */
             $job = Job::with(['order.client', 'assignedUser'])
                 ->findOrFail($jobId);
 
@@ -621,6 +623,7 @@ class JobController extends Controller
             'remarks' => 'nullable|string',
         ]);
 
+        /** @var \App\Models\Order $order */
         $order = Order::findOrFail($request->order_id);
         
         // STRICT WORKFLOW: Check order status and design approval

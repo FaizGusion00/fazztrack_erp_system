@@ -80,6 +80,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/designs/store-for-order/{order}', [DesignController::class, 'store'])->name('designs.store-for-order');
     Route::post('/designs/{design}/approve', [DesignController::class, 'approve'])->name('designs.approve');
     Route::post('/designs/{design}/reject', [DesignController::class, 'reject'])->name('designs.reject');
+    Route::post('/orders/{order}/pola', [DesignController::class, 'updatePola'])->name('orders.pola.update');
 
     // Design Template routes
     Route::resource('design-templates', DesignTemplateController::class);

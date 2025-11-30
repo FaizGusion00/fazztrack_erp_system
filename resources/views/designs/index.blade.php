@@ -43,6 +43,14 @@
                 Rejected
                 <span class="ml-2 bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $rejectedCount }}</span>
             </a>
+            @if(auth()->user()->isDesigner())
+            <a href="{{ route('designs.index', array_merge(request()->except(['tab', 'page']), ['tab' => 'pola'])) }}" 
+               class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm {{ request('tab') === 'pola' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                <i class="fas fa-ruler-combined mr-2"></i>
+                Pola Design
+                <span class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $polaCount ?? 0 }}</span>
+            </a>
+            @endif
         </nav>
         <div class="mt-3 sm:mt-0 sm:ml-auto flex items-center space-x-2">
             @php $view = request('view', 'table'); @endphp
@@ -225,6 +233,111 @@
     </div>
     @endif
 
+    {{-- Pola Design Section (Designer Only) --}}
+    @if(auth()->user()->isDesigner() && request('tab', 'all') === 'pola' && isset($ordersNeedingPola))
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <i class="fas fa-ruler-combined mr-2 text-primary-500"></i>
+                Pola (Pattern) Link Management
+                <span class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">{{ $ordersNeedingPola->count() }}</span>
+            </h3>
+            <p class="text-sm text-gray-500 mt-1">Manage pola (pattern) links for orders with approved designs. You can add or update pola links until production jobs are completed.</p>
+        </div>
+        <div class="p-6">
+            @if($view === 'table')
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order #</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pola Link (Google Drive)</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($ordersNeedingPola as $order)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ $order->order_id }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->job_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order->client->name }}</td>
+                                <td class="px-6 py-4 text-sm">
+                                    <form method="POST" action="{{ route('orders.pola.update', $order) }}" class="flex items-center space-x-2">
+                                        @csrf
+                                        <input type="url" 
+                                               name="pola_link" 
+                                               value="{{ old('pola_link', $order->pola_link) }}"
+                                               placeholder="https://drive.google.com/..."
+                                               class="flex-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                               required>
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-3 py-1.5 bg-primary-500 border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary-600 transition-colors">
+                                            <i class="fas fa-save mr-1"></i>
+                                            {{ $order->pola_link ? 'Update' : 'Add' }}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                    <a href="{{ route('orders.show', $order) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"><i class="fas fa-eye mr-1"></i>View</a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($ordersNeedingPola as $order)
+                    <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900">{{ $order->job_name }}</h4>
+                                <p class="text-sm text-gray-600 mt-1">{{ $order->client->name }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Order #{{ $order->order_id }}</p>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('orders.pola.update', $order) }}" class="space-y-3">
+                            @csrf
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Pola Link (Google Drive)</label>
+                                <input type="url" 
+                                       name="pola_link" 
+                                       value="{{ old('pola_link', $order->pola_link) }}"
+                                       placeholder="https://drive.google.com/..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                       required>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button type="submit" 
+                                        class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-primary-500 border border-transparent rounded-md text-sm font-medium text-white hover:bg-primary-600 transition-colors">
+                                    <i class="fas fa-save mr-2"></i>
+                                    {{ $order->pola_link ? 'Update Link' : 'Add Link' }}
+                                </button>
+                                <a href="{{ route('orders.show', $order) }}" 
+                                   class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                   title="View Order">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+    @elseif(auth()->user()->isDesigner() && request('tab', 'all') === 'pola' && (!isset($ordersNeedingPola) || $ordersNeedingPola->count() === 0))
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+        <div class="flex flex-col items-center">
+            <i class="fas fa-ruler-combined text-gray-400 text-4xl mb-2"></i>
+            <p class="text-gray-500">No orders with approved designs found at this time.</p>
+        </div>
+    </div>
+    @endif
+
+    @if(request('tab', 'all') !== 'pola')
     @if($view === 'table')
         <!-- Designs Table View -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -409,6 +522,7 @@
             {{ $designs->links() }}
         </div>
         @endif
+    @endif
     @endif
 </div>
 @endsection

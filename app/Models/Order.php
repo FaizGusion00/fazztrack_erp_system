@@ -30,6 +30,7 @@ class Order extends Model
         'job_sheet',
         'design_files',
         'download_link',
+        'pola_link',
         'delivery_status',
         'tracking_number',
         'delivery_date',

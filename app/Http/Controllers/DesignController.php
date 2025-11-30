@@ -28,11 +28,31 @@ class DesignController extends Controller
         
         // For designers, also get orders that need design work
         $ordersNeedingDesign = collect();
+        $ordersNeedingPola = collect();
         if ($user->isDesigner()) {
             // Get orders with status "Order Approved" that don't have any designs yet
             $ordersNeedingDesign = Order::where('status', 'Order Approved')
                 ->whereDoesntHave('designs')
                 ->with('client')
+                ->orderBy('due_date_design', 'asc')
+                ->get();
+            
+            // Get all orders with approved designs (can add/edit pola link until production jobs end)
+            // Allow editing pola link for orders with approved designs, regardless of order status or existing pola_link
+            $ordersNeedingPola = Order::whereHas('designs', function($q) {
+                    $q->where('status', 'Approved');
+                })
+                ->whereIn('status', [
+                    'Design Approved', 
+                    'Job Created', 
+                    'Job Start', 
+                    'Job Complete', 
+                    'Order Packaging', 
+                    'Order Finished'
+                ])
+                ->with(['client', 'designs' => function($q) {
+                    $q->where('status', 'Approved');
+                }])
                 ->orderBy('due_date_design', 'asc')
                 ->get();
         }
@@ -54,6 +74,9 @@ class DesignController extends Controller
             $query->where('status', 'Approved');
         } elseif ($tab === 'rejected') {
             $query->where('status', 'Rejected');
+        } elseif ($tab === 'pola') {
+            // For pola tab, we need orders with approved designs that need pola links
+            // This will be handled separately in the view
         }
         
         // Filter by status (additional filter)
@@ -121,7 +144,13 @@ class DesignController extends Controller
         
         $view = $request->get('view', 'table');
         
-        return view('designs.index', compact('designs', 'pendingCount', 'approvedCount', 'rejectedCount', 'view', 'ordersNeedingDesign', 'user'));
+        // Get count of orders with approved designs that can have pola links (for designer role only)
+        $polaCount = 0;
+        if ($user->isDesigner()) {
+            $polaCount = $ordersNeedingPola->count();
+        }
+        
+        return view('designs.index', compact('designs', 'pendingCount', 'approvedCount', 'rejectedCount', 'polaCount', 'view', 'ordersNeedingDesign', 'ordersNeedingPola', 'user'));
     }
 
     /**
@@ -564,5 +593,61 @@ class DesignController extends Controller
 
         return redirect()->route('designs.show', $design)
             ->with('success', 'Design rejected with feedback.');
+    }
+
+    /**
+     * Update pola link for an order (Designer only)
+     */
+    public function updatePola(Request $request, Order $order)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // Only Designer can update pola link
+        if (!$user->isDesigner()) {
+            abort(403, 'Access denied. Only designers can update pola links.');
+        }
+        
+        // Validate: Order must have approved design
+        $order->load('designs');
+        $approvedDesigns = $order->designs->filter(function($design) {
+            return strtolower($design->status) === 'approved';
+        });
+        
+        if ($approvedDesigns->isEmpty()) {
+            return redirect()->back()
+                ->with('error', 'Cannot add pola link. Order must have at least one approved design first.');
+        }
+        
+        // Validate: Order status should allow pola link editing (until production jobs end)
+        $allowedStatuses = [
+            'Design Approved', 
+            'Job Created', 
+            'Job Start', 
+            'Job Complete', 
+            'Order Packaging', 
+            'Order Finished'
+        ];
+        
+        if (!in_array($order->status, $allowedStatuses, true)) {
+            return redirect()->back()
+                ->with('error', "Cannot update pola link. Order status must allow pola editing. Current status: {$order->status}");
+        }
+        
+        $request->validate([
+            'pola_link' => 'required|url|max:500',
+        ]);
+        
+        $order->update([
+            'pola_link' => $request->pola_link,
+        ]);
+        
+        // Clear dashboard cache
+        Cache::forget('dashboard_stats_superadmin');
+        Cache::forget('dashboard_stats_admin');
+        Cache::forget('dashboard_stats_sales');
+        
+        return redirect()->back()
+            ->with('success', 'Pola link updated successfully.');
     }
 } 

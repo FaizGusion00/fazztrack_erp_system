@@ -80,6 +80,9 @@ class OfflineController extends Controller
             'offline_data' => 'nullable|array'
         ]);
 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $offlineLog = OfflineJobLog::create([
             'job_id' => $request->job_id,
             'user_id' => $user->id,
@@ -225,6 +228,7 @@ class OfflineController extends Controller
      */
     public function getUnsyncedLogs()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isProductionStaff()) {
@@ -265,6 +269,7 @@ class OfflineController extends Controller
      */
     public function checkOnlineStatus()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         
         if (!$user->isProductionStaff()) {

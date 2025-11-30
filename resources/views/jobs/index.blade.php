@@ -110,7 +110,8 @@
                 <div class="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-sm border border-white/20 overflow-hidden hover:shadow-lg transition-shadow duration-300">
                     <!-- Order Summary Header (Clickable) -->
                     <div class="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 cursor-pointer hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 transition-colors" 
-                         onclick="toggleOrderJobs({{ $orderId }})">
+                         data-order-id="{{ $orderId }}"
+                         onclick="toggleOrderJobs(this.getAttribute('data-order-id'))">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                             <div class="flex items-center space-x-3 sm:space-x-4 flex-1">
                                 <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
@@ -242,21 +243,24 @@
                                     <!-- Job Actions -->
                                     <div class="flex space-x-1">
                                         @if($job->status === 'Pending' && auth()->user()->isProductionStaff())
-                                            <button onclick="startJob({{ $job->job_id }})" 
+                                            <button data-job-id="{{ $job->job_id }}"
+                                                    onclick="startJob(this.getAttribute('data-job-id'))" 
                                                     class="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 text-xs sm:text-sm font-medium shadow-sm">
                                                 <i class="fas fa-play"></i>
                                             </button>
                                         @endif
                                         
                                         @if($job->status === 'In Progress' && auth()->user()->isProductionStaff())
-                                            <button onclick="endJob({{ $job->job_id }})" 
+                                            <button data-job-id="{{ $job->job_id }}"
+                                                    onclick="endJob(this.getAttribute('data-job-id'))" 
                                                     class="inline-flex items-center px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 text-xs sm:text-sm font-medium shadow-sm">
                                                 <i class="fas fa-stop"></i>
                                             </button>
                                         @endif
                                         
                                         {{-- @if(auth()->user()->isSuperAdmin() || auth()->user()->isSalesManager())
-                                            <button onclick="assignJob({{ $job->job_id }})" 
+                                            <button data-job-id="{{ $job->job_id }}"
+                                                    onclick="assignJob(this.getAttribute('data-job-id'))" 
                                                     class="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-300 text-xs sm:text-sm font-medium shadow-sm">
                                                 <i class="fas fa-user-plus"></i>
                                             </button>
@@ -322,9 +326,42 @@
 </div>
 
 <script>
+// Store the expanded state of orders
+const expandedOrders = JSON.parse(localStorage.getItem('expandedOrders') || '{}');
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Apply expanded state on load
+    for (const orderId in expandedOrders) {
+        if (expandedOrders[orderId]) {
+            const jobsContainer = document.getElementById(`order-jobs-${orderId}`);
+            const arrowIcon = document.querySelector(`.order-arrow-${orderId} i`);
+            if (jobsContainer) {
+                jobsContainer.classList.remove('hidden');
+            }
+            if (arrowIcon) {
+                arrowIcon.classList.remove('fa-chevron-down');
+                arrowIcon.classList.add('fa-chevron-up');
+            }
+        }
+    }
+    
+    // Animate cards on load
+    const cards = document.querySelectorAll('.bg-white\\/80');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+
 function startJob(jobId) {
+    const jobIdNum = typeof jobId === 'string' ? parseInt(jobId, 10) : jobId;
     if (confirm('Are you sure you want to start this job?')) {
-        fetch(`/jobs/${jobId}/start`, {
+        fetch(`/jobs/${jobIdNum}/start`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -346,31 +383,34 @@ function startJob(jobId) {
 
 // Toggle order jobs visibility
 function toggleOrderJobs(orderId) {
-    const jobsContainer = document.querySelector('.order-jobs-' + orderId);
-    const arrow = document.querySelector('.order-arrow-' + orderId);
-    
+    const orderIdNum = typeof orderId === 'string' ? parseInt(orderId, 10) : orderId;
+    const jobsContainer = document.getElementById(`order-jobs-${orderIdNum}`);
+    const arrowIcon = document.querySelector(`.order-arrow-${orderIdNum} i`);
+
     if (jobsContainer) {
-        const isHidden = jobsContainer.style.display === 'none';
-        jobsContainer.style.display = isHidden ? 'block' : 'none';
-        
-        if (arrow) {
-            const icon = arrow.querySelector('i');
-            if (icon) {
-                if (isHidden) {
-                    icon.classList.remove('fa-chevron-down');
-                    icon.classList.add('fa-chevron-up');
-                } else {
-                    icon.classList.remove('fa-chevron-up');
-                    icon.classList.add('fa-chevron-down');
-                }
+        if (jobsContainer.classList.contains('hidden')) {
+            jobsContainer.classList.remove('hidden');
+            if (arrowIcon) {
+                arrowIcon.classList.remove('fa-chevron-down');
+                arrowIcon.classList.add('fa-chevron-up');
             }
+            expandedOrders[orderIdNum] = true;
+        } else {
+            jobsContainer.classList.add('hidden');
+            if (arrowIcon) {
+                arrowIcon.classList.remove('fa-chevron-up');
+                arrowIcon.classList.add('fa-chevron-down');
+            }
+            expandedOrders[orderIdNum] = false;
         }
+        localStorage.setItem('expandedOrders', JSON.stringify(expandedOrders));
     }
 }
 
 function endJob(jobId) {
+    const jobIdNum = typeof jobId === 'string' ? parseInt(jobId, 10) : jobId;
     if (confirm('Are you sure you want to end this job?')) {
-        fetch(`/jobs/${jobId}/end`, {
+        fetch(`/jobs/${jobIdNum}/end`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -394,20 +434,5 @@ function endJob(jobId) {
 //     // Open assignment modal or redirect to assignment page
 //     window.location.href = `/jobs/${jobId}/assign`;
 // }
-
-// Add smooth animations
-document.addEventListener('DOMContentLoaded', function() {
-    // Animate cards on load
-    const cards = document.querySelectorAll('.bg-white\\/80');
-    cards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            card.style.transition = 'all 0.6s ease-out';
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }, index * 100);
-    });
-});
 </script>
 @endsection 
