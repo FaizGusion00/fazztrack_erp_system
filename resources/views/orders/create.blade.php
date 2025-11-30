@@ -113,7 +113,6 @@
                                             <i class="fas fa-trash mr-1"></i>
                                             Remove
                                         </button>
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                     </div>
                                 </div>
                             </div>
@@ -337,7 +336,6 @@
                                         <p class="text-xs text-gray-500">JPG, PNG (MAX. 20MB per image)</p>
                                         <p class="text-xs text-gray-400 mt-1">You can select multiple images at once</p>
                                     </div>
->>>>>>> 3710a4358d7c142e15038a7986c16e95d72df9e6
                                     <input id="design_images" name="design_images[]" type="file" class="hidden" accept=".jpg,.jpeg,.png" multiple>
                                 </label>
                             </div>
