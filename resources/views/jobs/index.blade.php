@@ -123,28 +123,34 @@
                                     <p class="text-xs sm:text-sm text-gray-500">{{ $client->name }}</p>
                                 </div>
                             </div>
-                            <div class="mt-3 sm:mt-0 flex items-center space-x-2">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {{ $orderJobs->count() }} Jobs
+                            <div class="mt-3 sm:mt-0 flex items-center flex-wrap gap-2 sm:gap-3">
+                                <span class="inline-flex items-center px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-300 shadow-sm">
+                                    <i class="fas fa-tasks mr-2.5 sm:mr-3 text-blue-600"></i>
+                                    <span class="whitespace-nowrap">{{ $orderJobs->count() }} Jobs</span>
                                 </span>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    RM {{ number_format($order->total_amount, 2) }}
+                                <span class="inline-flex items-center px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-semibold bg-green-50 text-green-700 border border-green-300 shadow-sm">
+                                    <i class="fas fa-dollar-sign mr-2.5 sm:mr-3 text-green-600"></i>
+                                    <span class="whitespace-nowrap">RM {{ number_format($order->total_amount, 2) }}</span>
                                 </span>
                                 <a href="{{ route('orders.show', $order) }}" 
                                    onclick="event.stopPropagation();"
-                                   class="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-xs font-medium shadow-sm">
-                                    <i class="fas fa-eye mr-1.5"></i>
-                                    View Order
+                                   class="inline-flex items-center px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                    <i class="fas fa-external-link-alt mr-2.5 sm:mr-3"></i>
+                                    <span class="hidden sm:inline">View Order</span>
+                                    <span class="sm:hidden">View</span>
                                 </a>
-                                <button class="ml-2 text-gray-500 hover:text-gray-700 transition-transform duration-200 order-arrow-{{ $orderId }}" type="button">
-                                    <i class="fas fa-chevron-down"></i>
+                                <button onclick="event.stopPropagation(); toggleOrderJobs('{{ $orderId }}')" 
+                                        class="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-all duration-200 order-arrow-{{ $orderId }} focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2" 
+                                        type="button"
+                                        aria-label="Toggle jobs">
+                                    <i class="fas fa-chevron-down transition-transform duration-200 text-sm"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Jobs List for this Order (Collapsible) -->
-                    <div class="divide-y divide-gray-200 order-jobs-{{ $orderId }}" style="display: none;">
+                    <div id="order-jobs-{{ $orderId }}" class="divide-y divide-gray-200 hidden">
                         @foreach($orderJobs as $job)
                         <div class="p-4 sm:p-6 lg:p-8 hover:bg-gray-50/50 transition-colors duration-200">
                             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
@@ -383,27 +389,34 @@ function startJob(jobId) {
 
 // Toggle order jobs visibility
 function toggleOrderJobs(orderId) {
-    const orderIdNum = typeof orderId === 'string' ? parseInt(orderId, 10) : orderId;
-    const jobsContainer = document.getElementById(`order-jobs-${orderIdNum}`);
-    const arrowIcon = document.querySelector(`.order-arrow-${orderIdNum} i`);
+    // Handle both string and number orderId
+    const orderIdStr = String(orderId);
+    const jobsContainer = document.getElementById(`order-jobs-${orderIdStr}`);
+    const arrowIcon = document.querySelector(`.order-arrow-${orderIdStr} i`);
 
     if (jobsContainer) {
-        if (jobsContainer.classList.contains('hidden')) {
+        const isHidden = jobsContainer.classList.contains('hidden');
+        
+        if (isHidden) {
+            // Expand: remove hidden class
             jobsContainer.classList.remove('hidden');
             if (arrowIcon) {
                 arrowIcon.classList.remove('fa-chevron-down');
                 arrowIcon.classList.add('fa-chevron-up');
             }
-            expandedOrders[orderIdNum] = true;
+            expandedOrders[orderIdStr] = true;
         } else {
+            // Collapse: add hidden class
             jobsContainer.classList.add('hidden');
             if (arrowIcon) {
                 arrowIcon.classList.remove('fa-chevron-up');
                 arrowIcon.classList.add('fa-chevron-down');
             }
-            expandedOrders[orderIdNum] = false;
+            expandedOrders[orderIdStr] = false;
         }
         localStorage.setItem('expandedOrders', JSON.stringify(expandedOrders));
+    } else {
+        console.error('Jobs container not found for order:', orderIdStr);
     }
 }
 
